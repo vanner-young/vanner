@@ -1,0 +1,20 @@
+{
+    "name": "@mv-cli/modules",
+    "version": "0.0.1",
+    "description": "脚手架模块封装",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@inquirer/prompts": "^6.0.1",
+        "@mv-cli/common": "workspace:^",
+        "ini": "^5.0.0"
+    },
+    "devDependencies": {
+        "commander": "^12.1.0"
+    }
+}

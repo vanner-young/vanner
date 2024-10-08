@@ -1,0 +1,25 @@
+{
+    "name": "mv-cli",
+    "version": "0.0.1",
+    "description": "",
+    "main": "lib/index.js",
+    "bin": {
+        "mv-cli": "lib/index.js"
+    },
+    "scripts": {
+        "format": "prettier ./packages/** --write",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "workspaces": [
+        "packages/*"
+    ],
+    "dependencies": {
+        "@mv-cli/core": "workspace:^"
+    },
+    "devDependencies": {
+        "prettier": "^3.3.3"
+    }
+}
