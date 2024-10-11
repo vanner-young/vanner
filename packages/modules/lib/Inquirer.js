@@ -2,6 +2,14 @@ const inquirer = require("@inquirer/prompts");
 const { arrayExecSyncHandler, filterObject } = require("@mv-cli/common");
 
 class Inquirer {
+    constructor() {
+        const processError = (reason) => {
+            if (!/^User force closed/i.test(reason.message))
+                console.error(reason);
+            process.exit(1);
+        };
+        process.addListener("unhandledRejection", processError);
+    }
     input(options) {
         return arrayExecSyncHandler((item) => {
             return inquirer.input(item);

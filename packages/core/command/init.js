@@ -1,16 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const { Inquirer, GitStorage, CustomerStorage } = require("@mv-cli/modules");
+const { Inquirer, GitStorage } = require("@mv-cli/modules");
 const { basicCommon, platform, dfsParser } = require("@mv-cli/common");
-const {
-    createProjectQuestion,
-    initExistsCustomerTemplate,
-    initNotExistsCustomerTemplate,
-} = require("../constance/question");
+const { createProjectQuestion } = require("../constance/question");
 const {
     INIT_PROJECT_VITE_REMOTE,
     INIT_PROJECT_DEFAULT_NAME,
-    INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
 } = require("../constance");
 
 const questionDict = {
@@ -26,7 +21,7 @@ const questionDict = {
     },
 };
 
-class InitProject extends Inquirer {
+class Init extends Inquirer {
     #config = {
         projectName: "",
     };
@@ -107,13 +102,8 @@ class InitProject extends Inquirer {
         this.#storage.vite = new GitStorage({
             source: INIT_PROJECT_VITE_REMOTE,
             local: appCacheTemplatePath,
+            isInitPull: require("./config").get("init_storage_pull"),
         });
-
-        // 自定义模板管理
-        // this.#storage.customer = new CustomerStorage({
-        //     source: INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-        //     local: appCacheTemplatePath,
-        // });
     }
     async start() {
         await this.loadStorage();
@@ -121,4 +111,4 @@ class InitProject extends Inquirer {
     }
 }
 
-module.exports = new InitProject();
+module.exports = new Init();

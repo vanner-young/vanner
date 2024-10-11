@@ -11,7 +11,6 @@
     "license": "ISC",
     "dependencies": {
         "@mv-cli/common": "workspace:^",
-        "@mv-cli/modules": "workspace:^",
-        "commander": "^12.1.0"
+        "@mv-cli/modules": "workspace:^"
     }
 }

@@ -7,4 +7,5 @@ module.exports = {
     INIT_PROJECT_VITE_REMOTE: "https://github.com/vitejs/create-vite-app.git", // 初始化项目的vite管理仓库地址
     INIT_PROJECT_TEMPLATE_DIR_NAME: "Template", // 脚手架模板缓存目录名称
     INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME: "customer", // 脚手架模板缓存自定义名称
+    APP_DES: "一款快速便捷高扩展的命令管理工具", // 脚手架简介
 };

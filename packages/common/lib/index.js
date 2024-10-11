@@ -32,27 +32,11 @@ const filterObject = (value, filterList) => {
     return newVal;
 };
 
-const isGitAddress = (link) => {
-    return /\.git$/.test(link);
-};
-
-const parseGitRemoteName = (link) => {
-    if (!isGitAddress(link)) throw new Error("invalid git link...");
-    let gitName = link
-        .split("/")
-        .filter((item) => item)
-        .at(-1);
-    if (!gitName) return;
-    return gitName.replace(".git", "");
-};
-
 module.exports = {
     platform,
     basicCommon,
     filterObject,
     arrayExecSyncHandler,
-    parseGitRemoteName,
     dfsParser,
     fileAction,
-    isGitAddress,
 };

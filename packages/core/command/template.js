@@ -13,9 +13,8 @@ const {
     updateAllTemplate,
     updateCustomerProject,
 } = require("../constance/question");
-const InitProject = require("./initProject");
 
-class MangerTemplate extends Inquirer {
+class Template extends Inquirer {
     #gitStorage;
     #templateDir;
 
@@ -55,6 +54,7 @@ class MangerTemplate extends Inquirer {
             source: gitLink,
             local: this.#templateDir,
             branch: -1,
+            isInitPull: true, // 新增仓库时，强制拉取一次仓库, 避免重复仓库
         });
 
         this.listenerGitAction();
@@ -202,10 +202,10 @@ class MangerTemplate extends Inquirer {
             if (createLocalProject) {
                 const { storagePath, storageName } = this.#gitStorage;
                 const localPath = path.resolve(process.cwd(), storageName);
-                InitProject.createProject(storagePath, localPath);
+                require("./init").createProject(storagePath, localPath);
             }
         });
     }
 }
 
-module.exports = new MangerTemplate();
+module.exports = new Template();

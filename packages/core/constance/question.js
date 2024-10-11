@@ -159,7 +159,7 @@ export const chooseTemplateProject = (text, projectList) => {
     return {
         name: "project",
         type: "select",
-        message: text || `是否选择以下项目模板?`,
+        message: text || `请选择以下模板进行创建`,
         choices: projectList.map((item) => ({
             name: item,
             value: item,
@@ -172,5 +172,13 @@ export const unExistsExecFile = (filename) => {
         name: "backupFile",
         type: "confirm",
         message: `未检测到需要执行的文件，是否执行 ${filename} 文件?`,
+    };
+};
+
+export const resetConfigFile = () => {
+    return {
+        name: "resetConfigFile",
+        type: "confirm",
+        message: "确认要还原配置信息吗?, 还原后的配置将被重置为初始状态",
     };
 };

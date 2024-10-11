@@ -10,6 +10,10 @@
         "format": "prettier ./packages/** --write",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
+    "engines": {
+        "node": ">18.19.1",
+        "npm": ">10.2.4"
+    },
     "keywords": [],
     "author": "",
     "license": "ISC",

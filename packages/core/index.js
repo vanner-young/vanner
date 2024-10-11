@@ -17,18 +17,18 @@ const {
     SOURCE_FILE_NAME,
     INIT_PROJECT_TEMPLATE_DIR_NAME,
     INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
+    APP_DES,
 } = require("./constance");
 
 class MvCliCore {
-    constructor() {}
     async start(pkgOption) {
-        await this.checkSystemEnv(); //  检查系统运行环境
+        await this.checkSystem(); //  检查系统运行环境
         await this.initEnvVariable(pkgOption); // 初始化环境变量
         await this.createAppCacheDir(); // 创建必要的缓存目录
 
         require("./command").start(); // 初始化类序列
     }
-    async checkSystemEnv() {
+    async checkSystem() {
         await this.checkNodeVersion();
         this.checkPlaterForm();
         this.checkAppHomeDir();
@@ -60,6 +60,7 @@ class MvCliCore {
             { key: "support_system", value: JSON.stringify(SUPPORT_SYSTEM) }, // 支持的操作系统
             { key: "support_node_version", value: NODE_MINI_VERSION }, // 支持的最低node版本
             { key: "app_cache_dir_name", value: APP_DIR_NAME }, // 脚手架缓存目录名称
+            { key: "app_des", value: APP_DES }, // 脚手架简介
             { key: "source_file_name", value: SOURCE_FILE_NAME }, // 脚手架缓存文件名称
             { key: "app_version", value: pkgOption.version }, // 脚手架版本号
             { key: "app_name", value: pkgOption.name }, // 脚手架主命令
@@ -69,10 +70,6 @@ class MvCliCore {
         ];
         return setProcessEnv(envList);
     }
-    checkPlaterForm() {
-        if (!SUPPORT_SYSTEM.includes(backPlatForm()))
-            throw Error("当前系统平台不支持，目前支持的系统有: windows");
-    }
     async checkNodeVersion() {
         const nodeVersion = await backNodeVersion();
         if (greaterNewVersion(nodeVersion, NODE_MINI_VERSION))
@@ -81,11 +78,14 @@ class MvCliCore {
                     NODE_MINI_VERSION,
             );
     }
+    checkPlaterForm() {
+        if (!SUPPORT_SYSTEM.includes(backPlatForm()))
+            throw Error("当前系统平台不支持，目前支持的系统有: windows");
+    }
     checkAppHomeDir() {
         if (!effectiveAppDataHome())
             throw Error("当前系统的用户目录不是有效的，请检查");
     }
 }
 
-const mvCore = new MvCliCore();
-module.exports = mvCore;
+module.exports = new MvCliCore();

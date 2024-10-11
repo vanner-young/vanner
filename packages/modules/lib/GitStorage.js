@@ -1,13 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const {
-    basicCommon,
-    parseGitRemoteName,
-    fileAction,
-    isGitAddress,
-    platform,
-} = require("@mv-cli/common");
+const { basicCommon, fileAction } = require("@mv-cli/common");
 
 class GitStorage extends EventEmitter {
     #config = {
@@ -16,8 +10,10 @@ class GitStorage extends EventEmitter {
         storagePath: "", // git 拉取的本地项目路径
         storageName: "", // git 拉取仓库的名称
         branch: "", // git 拉取的分支
+        isInitPull: false, // 是否在初始化时，拉取一下仓库的代码
+        init: false, //仓库是否初始化过
     };
-    constructor({ source, local, branch }) {
+    constructor({ source, local, branch, isInitPull = true }) {
         super();
         if (!source || !local)
             throw new Error("缺少必要的远端仓库地址以及本地映射地址...");
@@ -25,10 +21,11 @@ class GitStorage extends EventEmitter {
         this.#config.source = source;
         this.#config.local = local;
         this.#config.branch = branch || "master";
-
-        this.invalid(() => {
+        this.#config.isInitPull = isInitPull;
+        this.invalid(async () => {
             basicCommon.createNotExistsFolder(this.#config.local);
-            this.load();
+            await this.load();
+            this.#config.init = true;
         });
     }
     get storageName() {
@@ -43,6 +40,14 @@ class GitStorage extends EventEmitter {
     invalidGitPath(gitPath) {
         return /\.git$/.test(gitPath);
     }
+    parseGitRemoteName = (link) => {
+        let gitName = link
+            .split("/")
+            .filter((item) => item)
+            .at(-1);
+        if (!gitName) return;
+        return gitName.replace(".git", "");
+    };
     hasGit() {
         return basicCommon.getExecCommandResult("git -v");
     }
@@ -54,7 +59,7 @@ class GitStorage extends EventEmitter {
         cb();
     }
     async load() {
-        this.#config.storageName = parseGitRemoteName(this.remote);
+        this.#config.storageName = this.parseGitRemoteName(this.remote);
         this.#config.storagePath = path.resolve(
             this.#config.local,
             this.#config.storageName,
@@ -71,6 +76,8 @@ class GitStorage extends EventEmitter {
             this.dropStorage();
             await this.clone();
         } else {
+            const { init, isInitPull } = this.#config;
+            if (!init && !isInitPull) return;
             await this.pull();
         }
     }

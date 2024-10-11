@@ -1,4 +1,5 @@
 const fs = require("fs");
+const path = require("path");
 const mvCommon = require("mv-common");
 
 /**
@@ -67,11 +68,11 @@ const getProcessEnv = (key) => {
  * 获取指定路径下方使用的是什么的包管理器
  * **/
 const getPackageCli = (targetPath) => {
-    try {
-        return mvCommon.getPackageMangerName(targetPath);
-    } catch (e) {
-        return getProcessEnv("app_package_cli") || "npm";
-    }
+    return (
+        mvCommon.getPackageMangerName(targetPath) ||
+        getProcessEnv("default_package_cli") ||
+        "npm"
+    );
 };
 
 /**
@@ -86,9 +87,11 @@ const installDependencies = (packageCli = null, targetPath) => {
 };
 
 /**
- * 切换指定的分支并拉取代码
+ * 判断某个路径是否是js项目环境
  * **/
-const checkoutBranchAndPull = () => {};
+const invalidProjectInstallEnv = (targetPath) => {
+    return fs.existsSync(path.resolve(targetPath, "package.json"));
+};
 
 module.exports = {
     backPlatForm,
@@ -100,5 +103,5 @@ module.exports = {
     getProcessEnv,
     installDependencies,
     getPackageCli,
-    checkoutBranchAndPull,
+    invalidProjectInstallEnv,
 };
