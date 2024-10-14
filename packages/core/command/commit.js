@@ -1,5 +1,5 @@
 const { Inquirer, GitStorage } = require("@mv-cli/modules");
-const { basicCommon } = require("@mv-cli/common");
+const { basicCommon, platform } = require("@mv-cli/common");
 
 const {
     commitType,
@@ -33,28 +33,27 @@ class Commit extends Inquirer {
             if (!confirm) return;
 
             this.#gitStorage.addFile(file);
+            console.log(this.#gitStorage.status());
             this.#gitStorage.commit(`${type}: ${message}`);
             this.#gitStorage.push(origin, branch);
         });
     }
 
     async chooseType({ type }) {
-        let message = null;
         if (type) {
             const typeExists = Object.keys(CommitTypeDict).includes(
                 type.toLocaleLowerCase(),
             );
             if (typeExists) return (this.#config.type = type);
-            else
-                message = `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`;
         }
         this.#config.type = await this.handler(
             commitType(
-                message,
+                `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
                 Object.entries(CommitTypeDict).map(([key, value]) => ({
                     name: `${key}: ${value}`,
                     value: key,
                 })),
+                platform.getProcessEnv("default_commit_type"),
             ),
         );
     }

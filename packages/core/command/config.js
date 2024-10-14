@@ -7,6 +7,7 @@ const defaultContent = {
     registry: null,
     init_storage_pull: false,
     default_package_cli: "npm",
+    default_commit_type: "fix",
 };
 
 class Config extends ConfigModule {
@@ -17,11 +18,14 @@ class Config extends ConfigModule {
             encoding: "utf-8",
             defaultContent,
         });
+
         platform.setProcessEnv(
-            Object.entries(defaultContent).map(([key, value]) => ({
-                key,
-                value,
-            })),
+            Object.entries(Object.fromEntries(this.data)).map(
+                ([key, value]) => ({
+                    key,
+                    value,
+                }),
+            ),
         );
         this.#inquirer = new Inquirer();
     }
@@ -69,6 +73,9 @@ class Config extends ConfigModule {
         return val;
     }
     setConfig(key, value) {
+        if (key.includes("=")) {
+            [key, value] = key.split("=");
+        }
         this.invalidSetContent(key, value, () => {
             this.set(key, value);
         });

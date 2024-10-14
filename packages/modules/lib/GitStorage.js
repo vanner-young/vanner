@@ -149,6 +149,14 @@ class GitStorage extends EventEmitter {
         if (!origin || !branch) throw new Error("push remote have to origin");
         return basicCommon.execCommandPro(`git push ${origin} ${branch}`);
     }
+    async status() {
+        const statusContent =
+            await basicCommon.getExecCommandResult("git status --short");
+        return statusContent
+            .split("\n")
+            .map((item) => item.replace("M  ", ""))
+            .filter((item) => item);
+    }
     async pull(branch) {
         if (!branch) branch = this.#config.branch;
         const command =

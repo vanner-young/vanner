@@ -16,7 +16,11 @@ importers:
         specifier: ^3.3.3
         version: 3.3.3
 
-  packages/common: {}
+  packages/common:
+    dependencies:
+      mv-common:
+        specifier: ^1.0.1
+        version: 1.0.1
 
   packages/core:
     dependencies:
@@ -163,6 +167,9 @@ packages:
     resolution: {integrity: sha512-avsJQhyd+680gKXyG/sQc0nXaC6rBkPOfyHYcFb9+hdkqQkR9bdnkJ0AMZhke0oesPqIO+mFFJ+IdBc7mst4IA==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
+  mv-common@1.0.1:
+    resolution: {integrity: sha512-EHIYyK84cJhtdcKNd7zon/qm+nB52rVJvWyWyOPAMRKydHVlZhBrFb+it4GDVPnsxg2xu2+R157GrY1h2NVvkA==}
+
   os-tmpdir@1.0.2:
     resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
     engines: {node: '>=0.10.0'}
@@ -194,6 +201,11 @@ packages:
   type-fest@0.21.3:
     resolution: {integrity: sha512-t0rzBq87m3fVcduHDUFhKmyyX+9eo6WQjZvf51Ea/M0Q7+T374Jp1aUiyUl0GKxp8M/OETVHSDvmkyPgvX+X2w==}
     engines: {node: '>=10'}
+
+  typescript@5.6.3:
+    resolution: {integrity: sha512-hjcS1mhfuyi4WW8IWtjP7brDrG2cuDZukyrYrSauoXGNgx0S7zceP07adYkJycEr56BOUTNPzbInooiN3fn1qw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
 
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
@@ -354,6 +366,10 @@ snapshots:
 
   mute-stream@1.0.0: {}
 
+  mv-common@1.0.1:
+    dependencies:
+      typescript: 5.6.3
+
   os-tmpdir@1.0.2: {}
 
   prettier@3.3.3: {}
@@ -377,6 +393,8 @@ snapshots:
       os-tmpdir: 1.0.2
 
   type-fest@0.21.3: {}
+
+  typescript@5.6.3: {}
 
   undici-types@6.19.8: {}
 

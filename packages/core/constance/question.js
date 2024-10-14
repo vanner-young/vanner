@@ -183,10 +183,11 @@ export const resetConfigFile = () => {
     };
 };
 
-export const commitType = (message, commitType) => {
+export const commitType = (message, commitType, defaultValue) => {
     return {
         name: "type",
         type: "select",
+        default: defaultValue,
         message: message || "请选择本次的代码提交类型:",
         choices: commitType,
     };
