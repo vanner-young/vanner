@@ -45,12 +45,7 @@ class Commit extends Inquirer {
             if (!confirm) return;
 
             this.#gitStorage.addFile(file);
-            this.#gitStorage.commit(
-                `${type}: ${message
-                    .split(";")
-                    .filter((item) => item.trim())
-                    .join("\n")}`,
-            );
+            this.#gitStorage.commit(`${type}: ${message}`);
             this.#gitStorage.push(origin, branch);
         });
     }
