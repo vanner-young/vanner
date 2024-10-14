@@ -29,12 +29,28 @@ class Commit extends Inquirer {
                 return console.log("提交失败，请重试!");
             }
             const { type, file, origin, branch, message } = config;
-            const confirm = await this.handler(commitAction(config));
+            const statusFile = await this.#gitStorage.diff();
+            if (!statusFile.length) return console.log("本次没有变更的文件");
+
+            const confirm = await this.handler(
+                commitAction({
+                    ...config,
+                    file: `\n${statusFile.map((item, index) => ` ${index + 1}. ${item}`).join("\n")}`,
+                    message: message
+                        .split(";")
+                        .filter((item) => item.trim())
+                        .join("\n"),
+                }),
+            );
             if (!confirm) return;
 
             this.#gitStorage.addFile(file);
-            console.log(await this.#gitStorage.status());
-            this.#gitStorage.commit(`${type}: ${message}`);
+            this.#gitStorage.commit(
+                `${type}: ${message
+                    .split(";")
+                    .filter((item) => item.trim())
+                    .join("\n")}`,
+            );
             this.#gitStorage.push(origin, branch);
         });
     }
