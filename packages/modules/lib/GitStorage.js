@@ -7,14 +7,20 @@ class GitStorage extends EventEmitter {
     #config = {
         source: "", // git 地址
         local: "", // git 拉取的本地路径
-        storagePath: "", // git 拉取的本地项目路径
+        storagePath: "", // git 拉取的本地路径的项目路径
         storageName: "", // git 拉取仓库的名称
         branch: "", // git 拉取的分支
         isInitPull: false, // 是否在初始化时，拉取一下仓库的代码
         init: false, //仓库是否初始化过
     };
-    constructor({ source, local, branch, isInitPull = true }) {
+    constructor(option) {
         super();
+        if (basicCommon.isType(option, "string")) {
+            this.initLocalStorage(option);
+            return;
+        }
+
+        const { source, local, branch, isInitPull = true } = option;
         if (!source || !local)
             throw new Error("缺少必要的远端仓库地址以及本地映射地址...");
 
@@ -36,6 +42,30 @@ class GitStorage extends EventEmitter {
     }
     get remote() {
         return this.#config.source;
+    }
+    async initLocalStorage(localPath) {
+        let originList = [];
+        try {
+            this.#config.storagePath = localPath;
+            originList = await this.getOriginList();
+        } catch (e) {
+            console.log("初始化本地仓库失败!");
+        }
+        this.emit("load:origin:end", originList);
+    }
+    async getOriginList() {
+        const source = await basicCommon.getExecCommandResult("git remote -v", {
+            cwd: this.storagePath,
+        });
+        let pushOriginList = source
+            .split("\n")
+            .filter((item) => item && item.endsWith("(push)"));
+        pushOriginList = pushOriginList.map((item) => {
+            const [origin, remote] = item.split("\t").filter((item) => item);
+            const [remoteUrl] = remote.split(" ").filter((item) => item);
+            return { origin, remote: remoteUrl };
+        });
+        return pushOriginList;
     }
     invalidGitPath(gitPath) {
         return /\.git$/.test(gitPath);
@@ -66,7 +96,7 @@ class GitStorage extends EventEmitter {
         );
         if (fs.existsSync(this.storagePath)) await this.diff();
         else await this.clone();
-        this.emit("loadEnd");
+        this.emit("load:end");
     }
     async diff() {
         const activeGitStorage = fileAction.isActiveEmptyGitProject(
@@ -96,8 +126,28 @@ class GitStorage extends EventEmitter {
                 this.remote,
             );
     }
-    checkout(branch) {
-        return this.pull(branch);
+    checkout(branch, force = false) {
+        if (force) return this.pull(branch);
+        return basicCommon.execCommandPro(`git checkout ${branch}`, {
+            cwd: this.storagePath,
+            stdio: "inherit",
+        });
+    }
+    addFile(file) {
+        return basicCommon.execCommandPro(`git add ${file}`, {
+            cwd: this.storagePath,
+            stdio: "inherit",
+        });
+    }
+    commit(message) {
+        return basicCommon.execCommandPro(`git commit -m "${message}"`, {
+            cwd: this.storagePath,
+            stdio: "inherit",
+        });
+    }
+    push(origin, branch) {
+        if (!origin || !branch) throw new Error("push remote have to origin");
+        return basicCommon.execCommandPro(`git push ${origin} ${branch}`);
     }
     async pull(branch) {
         if (!branch) branch = this.#config.branch;
@@ -117,20 +167,25 @@ class GitStorage extends EventEmitter {
         );
         return (branch && branch.replaceAll("\n", "")) || "";
     }
-    async getBranchRemote() {
+    async getBranchRemote(origin = "") {
         const branchResult = await basicCommon.getExecCommandResult(
             "git fetch --all && git branch -r",
             { cwd: this.#config.storagePath },
         );
         if (!branchResult) return [];
-
         return branchResult
             .split("\n")
             .map((item) => {
+                item = item.trim();
                 if (!item) return;
-                if (item.startsWith("origin/HEAD ->")) return;
-                const origin = item.split("/")?.[0] || "";
-                return item.replace(`${origin}/`, "").trim();
+                if (!origin) origin = item.split("/")?.[0] || "";
+                if (
+                    item.startsWith(`${origin}/HEAD ->`) ||
+                    !item.startsWith(`${origin}/`)
+                )
+                    return;
+
+                return item.replace(`${origin}/`, "");
             })
             .filter((item) => item);
     }

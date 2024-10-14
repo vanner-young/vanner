@@ -134,7 +134,7 @@ export const updateAllTemplate = () => {
     };
 };
 
-export const updateCustomerTemplateProject = (project) => {
+export const updateCustomerTemplateProject = (project, branch) => {
     return {
         name: "delete",
         type: "confirm",
@@ -180,5 +180,73 @@ export const resetConfigFile = () => {
         name: "resetConfigFile",
         type: "confirm",
         message: "确认要还原配置信息吗?, 还原后的配置将被重置为初始状态",
+    };
+};
+
+export const commitType = (message, commitType) => {
+    return {
+        name: "type",
+        type: "select",
+        message: message || "请选择本次的代码提交类型:",
+        choices: commitType,
+    };
+};
+
+export const commitFiles = () => {
+    return {
+        name: "fileType",
+        type: "select",
+        message: "请选择本次提交的文件:",
+        default: "all",
+        choices: [
+            {
+                name: "全部追踪的文件",
+                value: "all",
+            },
+            {
+                name: "手动输入",
+                value: "part",
+            },
+        ],
+    };
+};
+
+export const inputCommitFiles = () => {
+    return {
+        name: "commitFile",
+        type: "input",
+        default: "*",
+        message: "请输入本次需要提交的文件，采用空格分割(*为全部未追踪文件): ",
+    };
+};
+
+export const commitBranch = (branchList, currentBranch) => {
+    return {
+        name: "commitBranch",
+        type: "select",
+        message: "请选择需要提交的分支:",
+        default: currentBranch,
+        choices: branchList.map((item) => ({
+            name: item === currentBranch ? `${item}: 当前所在分支` : item,
+            value: item,
+        })),
+    };
+};
+
+export const chooseCommitOrigin = (message, originList) => {
+    return {
+        name: "commitOrigin",
+        type: "select",
+        message:
+            message || "检测项目中存在多个Git提交源，请选择本次提交源地址: ",
+        choices: originList,
+    };
+};
+
+export const commitMessage = () => {
+    return {
+        name: "commitMessage",
+        type: "input",
+        message: "请输入本次的变更信息内容: ",
     };
 };

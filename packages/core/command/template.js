@@ -171,7 +171,7 @@ class Template extends Inquirer {
         }
     }
     listenerGitAction() {
-        this.#gitStorage.once("loadEnd", async () => {
+        this.#gitStorage.once("load:end", async () => {
             const branchList = await this.#gitStorage.getBranchRemote();
             let currentBranch = await this.#gitStorage.getCurrentBranch();
 
@@ -193,7 +193,7 @@ class Template extends Inquirer {
                     currentBranch = await this.handler(
                         checkoutBranch(branchList),
                     );
-                    await this.#gitStorage.checkout(currentBranch);
+                    await this.#gitStorage.checkout(currentBranch, true);
                 }
             }
             const createLocalProject = await this.handler(

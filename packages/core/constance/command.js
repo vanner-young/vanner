@@ -6,6 +6,7 @@ const Init = require("../command/init");
 const Template = require("../command/template");
 const Create = require("../command/create");
 const Install = require("../command/install");
+const Commit = require("../command/commit");
 
 const commandConfig = () => {
     const {
@@ -63,7 +64,7 @@ const commandConfig = () => {
             ],
         },
         {
-            command: "run [args...]",
+            command: "run [filename...]",
             description: "可在当前目录或指定的目录下执行一条命令",
             option: [
                 {
@@ -142,6 +143,33 @@ const commandConfig = () => {
                 },
             ],
             action: Install,
+        },
+        {
+            command: "commit",
+            description: "提交Git代码",
+            option: [
+                {
+                    command: "-t, --type <type>",
+                    description: "提交类型：feat|fix等",
+                },
+                {
+                    command: "-m, --message <message>",
+                    description: "本次提交的消息内容",
+                },
+                {
+                    command: "-f, --file <filename...>",
+                    description: "本次提交的文件",
+                },
+                {
+                    command: "-b, --branch <branch>",
+                    description: "提交到Git分支的名称",
+                },
+                {
+                    command: "-o, --origin <origin>",
+                    description: "提交的远程源名称",
+                },
+            ],
+            action: Commit,
         },
     ];
 };
