@@ -33,7 +33,7 @@ class Commit extends Inquirer {
             if (!confirm) return;
 
             this.#gitStorage.addFile(file);
-            console.log(this.#gitStorage.status());
+            console.log(await this.#gitStorage.status());
             this.#gitStorage.commit(`${type}: ${message}`);
             this.#gitStorage.push(origin, branch);
         });
