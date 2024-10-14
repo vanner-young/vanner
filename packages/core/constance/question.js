@@ -247,6 +247,15 @@ export const commitMessage = () => {
     return {
         name: "commitMessage",
         type: "input",
-        message: "请输入本次的变更信息内容: ",
+        message: "请输入本次提交信息内容: ",
+    };
+};
+
+export const commitAction = ({ branch, type, file, origin, message }) => {
+    return {
+        name: "commitAction",
+        type: "confirm",
+        default: true,
+        message: `请确认以下提交信息无误:\n\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交源名称: ${origin}\n本次提交信息: ${message}\n\n是否提交?`,
     };
 };

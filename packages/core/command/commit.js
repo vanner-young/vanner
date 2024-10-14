@@ -7,6 +7,7 @@ const {
     inputCommitFiles,
     chooseCommitOrigin,
     commitMessage,
+    commitAction,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
 
@@ -23,11 +24,14 @@ class Commit extends Inquirer {
     async start(source) {
         await this.chooseType(source);
         await this.chooseCommitFile(source);
-        this.chooseCommitBranch(source).then((config) => {
+        this.chooseCommitBranch(source).then(async (config) => {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
             const { type, file, origin, branch, message } = config;
+            const confirm = await this.handler(commitAction(config));
+            if (!confirm) return;
+
             this.#gitStorage.addFile(file);
             this.#gitStorage.commit(`${type}: ${message}`);
             this.#gitStorage.push(origin, branch);
