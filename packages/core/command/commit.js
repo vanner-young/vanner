@@ -8,6 +8,7 @@ const {
     chooseCommitOrigin,
     commitMessage,
     commitAction,
+    chooseCommitFile,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
 
@@ -20,22 +21,20 @@ class Commit extends Inquirer {
         message: "",
         origin: "",
     };
+    diffFile = [];
 
     async start(source) {
-        await this.chooseType(source);
-        await this.chooseCommitFile(source);
-        this.chooseCommitBranch(source).then(async (config) => {
+        this.#gitStorage = new GitStorage(process.cwd());
+
+        this.chooseOption(source).then(async (config) => {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
             const { type, file, origin, branch, message } = config;
-            const statusFile = await this.#gitStorage.diff();
-            if (!statusFile.length) return console.log("本次没有变更的文件");
-
             const confirm = await this.handler(
                 commitAction({
                     ...config,
-                    file: `\n${statusFile.map((item, index) => ` ${index + 1}. ${item}`).join("\n")}`,
+                    file: `\n${this.diffFile.map((item, index) => ` ${index + 1}. ${item}`).join("\n")}`,
                     message: message
                         .split(";")
                         .filter((item) => item.trim())
@@ -59,7 +58,8 @@ class Commit extends Inquirer {
         }
         this.#config.type = await this.handler(
             commitType(
-                `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
+                type &&
+                    `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
                 Object.entries(CommitTypeDict).map(([key, value]) => ({
                     name: `${key}: ${value}`,
                     value: key,
@@ -72,16 +72,18 @@ class Commit extends Inquirer {
     async chooseCommitFile({ file }) {
         if (Array.isArray(file) && file?.length)
             return (this.#config.file = file.join(" "));
-
-        const fileType = await this.handler(commitFiles());
-        if (fileType === "all") return (this.#config.file = ".");
-        this.#config.file = await this.inputCommitFiles();
+        const commitFiles = await this.handler(chooseCommitFile(this.diffFile));
+        this.#config.file = commitFiles.join(" ");
     }
 
-    chooseCommitBranch({ branch, origin, message }) {
+    chooseOption(source) {
         return new Promise((resolve) => {
-            this.#gitStorage = new GitStorage(process.cwd());
+            let { branch, origin, message } = source;
             this.#gitStorage.once("load:origin:end", async (originList) => {
+                this.diffFile = await this.#gitStorage.diff();
+                if (!this.diffFile.length)
+                    return console.log("没有变更的文件, 无需提交.");
+
                 if (!originList || !originList.length)
                     return console.log("当前地址不存在提交源，请创建后重试!");
 
@@ -100,6 +102,9 @@ class Commit extends Inquirer {
                         origin = originList.at(0).origin;
                     }
                 }
+
+                await this.chooseType(source);
+                await this.chooseCommitFile(source);
 
                 if (!branch) {
                     const branchList =
@@ -125,19 +130,6 @@ class Commit extends Inquirer {
         const value = await this.handler(commitMessage());
         if (!value) return this.commitMessage();
         return value;
-    }
-
-    async inputCommitFiles() {
-        const files = await this.handler(inputCommitFiles());
-        const filesList = files.split(" ").filter((item) => item?.trim?.());
-        if (filesList?.length) {
-            console.log(
-                `本次提交的文件为: ${filesList.join("、").replace("*", "全部未追踪文件")}`,
-            );
-            return filesList.join(" ").replace("*", ".");
-        }
-        console.log("输入的本次提交文件不合法，请重新输入");
-        return this.inputCommitFiles();
     }
 }
 

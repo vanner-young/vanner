@@ -205,7 +205,7 @@ export const commitFiles = () => {
                 value: "all",
             },
             {
-                name: "手动输入",
+                name: "手动选择",
                 value: "part",
             },
         ],
@@ -258,5 +258,15 @@ export const commitAction = ({ branch, type, file, origin, message }) => {
         type: "confirm",
         default: true,
         message: `请确认以下提交信息无误:\n\n提交源名称: ${origin}\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交备注信息:\n ${message}\n\n是否提交?`,
+    };
+};
+
+export const chooseCommitFile = (fileList) => {
+    return {
+        name: "projectList",
+        type: "checkbox",
+        message: `请在以下列表中选择本次需要提交的文件: (输入I/A可对文件进行全选或反选)\n`,
+        required: true,
+        choices: fileList.map((item) => ({ name: item, value: item })),
     };
 };
