@@ -8,6 +8,7 @@ const defaultContent = {
     init_storage_pull: false,
     default_package_cli: "npm",
     default_commit_type: "fix",
+    default_exec_file: "index.js",
 };
 
 class Config extends ConfigModule {

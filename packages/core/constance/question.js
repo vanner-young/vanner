@@ -193,34 +193,6 @@ export const commitType = (message, commitType, defaultValue) => {
     };
 };
 
-export const commitFiles = () => {
-    return {
-        name: "fileType",
-        type: "select",
-        message: "请选择本次提交的文件:",
-        default: "all",
-        choices: [
-            {
-                name: "全部追踪的文件",
-                value: "all",
-            },
-            {
-                name: "手动选择",
-                value: "part",
-            },
-        ],
-    };
-};
-
-export const inputCommitFiles = () => {
-    return {
-        name: "commitFile",
-        type: "input",
-        default: "*",
-        message: "请输入本次需要提交的文件，采用空格分割(*为全部未追踪文件): ",
-    };
-};
-
 export const commitBranch = (branchList, currentBranch) => {
     return {
         name: "commitBranch",
@@ -268,5 +240,14 @@ export const chooseCommitFile = (fileList) => {
         message: `请在以下列表中选择本次需要提交的文件: (输入I/A可对文件进行全选或反选)\n`,
         required: true,
         choices: fileList.map((item) => ({ name: item, value: item })),
+    };
+};
+
+export const chooseRunCommand = (command, scriptList) => {
+    return {
+        name: "command",
+        type: "select",
+        message: `${command} 脚本命令不存在，请重新选择:`,
+        choices: scriptList,
     };
 };

@@ -9,7 +9,9 @@ class BaseCommand extends RegisterCommandUtil {
     }
     start() {
         this.commandGlobalCatch((source, dest) => {
-            if (basicCommon.isEmptyObject(source) && dest.args.length < 1) {
+            const args = dest.args,
+                isEmptySource = basicCommon.isEmptyObject(source);
+            if (args?.at(0) === "help" || (isEmptySource && !args.length)) {
                 this.program.outputHelp();
             } else if (source.v) {
                 console.log(platform.getProcessEnv("app_version"));

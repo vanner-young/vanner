@@ -3,8 +3,6 @@ const { basicCommon, platform } = require("@mv-cli/common");
 
 const {
     commitType,
-    commitFiles,
-    inputCommitFiles,
     chooseCommitOrigin,
     commitMessage,
     commitAction,
@@ -30,6 +28,7 @@ class Commit extends Inquirer {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
+
             const { type, file, origin, branch, message } = config;
             const confirm = await this.handler(
                 commitAction({
@@ -80,9 +79,9 @@ class Commit extends Inquirer {
         return new Promise((resolve) => {
             let { branch, origin, message } = source;
             this.#gitStorage.once("load:origin:end", async (originList) => {
-                this.diffFile = await this.#gitStorage.diff();
+                this.diffFile = await this.#gitStorage.diffFile();
                 if (!this.diffFile.length)
-                    return console.log("没有变更的文件, 无需提交.");
+                    return console.log("当前路径下暂无变更的文件, 无需提交.");
 
                 if (!originList || !originList.length)
                     return console.log("当前地址不存在提交源，请创建后重试!");

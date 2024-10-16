@@ -1,56 +1,77 @@
+const fs = require("fs");
+const path = require("path");
 const { Inquirer } = require("@mv-cli/modules");
-const { basicCommon } = require("@mv-cli/common");
-
-const { unExistsExecFile } = require("../constance/question");
+const { filterEmptyArray, fileAction, basicCommon } = require("@mv-cli/common");
+const { chooseRunCommand } = require("../constance/question");
 
 class Run extends Inquirer {
-    start(source, option) {
-        if (option.dir === "ir")
-            return console.log(`error: unknown option '-dir'`);
-
-        if (option.file) {
-            this.execFile(source, option);
-        } else {
-            this.execCommand(source, option);
-        }
+    #config = {
+        cwd: false,
+        env: {},
+        command: null,
+    };
+    async start(command, option) {
+        await this.parseCommand(command);
+        this.parseEnv(option);
+        return this.exec();
     }
-
-    execCommand(source, option) {
-        basicCommon.execCommandPro(source.join(" "), {
+    exec() {
+        const { command, cwd } = this.#config;
+        if (!command || !cwd) return;
+        return basicCommon.execCommandPro(this.#config.command, {
             stdio: "inherit",
-            cwd: option.dir || process.cwd(),
+            cwd,
+            env: {
+                ...process.env,
+                Path: `${path.resolve(cwd, "node_modules/.bin")};${process.env.Path}`,
+            },
         });
     }
+    async parseCommand(command) {
+        if (!this.#config.cwd) {
+            this.#config.cwd = process.cwd();
+            this.loadCwd();
+        }
+        const { scripts } = require(
+            path.resolve(this.#config.cwd, "package.json"),
+        );
+        const commandList = Object.keys(scripts);
 
-    async execFile(source, option) {
-        let filename = source.at(0);
-        if (!filename) {
-            const backupFile = "index.js";
-            if (!basicCommon.existsFileForCwd(backupFile)) {
-                return console.log(
-                    "请输入需要执行的文件后重试, mv-cli run <filename> --file",
-                );
+        if (!commandList.includes(command))
+            this.#config.command = await this.handler(
+                chooseRunCommand(
+                    command,
+                    Object.entries(scripts).map(([key, value]) => ({
+                        name: `${key}  ${value}`,
+                        value: value,
+                    })),
+                ),
+            );
+        else this.#config.command = scripts[command];
+    }
+    parseEnv({ env = [] }) {
+        env = filterEmptyArray(env);
+        if (env.length) {
+            for (const item of env) {
+                const [key, value] = item.split("=");
+                this.#config.env[key] = value;
             }
-            const execBackupFile = await this.handler(
-                unExistsExecFile(backupFile),
-            );
-            if (!execBackupFile) return;
-            filename = backupFile;
+        }
+    }
+    loadCwd() {
+        const cwdPath = this.findProjectPath(this.#config.cwd);
+        if (!cwdPath)
+            throw new Error("执行失败, 此路径及其父级均不存在可执行的项目");
+        this.#config.cwd = cwdPath;
+    }
+    findProjectPath(targetPath) {
+        if (fileAction.isDrivePath(targetPath)) return false;
+        const packageJsonDir = path.resolve(targetPath, "package.json");
+        if (!fs.existsSync(packageJsonDir)) {
+            return this.findProjectPath(path.dirname(targetPath));
         } else {
-            if (!basicCommon.existsFileForCwd(filename))
-                return console.log(`当前目录下不存在 ${filename} 的文件...`);
+            return targetPath;
         }
-
-        if (!/\.(js|mjs)$/.test(filename)) {
-            return console.log(
-                "不支持的文件后缀, 仅支持: js、mjs 的文件",
-                filename,
-            );
-        }
-        basicCommon.execCommandPro(`node ${filename}`, {
-            stdio: "inherit",
-            cwd: option.dir || process.cwd(),
-        });
     }
 }
 

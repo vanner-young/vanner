@@ -2,6 +2,11 @@ const fs = require("fs");
 const path = require("path");
 const basicCommon = require("mv-common");
 
+const isDrivePath = (targetPath) => {
+    targetPath = path.resolve(targetPath);
+    return targetPath === path.parse(targetPath).root;
+};
+
 const readTargetFileTypeList = (targetPath, type = "dir") => {
     return fs.readdirSync(targetPath).filter((item) => {
         const itemPath = path.resolve(targetPath, item),
@@ -31,6 +36,7 @@ const isActiveEmptyGitProject = (targetPath) => {
 };
 
 module.exports = {
+    isDrivePath,
     isActiveEmptyGitProject,
     readTargetFileTypeList,
 };

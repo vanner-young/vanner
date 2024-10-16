@@ -1,12 +1,13 @@
 const { getProcessEnv } = require("@mv-cli/common/lib/platform");
 
 const Config = require("../command/config");
-const Run = require("../command/run");
+const Exec = require("../command/exec");
 const Init = require("../command/init");
 const Template = require("../command/template");
 const Create = require("../command/create");
 const Install = require("../command/install");
 const Commit = require("../command/commit");
+const Run = require("../command/Run");
 
 const commandConfig = () => {
     const {
@@ -64,8 +65,9 @@ const commandConfig = () => {
             ],
         },
         {
-            command: "run [filename...]",
-            description: "可在当前目录或指定的目录下执行一条命令",
+            command: "exec [filename...]",
+            description:
+                "可在当前目录或指定的目录下执行命令或脚本文件(.js|.mjs)",
             option: [
                 {
                     command: "-d, --dir <path>",
@@ -74,10 +76,10 @@ const commandConfig = () => {
                 {
                     command: "-f, --file",
                     description:
-                        "当值存在时，将采用Node执行一个JavaScript 文件",
+                        "当值存在时, 将采用Node执行一个JavaScript 文件",
                 },
             ],
-            action: Run,
+            action: Exec,
         },
         {
             command: "init",
@@ -146,7 +148,7 @@ const commandConfig = () => {
         },
         {
             command: "commit",
-            description: "提交Git代码",
+            description: "提交本地代码至Git仓库",
             option: [
                 {
                     command: "-t, --type <type>",
@@ -170,6 +172,17 @@ const commandConfig = () => {
                 },
             ],
             action: Commit,
+        },
+        {
+            command: "run <command>",
+            option: [
+                {
+                    command: "--env <args...>",
+                    description: "执行命令的额外参数",
+                },
+            ],
+            description: "执行当前项目下的脚本命令",
+            action: Run,
         },
     ];
 };
