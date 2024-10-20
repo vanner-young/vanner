@@ -20,6 +20,7 @@ class Commit extends Inquirer {
         branch: "",
         message: "",
         origin: "",
+        push: false,
     };
     diffFile = [];
     statusFile = [];
@@ -31,6 +32,8 @@ class Commit extends Inquirer {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
+
+            if 
 
             const { type, file, origin, branch, message } = config;
             const confirm = await this.handler(
@@ -111,6 +114,7 @@ class Commit extends Inquirer {
                                 alreadyCommitFile(notPushFile),
                             );
                             if (!pushFile) return;
+                            this.#config.push = true;
                         }
                     }
                 }
@@ -134,10 +138,6 @@ class Commit extends Inquirer {
                     }
                 }
 
-                await this.chooseType(source);
-                await this.chooseCommitFile(source);
-                if (!this.#config.file.trim()) return;
-
                 if (!branch) {
                     const branchList =
                         await this.#gitStorage.getBranchRemote(origin);
@@ -150,9 +150,15 @@ class Commit extends Inquirer {
 
                 this.#config.origin = origin;
                 this.#config.branch = branch;
-                if (message) this.#config.message = message;
-                else this.#config.message = await this.commitMessage();
 
+                if (!this.#config.push) {
+                    await this.chooseType(source);
+                    await this.chooseCommitFile(source);
+                    if (!this.#config.file.trim()) return;
+                    
+                    if (message) this.#config.message = message;
+                    else this.#config.message = await this.commitMessage();
+                }
                 resolve(this.#config);
             });
         });
