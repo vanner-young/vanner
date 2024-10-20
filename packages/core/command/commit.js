@@ -32,25 +32,25 @@ class Commit extends Inquirer {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
-
-            const { type, file, origin, branch, message } = config;
-            const confirm = await this.handler(
-                commitAction({
-                    ...config,
-                    file: `\n${file
-                        .split(" ")
-                        .map((item, index) => ` ${index + 1}. ${item}`)
-                        .join("\n")}`,
-                    message: message
-                        .split(";")
-                        .filter((item) => item.trim())
-                        .join("\n"),
-                }),
-            );
-            if (!confirm) return;
-
-            this.#gitStorage.addFile(file);
-            this.#gitStorage.commit(`${type}: ${message}`);
+            const { type, file, origin, branch, message, push } = config;
+            if (!push) {
+                const confirm = await this.handler(
+                    commitAction({
+                        ...config,
+                        file: `\n${file
+                            .split(" ")
+                            .map((item, index) => ` ${index + 1}. ${item}`)
+                            .join("\n")}`,
+                        message: message
+                            .split(";")
+                            .filter((item) => item.trim())
+                            .join("\n"),
+                    }),
+                );
+                if (!confirm) return;
+                this.#gitStorage.addFile(file);
+                this.#gitStorage.commit(`${type}: ${message}`);
+            }
             this.#gitStorage.push(origin, branch);
         });
     }
