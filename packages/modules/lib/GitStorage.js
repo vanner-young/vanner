@@ -152,6 +152,7 @@ class GitStorage extends EventEmitter {
     async diffFile() {
         const diffString = await basicCommon.getExecCommandResult(
             "git diff --name-only 2> NUL",
+            { stdio: ["ignore", "pipe", "ignore"] },
         );
         return diffString.split("\n").filter((item) => item);
     }
