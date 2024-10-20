@@ -1,5 +1,5 @@
 {
-    "name": "@mv-cli/core",
+    "name": "@mvanner/core",
     "version": "0.0.1",
     "description": "",
     "main": "index.js",
@@ -10,7 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@mv-cli/common": "workspace:^",
-        "@mv-cli/modules": "workspace:^"
+        "@mvanner/common": "workspace:^",
+        "@mvanner/modules": "workspace:^"
     }
 }

@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { Inquirer } = require("@mv-cli/modules");
-const { basicCommon, platform } = require("@mv-cli/common");
+const { Inquirer } = require("@mvanner/modules");
+const { basicCommon, platform } = require("@mvanner/common");
 
 const {
     createExistProject,

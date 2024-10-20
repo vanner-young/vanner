@@ -1,6 +1,6 @@
 const ini = require("ini");
 const path = require("path");
-const { basicCommon } = require("@mv-cli/common");
+const { basicCommon } = require("@mvanner/common");
 
 class Config {
     #source;

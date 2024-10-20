@@ -1,10 +1,10 @@
 {
-    "name": "mv-cli",
+    "name": "mvanner",
     "version": "0.0.1",
     "description": "",
     "main": "lib/index.js",
     "bin": {
-        "mv-cli": "lib/index.js"
+        "mvanner": "lib/index.js"
     },
     "scripts": {
         "format": "prettier ./packages/** --write",
@@ -21,7 +21,7 @@
         "packages/*"
     ],
     "dependencies": {
-        "@mv-cli/core": "workspace:^"
+        "@mvanner/core": "workspace:^"
     },
     "devDependencies": {
         "prettier": "^3.3.3"

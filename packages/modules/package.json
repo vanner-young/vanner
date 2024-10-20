@@ -1,5 +1,5 @@
 {
-    "name": "@mv-cli/modules",
+    "name": "@mvanner/modules",
     "version": "0.0.1",
     "description": "脚手架模块封装",
     "main": "index.js",
@@ -11,7 +11,7 @@
     "license": "ISC",
     "dependencies": {
         "@inquirer/prompts": "^6.0.1",
-        "@mv-cli/common": "workspace:^",
+        "@mvanner/common": "workspace:^",
         "ini": "^5.0.0"
     },
     "devDependencies": {

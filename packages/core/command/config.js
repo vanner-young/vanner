@@ -1,7 +1,7 @@
-const { Config: ConfigModule, Inquirer } = require("@mv-cli/modules");
-const { getProcessEnv } = require("@mv-cli/common/lib/platform");
+const { Config: ConfigModule, Inquirer } = require("@mvanner/modules");
+const { getProcessEnv } = require("@mvanner/common/lib/platform");
 const { resetConfigFile } = require("../constance/question");
-const { basicCommon, platform } = require("@mv-cli/common");
+const { basicCommon, platform } = require("@mvanner/common");
 
 const defaultContent = {
     registry: null,

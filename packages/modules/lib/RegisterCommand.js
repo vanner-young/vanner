@@ -1,5 +1,5 @@
 const { Command, Option } = require("commander");
-const { basicCommon } = require("@mv-cli/common");
+const { basicCommon } = require("@mvanner/common");
 
 class SingleCommandRegister {
     usage(program, content) {

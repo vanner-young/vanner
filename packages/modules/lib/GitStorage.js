@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const { basicCommon, fileAction } = require("@mv-cli/common");
+const { basicCommon, fileAction } = require("@mvanner/common");
 
 class GitStorage extends EventEmitter {
     #config = {

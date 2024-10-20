@@ -1,5 +1,5 @@
-const { Inquirer } = require("@mv-cli/modules");
-const { basicCommon, platform } = require("@mv-cli/common");
+const { Inquirer } = require("@mvanner/modules");
+const { basicCommon, platform } = require("@mvanner/common");
 
 class Exec extends Inquirer {
     defaultFileName;

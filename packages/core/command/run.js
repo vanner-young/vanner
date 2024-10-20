@@ -1,7 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const { Inquirer } = require("@mv-cli/modules");
-const { filterEmptyArray, fileAction, basicCommon } = require("@mv-cli/common");
+const { Inquirer } = require("@mvanner/modules");
+const {
+    filterEmptyArray,
+    fileAction,
+    basicCommon,
+} = require("@mvanner/common");
 const { chooseRunCommand } = require("../constance/question");
 
 class Run extends Inquirer {

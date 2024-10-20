@@ -1,5 +1,5 @@
 const inquirer = require("@inquirer/prompts");
-const { arrayExecSyncHandler, filterObject } = require("@mv-cli/common");
+const { arrayExecSyncHandler, filterObject } = require("@mvanner/common");
 
 class Inquirer {
     constructor() {

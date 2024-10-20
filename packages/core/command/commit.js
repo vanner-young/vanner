@@ -1,5 +1,5 @@
-const { Inquirer, GitStorage } = require("@mv-cli/modules");
-const { basicCommon, platform } = require("@mv-cli/common");
+const { Inquirer, GitStorage } = require("@mvanner/modules");
+const { basicCommon, platform } = require("@mvanner/common");
 
 const {
     commitType,
@@ -20,10 +20,11 @@ class Commit extends Inquirer {
         branch: "",
         message: "",
         origin: "",
-        push: false,
     };
     diffFile = [];
     statusFile = [];
+    push = false;
+    commitAll = false;
 
     async start(source) {
         this.#gitStorage = new GitStorage(process.cwd());
@@ -32,8 +33,8 @@ class Commit extends Inquirer {
             if (!basicCommon.isType(config, "object")) {
                 return console.log("提交失败，请重试!");
             }
-            const { type, file, origin, branch, message, push } = config;
-            if (!push) {
+            const { type, file, origin, branch, message } = config;
+            if (!this.push) {
                 const confirm = await this.handler(
                     commitAction({
                         ...config,
@@ -48,7 +49,7 @@ class Commit extends Inquirer {
                     }),
                 );
                 if (!confirm) return;
-                this.#gitStorage.addFile(file);
+                this.#gitStorage.addFile(this.commitAll ? "." : file);
                 this.#gitStorage.commit(`${type}: ${message}`);
             }
             this.#gitStorage.push(origin, branch);
@@ -84,10 +85,9 @@ class Commit extends Inquirer {
                 chooseCommitFile(this.diffFile),
             );
             if (commitFiles.length === this.diffFile.length) {
-                this.#config.file = ".";
-            } else {
-                this.#config.file = commitFiles.join(" ");
+                this.commitAll = true;
             }
+            this.#config.file = commitFiles.join(" ");
         } else {
             const isReady = await this.handler(
                 alreadyStatusFile(this.statusFile),
@@ -116,7 +116,7 @@ class Commit extends Inquirer {
                                 alreadyCommitFile(notPushFile),
                             );
                             if (!pushFile) return;
-                            this.#config.push = true;
+                            this.push = true;
                         }
                     }
                 }
@@ -153,7 +153,7 @@ class Commit extends Inquirer {
                 this.#config.origin = origin;
                 this.#config.branch = branch;
 
-                if (!this.#config.push) {
+                if (!this.push) {
                     await this.chooseType(source);
                     await this.chooseCommitFile(source);
                     if (!this.#config.file.trim()) return;

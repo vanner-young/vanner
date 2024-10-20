@@ -1,5 +1,5 @@
 {
-    "name": "@mv-cli/common",
+    "name": "@mvanner/common",
     "version": "0.0.1",
     "description": "",
     "main": "lib/index.js",

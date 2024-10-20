@@ -1,4 +1,4 @@
-const { basicCommon, platform } = require("@mv-cli/common");
+const { basicCommon, platform } = require("@mvanner/common");
 
 class Package {
     #packageConfig = {

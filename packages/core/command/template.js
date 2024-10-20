@@ -1,6 +1,6 @@
 const path = require("path");
-const { platform, basicCommon } = require("@mv-cli/common");
-const { Inquirer, GitStorage } = require("@mv-cli/modules");
+const { platform, basicCommon } = require("@mvanner/common");
+const { Inquirer, GitStorage } = require("@mvanner/modules");
 const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = require("../constance");
 const {
     checkoutBranch,
@@ -45,7 +45,7 @@ class Template extends Inquirer {
             );
         } else {
             console.log(
-                "当前系统暂已无项目模板数据，可使用 mv-cli template add <git remote> 进行添加",
+                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
             );
         }
     }

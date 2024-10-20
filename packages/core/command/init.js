@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { Inquirer, GitStorage } = require("@mv-cli/modules");
-const { basicCommon, platform, dfsParser } = require("@mv-cli/common");
+const { Inquirer, GitStorage } = require("@mvanner/modules");
+const { basicCommon, platform, dfsParser } = require("@mvanner/common");
 const { createProjectQuestion } = require("../constance/question");
 const {
     INIT_PROJECT_VITE_REMOTE,

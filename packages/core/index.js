@@ -7,8 +7,8 @@ const {
     effectiveAppDataHome,
     setProcessEnv,
     getProcessEnv,
-} = require("@mv-cli/common/lib/platform");
-const { basicCommon } = require("@mv-cli/common");
+} = require("@mvanner/common/lib/platform");
+const { basicCommon } = require("@mvanner/common");
 
 const {
     SUPPORT_SYSTEM,
