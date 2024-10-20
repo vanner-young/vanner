@@ -204,6 +204,12 @@ class GitStorage extends EventEmitter {
             })
             .filter((item) => item);
     }
+    async getCommitNotPushFileList() {
+        return await basicCommon.getExecCommandResult(
+            `git log --branches --not --remotes --name-only`,
+            { stdio: ["ignore", "pipe", "ignore"] },
+        );
+    }
 }
 
 module.exports = GitStorage;
