@@ -210,6 +210,7 @@ class GitStorage extends EventEmitter {
             { stdio: ["ignore", "pipe", "ignore"] },
         );
         const list = conteString.split("\n").reverse();
+        console.log(list);
         if (!list.length || !list.at(0)) return [];
         const fileList = [];
         for (const item of list) {
