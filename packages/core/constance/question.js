@@ -252,10 +252,18 @@ export const chooseRunCommand = (command, scriptList) => {
     };
 };
 
+export const alreadyStatusFile = (fileList) => {
+    return {
+        name: "alreadyStatusFile",
+        type: "confirm",
+        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+    };
+};
+
 export const alreadyCommitFile = (fileList) => {
     return {
         name: "alreadyCommitFile",
         type: "confirm",
-        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+        message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
     };
 };

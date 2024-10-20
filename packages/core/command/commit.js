@@ -7,6 +7,7 @@ const {
     commitMessage,
     commitAction,
     chooseCommitFile,
+    alreadyStatusFile,
     alreadyCommitFile,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
@@ -84,7 +85,7 @@ class Commit extends Inquirer {
             this.#config.file = commitFiles.join(" ");
         } else {
             const isReady = await this.handler(
-                alreadyCommitFile(this.statusFile),
+                alreadyStatusFile(this.statusFile),
             );
             if (isReady) this.#config.file = this.statusFile.join(" ");
         }
@@ -98,14 +99,19 @@ class Commit extends Inquirer {
 
                 if (!this.diffFile.length) {
                     this.statusFile = await this.#gitStorage.status();
-
-                    this.notPushFile =
-                        await this.#gitStorage.getCommitNotPushFileList();
-                    console.log("123", this.notPushFile);
-                    if (!this.statusFile.length)
-                        return console.log(
-                            "当前路径下暂无变更的文件, 无需提交.",
-                        );
+                    if (!this.statusFile.length) {
+                        const notPushFile =
+                            await this.#gitStorage.getCommitNotPushFileList();
+                        if (!notPushFile.length) {
+                            return console.log(
+                                "当前路径下暂无变更的文件, 无需提交.",
+                            );
+                        } else {
+                            const pushFile =
+                                await this.handler(alreadyCommitFile());
+                            if (!pushFile) return;
+                        }
+                    }
                 }
 
                 if (!originList || !originList.length)
