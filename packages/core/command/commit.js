@@ -107,8 +107,9 @@ class Commit extends Inquirer {
                                 "当前路径下暂无变更的文件, 无需提交.",
                             );
                         } else {
-                            const pushFile =
-                                await this.handler(alreadyCommitFile());
+                            const pushFile = await this.handler(
+                                alreadyCommitFile(notPushFile),
+                            );
                             if (!pushFile) return;
                         }
                     }
