@@ -83,7 +83,11 @@ class Commit extends Inquirer {
             const commitFiles = await this.handler(
                 chooseCommitFile(this.diffFile),
             );
-            this.#config.file = commitFiles.join(" ");
+            if (commitFiles.length === this.diffFile.length) {
+                this.#config.file = ".";
+            } else {
+                this.#config.file = commitFiles.join(" ");
+            }
         } else {
             const isReady = await this.handler(
                 alreadyStatusFile(this.statusFile),
