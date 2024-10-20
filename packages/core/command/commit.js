@@ -98,6 +98,10 @@ class Commit extends Inquirer {
 
                 if (!this.diffFile.length) {
                     this.statusFile = await this.#gitStorage.status();
+
+                    this.notPushFile =
+                        await this.#gitStorage.getCommitNotPushFileList();
+                    console.log("123", this.notPushFile);
                     if (!this.statusFile.length)
                         return console.log(
                             "当前路径下暂无变更的文件, 无需提交.",
