@@ -205,12 +205,12 @@ class GitStorage extends EventEmitter {
             .filter((item) => item);
     }
     async getCommitNotPushFileList() {
-        return await basicCommon
-            .getExecCommandResult(
+        return (
+            await basicCommon.getExecCommandResult(
                 `git log --branches --not --remotes --name-only`,
                 { stdio: ["ignore", "pipe", "ignore"] },
             )
-            .split("\n");
+        ).split("\n");
     }
 }
 
