@@ -35,7 +35,10 @@ class Commit extends Inquirer {
             const confirm = await this.handler(
                 commitAction({
                     ...config,
-                    file: `\n${this.diffFile.map((item, index) => ` ${index + 1}. ${item}`).join("\n")}`,
+                    file: `\n${file
+                        .split(" ")
+                        .map((item, index) => ` ${index + 1}. ${item}`)
+                        .join("\n")}`,
                     message: message
                         .split(";")
                         .filter((item) => item.trim())
@@ -122,7 +125,7 @@ class Commit extends Inquirer {
 
                 await this.chooseType(source);
                 await this.chooseCommitFile(source);
-                if (!this.#config.file.length) return;
+                if (!this.#config.file.trim()) return;
 
                 if (!branch) {
                     const branchList =
