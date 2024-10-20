@@ -33,8 +33,6 @@ class Commit extends Inquirer {
                 return console.log("提交失败，请重试!");
             }
 
-            if 
-
             const { type, file, origin, branch, message } = config;
             const confirm = await this.handler(
                 commitAction({
@@ -155,7 +153,7 @@ class Commit extends Inquirer {
                     await this.chooseType(source);
                     await this.chooseCommitFile(source);
                     if (!this.#config.file.trim()) return;
-                    
+
                     if (message) this.#config.message = message;
                     else this.#config.message = await this.commitMessage();
                 }
