@@ -7,6 +7,7 @@ const {
     commitMessage,
     commitAction,
     chooseCommitFile,
+    alreadyCommitFile,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
 
@@ -20,6 +21,7 @@ class Commit extends Inquirer {
         origin: "",
     };
     diffFile = [];
+    statusFile = [];
 
     async start(source) {
         this.#gitStorage = new GitStorage(process.cwd());
@@ -71,8 +73,18 @@ class Commit extends Inquirer {
     async chooseCommitFile({ file }) {
         if (Array.isArray(file) && file?.length)
             return (this.#config.file = file.join(" "));
-        const commitFiles = await this.handler(chooseCommitFile(this.diffFile));
-        this.#config.file = commitFiles.join(" ");
+
+        if (this.diffFile.length) {
+            const commitFiles = await this.handler(
+                chooseCommitFile(this.diffFile),
+            );
+            this.#config.file = commitFiles.join(" ");
+        } else {
+            const isReady = await this.handler(
+                alreadyCommitFile(this.statusFile),
+            );
+            if (isReady) this.#config.file = this.statusFile.join(" ");
+        }
     }
 
     chooseOption(source) {
@@ -80,8 +92,14 @@ class Commit extends Inquirer {
             let { branch, origin, message } = source;
             this.#gitStorage.once("load:origin:end", async (originList) => {
                 this.diffFile = await this.#gitStorage.diffFile();
-                if (!this.diffFile.length)
-                    return console.log("当前路径下暂无变更的文件, 无需提交.");
+
+                if (!this.diffFile.length) {
+                    this.statusFile = await this.#gitStorage.status();
+                    if (!this.statusFile.length)
+                        return console.log(
+                            "当前路径下暂无变更的文件, 无需提交.",
+                        );
+                }
 
                 if (!originList || !originList.length)
                     return console.log("当前地址不存在提交源，请创建后重试!");
@@ -104,6 +122,7 @@ class Commit extends Inquirer {
 
                 await this.chooseType(source);
                 await this.chooseCommitFile(source);
+                if (!this.#config.file.length) return;
 
                 if (!branch) {
                     const branchList =

@@ -251,3 +251,11 @@ export const chooseRunCommand = (command, scriptList) => {
         choices: scriptList,
     };
 };
+
+export const alreadyCommitFile = (fileList) => {
+    return {
+        name: "alreadyCommitFile",
+        type: "confirm",
+        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+    };
+};
