@@ -145,9 +145,12 @@ class GitStorage extends EventEmitter {
             stdio: "inherit",
         });
     }
-    push(origin, branch) {
+    push(origin, branch, option = {}) {
         if (!origin || !branch) throw new Error("push remote have to origin");
-        return basicCommon.execCommandPro(`git push ${origin} ${branch}`);
+        return basicCommon.execCommandPro(
+            `git push ${origin} ${branch}`,
+            option,
+        );
     }
     async diffFile() {
         const diffString = await basicCommon.getExecCommandResult(

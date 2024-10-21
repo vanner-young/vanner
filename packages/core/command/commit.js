@@ -51,7 +51,7 @@ class Commit extends Inquirer {
                     this.#gitStorage.addFile(this.commitAll ? "." : file);
                     this.#gitStorage.commit(`${type}: ${message}`);
                 }
-                this.#gitStorage.push(origin, branch);
+                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
                 resolve(this.#config);
             });
         });
