@@ -1,5 +1,6 @@
 const { Inquirer, GitStorage } = require("@mvanner/modules");
 const { CommitTypeDict } = require("../constance/commandConfig");
+const { delay } = require("@mvanner/common");
 
 const {
     chooseCommitOrigin,
@@ -57,6 +58,7 @@ class Checkout extends Inquirer {
                     );
                     if (!commitPush) return;
                     await Commit.start();
+                    await delay(2000);
                 }
 
                 if (typeName) {

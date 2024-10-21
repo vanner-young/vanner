@@ -37,6 +37,14 @@ const filterEmptyArray = (list) => {
     return list.map((item) => item.trim()).filter((item) => item);
 };
 
+const delay = async (timeout = 1000) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(true);
+        }, timeout);
+    });
+};
+
 module.exports = {
     platform,
     basicCommon,
@@ -45,4 +53,5 @@ module.exports = {
     dfsParser,
     fileAction,
     filterEmptyArray,
+    delay,
 };
