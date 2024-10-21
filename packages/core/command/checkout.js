@@ -54,9 +54,6 @@ class Checkout extends Inquirer {
                     if (!commitPush) return;
                     await Commit.start();
                 }
-
-                console.log(123);
-                resolve(true);
             });
         });
     }
