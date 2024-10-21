@@ -220,7 +220,7 @@ class GitStorage extends EventEmitter {
     async isExistsNotCommitFile() {
         const diffFile = await this.diffFile();
         if (diffFile.length) return diffFile;
-        return await this.statusFile();
+        return await this.status();
     }
 }
 
