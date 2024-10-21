@@ -6,6 +6,7 @@ const {
     chooseCommitOrigin,
     alreadyStatusFileCheckout,
     chooseOperateType,
+    operateTypeOrder,
 } = require("../constance/question");
 const Commit = require("./commit");
 
@@ -59,7 +60,7 @@ class Checkout extends Inquirer {
                     if (!commitPush) return;
                     await Commit.start();
                     await delay();
-                    console.log("\n\n");
+                    console.log("暂存区代码提交完成！\n");
                 }
 
                 if (typeName) {
@@ -73,7 +74,8 @@ class Checkout extends Inquirer {
                         chooseOperateType(CommitTypeDict),
                     );
                 }
-                console.log(this.#config.type);
+
+                this.#config.order = await this.handler(operateTypeOrder());
 
                 resolve(true);
             });

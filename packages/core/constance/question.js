@@ -287,3 +287,12 @@ export const chooseOperateType = (commitTypeDict) => {
         })),
     };
 };
+
+export const operateTypeOrder = () => {
+    return {
+        name: "operateTypeOrder",
+        type: "input",
+        message: "请输入本次操作单号:",
+        required: true,
+    };
+};
