@@ -4,6 +4,7 @@ const { CommitTypeDict } = require("../constance/commandConfig");
 const {
     chooseCommitOrigin,
     alreadyStatusFileCheckout,
+    chooseOperateType,
 } = require("../constance/question");
 const Commit = require("./commit");
 
@@ -65,7 +66,9 @@ class Checkout extends Inquirer {
                         return console.log("当前输入类型不合法，请重新输入！");
                     }
                 } else {
-                    this.#config.type = await this.handler(CommitTypeDict);
+                    this.#config.type = await this.handler(
+                        chooseOperateType(CommitTypeDict),
+                    );
                 }
                 console.log(this.#config.type);
 
