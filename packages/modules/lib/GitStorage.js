@@ -220,10 +220,36 @@ class GitStorage extends EventEmitter {
             else return fileList;
         }
     }
-    async isExistsNotCommitFile() {
+    async getNotCommitFile() {
         const diffFile = await this.diffFile();
         if (diffFile.length) return diffFile;
         return await this.status();
+    }
+
+    async getGitUserName() {
+        const username = await basicCommon.getExecCommandResult(
+            "git config user.name",
+            {
+                cwd: this.#config.storagePath,
+            },
+        );
+        if (username.trim() && !["null", "undefined", "NaN"].includes(username))
+            return username.slice(0, 10);
+        return false;
+    }
+
+    async setUserName(username) {
+        return await basicCommon.execCommandPro(
+            `git config user.name ${username}`,
+            { stdio: "inherit" },
+        );
+    }
+
+    async checkoutOnBasicOfOriginBranch(origin, branchName, basicOfBranch) {
+        return await basicCommon.execCommandPro(
+            `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
+            { stdio: "inherit" },
+        );
     }
 }
 

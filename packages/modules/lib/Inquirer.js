@@ -30,6 +30,20 @@ class Inquirer {
             return inquirer.checkbox(item);
         }, options);
     }
+    search(options) {
+        return arrayExecSyncHandler((item) => {
+            const dataSource = item.choices;
+            item = filterObject(item, ["choices"]);
+            return inquirer.search({
+                ...item,
+                source: async (input) => {
+                    return input?.trim?.()
+                        ? dataSource.filter((item) => item.name.includes(input))
+                        : dataSource;
+                },
+            });
+        }, options);
+    }
     handler(options) {
         return arrayExecSyncHandler(
             (item) => this[item.type](filterObject(item, ["type"])),

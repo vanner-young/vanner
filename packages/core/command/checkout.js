@@ -7,6 +7,8 @@ const {
     alreadyStatusFileCheckout,
     chooseOperateType,
     operateTypeOrder,
+    chooseTargetBranch,
+    inputGitUserName,
 } = require("../constance/question");
 const Commit = require("./commit");
 
@@ -16,14 +18,21 @@ class Checkout extends Inquirer {
         order: "",
         origin: "",
         targetBranch: "",
+        username: "",
     };
     #gitStorage;
     get commitType() {
         return Object.keys(CommitTypeDict);
     }
     start(typeName) {
-        this.chooseOption(typeName).then(() => {
-            console.log(this.#config);
+        this.chooseOption(typeName).then(async () => {
+            const { type, order, origin, username, targetBranch } =
+                this.#config;
+            await this.#gitStorage.checkoutOnBasicOfOriginBranch(
+                origin,
+                `${type}/${username}/${order}`,
+                targetBranch,
+            );
         });
     }
     chooseOption(typeName) {
@@ -51,8 +60,7 @@ class Checkout extends Inquirer {
                 if (!branchList.length)
                     return console.log("当前项目源还未创建分支，请创建后重试!");
 
-                const notPushFile =
-                    await this.#gitStorage.isExistsNotCommitFile();
+                const notPushFile = await this.#gitStorage.getNotCommitFile();
                 if (notPushFile.length) {
                     const commitPush = await this.handler(
                         alreadyStatusFileCheckout(notPushFile),
@@ -74,15 +82,20 @@ class Checkout extends Inquirer {
                         chooseOperateType(CommitTypeDict),
                     );
                 }
-
+                this.#config.targetBranch = await this.handler(
+                    chooseTargetBranch(branchList),
+                );
                 this.#config.order = await this.handler(operateTypeOrder());
-
-                resolve(true);
+                let username = await this.#gitStorage.getGitUserName();
+                console.log(username, typeof username);
+                if (!username) {
+                    username = await this.handler(inputGitUserName());
+                    await this.#gitStorage.setUserName(username);
+                }
+                this.#config.username = username;
+                resolve(this.#config);
             });
         });
-    }
-    chooseBranchType() {
-        console.log("切换类型未指定, 选择切换分支类型...");
     }
 }
 

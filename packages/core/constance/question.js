@@ -292,7 +292,27 @@ export const operateTypeOrder = () => {
     return {
         name: "operateTypeOrder",
         type: "input",
-        message: "请输入本次操作单号:",
+        message: "请输入本次操作(需求/Bug/优化)单号：",
         required: true,
+    };
+};
+
+export const chooseTargetBranch = (branchList) => {
+    return {
+        name: "chooseTargetBranch",
+        type: "search",
+        message: "请选择目标分支(基于哪个分支进行操作), 可输入选择：",
+        choices: branchList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+export const inputGitUserName = () => {
+    return {
+        name: "inputGitUserName",
+        type: "input",
+        message: "当前项目未设置Git用户名，请输入你想使用的用户名称后继续：",
     };
 };
