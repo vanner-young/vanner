@@ -15,12 +15,15 @@ class Checkout extends Inquirer {
         targetBranch: "",
     };
     #gitStorage;
-    start(source) {
-        this.chooseOption(source).then(() => {
+    get commitType() {
+        return Object.keys(CommitTypeDict);
+    }
+    start(typeName) {
+        this.chooseOption(typeName).then(() => {
             console.log(this.#config);
         });
     }
-    chooseOption() {
+    chooseOption(typeName) {
         return new Promise((resolve) => {
             this.#gitStorage = new GitStorage(process.cwd());
             this.#gitStorage.once("load:origin:end", async (originList) => {
@@ -54,7 +57,19 @@ class Checkout extends Inquirer {
                     if (!commitPush) return;
                     await Commit.start();
                 }
-                console.log(12312);
+
+                if (typeName) {
+                    if (this.commitType.includes(typeName)) {
+                        this.#config.type = typeName;
+                    } else {
+                        return console.log("当前输入类型不合法，请重新输入！");
+                    }
+                } else {
+                    this.#config.type = await this.handler(CommitTypeDict);
+                }
+                console.log(this.#config.type);
+
+                resolve(true);
             });
         });
     }

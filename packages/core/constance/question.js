@@ -256,7 +256,7 @@ export const alreadyStatusFile = (fileList) => {
     return {
         name: "alreadyStatusFile",
         type: "confirm",
-        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
     };
 };
 
@@ -264,7 +264,7 @@ export const alreadyCommitFile = (fileList) => {
     return {
         name: "alreadyCommitFile",
         type: "confirm",
-        message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+        message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
     };
 };
 
@@ -272,6 +272,19 @@ export const alreadyStatusFileCheckout = (fileList) => {
     return {
         name: "alreadyStatusFileCheckout",
         type: "confirm",
-        message: `当前暂存区存在未提交的文件，是否继续提交推送后在切换分支？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+        message: `当前暂存区存在未提交的文件，是否继续提交推送后在切换分支？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+    };
+};
+
+export const chooseOperateType = (commitTypeDict) => {
+    return {
+        name: "chooseOperateType",
+        type: "select",
+        message: `当前未输入操作类型，请在以下类型中选择：\n${Object.entries(
+            commitTypeDict,
+        ).map(([key, value], index) => ({
+            name: `  ${index + 1}. ${key + ":" + value}\n`,
+            value: key,
+        }))}`,
     };
 };
