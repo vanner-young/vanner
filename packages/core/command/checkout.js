@@ -58,7 +58,8 @@ class Checkout extends Inquirer {
                     );
                     if (!commitPush) return;
                     await Commit.start();
-                    await delay(2000);
+                    await delay();
+                    console.log("\n\n");
                 }
 
                 if (typeName) {
