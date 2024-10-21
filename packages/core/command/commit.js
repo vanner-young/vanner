@@ -52,7 +52,9 @@ class Commit extends Inquirer {
                     this.#gitStorage.commit(`${type}: ${message}`);
                 }
                 this.#gitStorage.push(origin, branch);
-                resolve(this.#config);
+                setTimeout(() => {
+                    resolve(this.#config);
+                }, 3000);
             });
         });
     }
