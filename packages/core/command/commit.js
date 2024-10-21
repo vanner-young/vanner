@@ -26,33 +26,34 @@ class Commit extends Inquirer {
     push = false;
     commitAll = false;
 
-    async start(source) {
-        this.#gitStorage = new GitStorage(process.cwd());
-
-        this.chooseOption(source).then(async (config) => {
-            if (!basicCommon.isType(config, "object")) {
-                return console.log("提交失败，请重试!");
-            }
-            const { type, file, origin, branch, message } = config;
-            if (!this.push) {
-                const confirm = await this.handler(
-                    commitAction({
-                        ...config,
-                        file: `\n${file
-                            .split(" ")
-                            .map((item, index) => ` ${index + 1}. ${item}`)
-                            .join("\n")}`,
-                        message: message
-                            .split(";")
-                            .filter((item) => item.trim())
-                            .join("\n"),
-                    }),
-                );
-                if (!confirm) return;
-                this.#gitStorage.addFile(this.commitAll ? "." : file);
-                this.#gitStorage.commit(`${type}: ${message}`);
-            }
-            this.#gitStorage.push(origin, branch);
+    async start(source = {}) {
+        return new Promise((resolve) => {
+            this.chooseOption(source).then(async (config) => {
+                if (!basicCommon.isType(config, "object")) {
+                    return console.log("提交失败，请重试!");
+                }
+                const { type, file, origin, branch, message } = config;
+                if (!this.push) {
+                    const confirm = await this.handler(
+                        commitAction({
+                            ...config,
+                            file: `\n${file
+                                .split(" ")
+                                .map((item, index) => ` ${index + 1}. ${item}`)
+                                .join("\n")}`,
+                            message: message
+                                .split(";")
+                                .filter((item) => item.trim())
+                                .join("\n"),
+                        }),
+                    );
+                    if (!confirm) return;
+                    this.#gitStorage.addFile(this.commitAll ? "." : file);
+                    this.#gitStorage.commit(`${type}: ${message}`);
+                }
+                this.#gitStorage.push(origin, branch);
+                resolve(this.#config);
+            });
         });
     }
 
@@ -98,10 +99,10 @@ class Commit extends Inquirer {
 
     chooseOption(source) {
         return new Promise((resolve) => {
+            this.#gitStorage = new GitStorage(process.cwd());
             let { branch, origin, message } = source;
             this.#gitStorage.once("load:origin:end", async (originList) => {
                 this.diffFile = await this.#gitStorage.diffFile();
-
                 if (!this.diffFile.length) {
                     this.statusFile = await this.#gitStorage.status();
                     if (!this.statusFile.length) {
@@ -143,11 +144,12 @@ class Commit extends Inquirer {
                 if (!branch) {
                     const branchList =
                         await this.#gitStorage.getBranchRemote(origin);
-                    branch = await this.#gitStorage.getCurrentBranch();
-                    if (!branchList.length || !branch)
+                    if (!branchList.length)
                         return console.log(
                             "当前项目源还未创建分支，请创建后重试!",
                         );
+
+                    branch = await this.#gitStorage.getCurrentBranch();
                 }
 
                 this.#config.origin = origin;

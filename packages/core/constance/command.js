@@ -8,6 +8,7 @@ const Create = require("../command/create");
 const Install = require("../command/install");
 const Commit = require("../command/commit");
 const Run = require("../command/Run");
+const Checkout = require("../command/checkout");
 
 const commandConfig = () => {
     const {
@@ -183,6 +184,11 @@ const commandConfig = () => {
             ],
             description: "执行当前项目下的脚本命令",
             action: Run,
+        },
+        {
+            command: "checkout [type]",
+            description: "基于当前分支选择性的切换新的分支, 并规范分支类型",
+            action: Checkout,
         },
     ];
 };

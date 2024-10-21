@@ -267,3 +267,11 @@ export const alreadyCommitFile = (fileList) => {
         message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
     };
 };
+
+export const alreadyStatusFileCheckout = (fileList) => {
+    return {
+        name: "alreadyStatusFileCheckout",
+        type: "confirm",
+        message: `当前暂存区存在未提交的文件，是否继续提交推送后在切换分支？\n${fileList.map((item, index) => `  ${index + 1}.${item}`).join("\n")}`,
+    };
+};
