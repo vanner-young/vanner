@@ -280,11 +280,10 @@ export const chooseOperateType = (commitTypeDict) => {
     return {
         name: "chooseOperateType",
         type: "select",
-        message: `当前未输入操作类型，请在以下类型中选择：\n${Object.entries(
-            commitTypeDict,
-        ).map(([key, value], index) => ({
+        message: `当前未输入操作类型，请在以下类型中选择：`,
+        choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
             name: `  ${index + 1}. ${key + ":" + value}\n`,
             value: key,
-        }))}`,
+        })),
     };
 };
