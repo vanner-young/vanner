@@ -6,7 +6,7 @@ const {
     chooseCommitOrigin,
     alreadyStatusFileCheckout,
     chooseOperateType,
-    operateTypeOrder,
+    inputCheckoutBranchName,
     chooseTargetBranch,
     inputGitUserName,
 } = require("../constance/question");
@@ -14,9 +14,9 @@ const Commit = require("./commit");
 
 class Checkout extends Inquirer {
     #config = {
-        type: "",
-        order: "",
         origin: "",
+        branch: "",
+        type: "",
         targetBranch: "",
         username: "",
     };
@@ -24,75 +24,101 @@ class Checkout extends Inquirer {
     get commitType() {
         return Object.keys(CommitTypeDict);
     }
-    start(typeName) {
-        this.chooseOption(typeName).then(async () => {
-            const { type, order, origin, username, targetBranch } =
+    start(branchName, source) {
+        this.#config.type = source.type;
+        this.#config.branch = branchName;
+
+        this.chooseOption().then(async () => {
+            const { type, origin, branch, username, targetBranch } =
                 this.#config;
-            await this.#gitStorage.checkoutOnBasicOfOriginBranch(
-                origin,
-                `${type}/${username}/${order}`,
-                targetBranch,
-            );
+
+            const newBranchName = `${type}/${username}${branch}`;
+            const localBranch = await this.#gitStorage.getBranchLocal();
+            if (localBranch.includes(targetBranch)) {
+                await this.#gitStorage.checkoutOnBasicOfLocalBranch(
+                    newBranchName,
+                    targetBranch,
+                );
+            } else {
+                await this.#gitStorage.checkoutOnBasicOfOriginBranch(
+                    origin,
+                    newBranchName,
+                    targetBranch,
+                );
+            }
         });
     }
-    chooseOption(typeName) {
+    async confirmOrigin(originList) {
+        if (!originList || !originList.length) {
+            throw new Error("当前地址不存在提交源，请创建后重试!");
+        }
+        if (originList.length > 1) {
+            this.#config.origin = await this.handler(
+                chooseCommitOrigin(
+                    originList.map((item) => ({
+                        name: `${item.origin}  ${item.remote}`,
+                        value: item.origin,
+                    })),
+                ),
+            );
+        } else {
+            this.#config.origin = originList.at(0).origin;
+        }
+    }
+    async invalidBranch() {
+        const branchList = await this.#gitStorage.getBranchRemote(
+            this.#config.origin,
+        );
+        if (!branchList.length) {
+            throw new Error("当前项目源还未创建分支，请创建后重试!");
+        }
+        return branchList;
+    }
+    async handlerNotPushFile() {
+        const notPushFile = await this.#gitStorage.getNotCommitFile();
+        if (notPushFile.length) {
+            const commitPush = await this.handler(
+                alreadyStatusFileCheckout(notPushFile),
+            );
+            if (!commitPush) process.exit(0);
+            await Commit.start();
+            await delay();
+            console.log("暂存区代码提交完成！\n");
+        }
+    }
+    chooseOption() {
         return new Promise((resolve) => {
             this.#gitStorage = new GitStorage(process.cwd());
             this.#gitStorage.once("load:origin:end", async (originList) => {
-                if (!originList || !originList.length)
-                    return console.log("当前地址不存在提交源，请创建后重试!");
-                if (originList.length > 1) {
-                    this.#config.origin = await this.handler(
-                        chooseCommitOrigin(
-                            originList.map((item) => ({
-                                name: `${item.origin}  ${item.remote}`,
-                                value: item.origin,
-                            })),
-                        ),
+                await this.confirmOrigin(originList);
+                const branchList = await this.invalidBranch();
+                await this.handlerNotPushFile();
+
+                const { branch, type } = this.#config;
+                if (!branch) {
+                    this.#config.branch = await this.handler(
+                        inputCheckoutBranchName(),
                     );
-                } else {
-                    this.#config.origin = originList.at(0).origin;
                 }
 
-                const branchList = await this.#gitStorage.getBranchRemote(
-                    this.#config.origin,
-                );
-                if (!branchList.length)
-                    return console.log("当前项目源还未创建分支，请创建后重试!");
-
-                const notPushFile = await this.#gitStorage.getNotCommitFile();
-                if (notPushFile.length) {
-                    const commitPush = await this.handler(
-                        alreadyStatusFileCheckout(notPushFile),
-                    );
-                    if (!commitPush) return;
-                    await Commit.start();
-                    await delay();
-                    console.log("暂存区代码提交完成！\n");
-                }
-
-                if (typeName) {
-                    if (this.commitType.includes(typeName)) {
-                        this.#config.type = typeName;
-                    } else {
-                        return console.log("当前输入类型不合法，请重新输入！");
-                    }
-                } else {
+                if (!type || !this.commitType.includes(type)) {
                     this.#config.type = await this.handler(
-                        chooseOperateType(CommitTypeDict),
+                        chooseOperateType(CommitTypeDict, type),
                     );
                 }
+
+                const nowBranchName = await this.#gitStorage.getNowBranchName();
                 this.#config.targetBranch = await this.handler(
-                    chooseTargetBranch(branchList),
+                    chooseTargetBranch(branchList, nowBranchName),
                 );
-                this.#config.order = await this.handler(operateTypeOrder());
+
                 let username = await this.#gitStorage.getGitUserName();
-                console.log(username, typeof username);
                 if (!username) {
                     username = await this.handler(inputGitUserName());
                     await this.#gitStorage.setUserName(username);
                 }
                 this.#config.username = username;
+
                 resolve(this.#config);
             });
         });

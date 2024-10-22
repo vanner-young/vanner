@@ -32,8 +32,18 @@ class Inquirer {
     }
     search(options) {
         return arrayExecSyncHandler((item) => {
-            const dataSource = item.choices;
-            item = filterObject(item, ["choices"]);
+            const dataSource = item.choices,
+                defaultValue = item.default;
+            if (defaultValue) {
+                const existsItem = dataSource.findIndex(
+                    (item) => item.value === defaultValue,
+                );
+                if (existsItem !== -1) {
+                    const [item] = dataSource.splice(existsItem, 1);
+                    dataSource.unshift(item);
+                }
+            }
+            item = filterObject(item, ["choices", "default"]);
             return inquirer.search({
                 ...item,
                 source: async (input) => {

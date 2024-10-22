@@ -186,8 +186,13 @@ const commandConfig = () => {
             action: Run,
         },
         {
-            command: "checkout [type]",
-            description: "基于当前分支选择性的切换新的分支, 并规范分支类型",
+            command: "checkout [branchName]",
+            description: "基于特定的分支切换新的分支, 并规范分支名称",
+            option: [
+                {
+                    command: "-t, --type <type>",
+                },
+            ],
             action: Checkout,
         },
     ];

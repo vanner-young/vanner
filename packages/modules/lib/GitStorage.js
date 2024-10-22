@@ -207,6 +207,15 @@ class GitStorage extends EventEmitter {
             })
             .filter((item) => item);
     }
+    async getBranchLocal() {
+        const branchList = await basicCommon.getExecCommandResult(
+            "git branch",
+            {
+                stdio: ["ignore", "pipe", "ignore"],
+            },
+        );
+        return branchList.split("\n").map((item) => item.replace("* ", ""));
+    }
     async getCommitNotPushFileList() {
         const conteString = await basicCommon.getExecCommandResult(
             `git log --branches --not --remotes --name-only`,
@@ -249,6 +258,20 @@ class GitStorage extends EventEmitter {
         return await basicCommon.execCommandPro(
             `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
             { stdio: "inherit" },
+        );
+    }
+
+    async checkoutOnBasicOfLocalBranch(branchName, basicOfBranch) {
+        return await basicCommon.execCommandPro(
+            `git checkout -b ${branchName} ${basicOfBranch}`,
+            { stdio: "inherit" },
+        );
+    }
+
+    async getNowBranchName() {
+        return await basicCommon.getExecCommandResult(
+            `git rev-parse --abbrev-ref HEAD`,
+            { stdio: ["ignore", "pipe", "ignore"] },
         );
     }
 }

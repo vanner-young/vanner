@@ -276,11 +276,13 @@ export const alreadyStatusFileCheckout = (fileList) => {
     };
 };
 
-export const chooseOperateType = (commitTypeDict) => {
+export const chooseOperateType = (commitTypeDict, exists = false) => {
     return {
         name: "chooseOperateType",
         type: "select",
-        message: `当前未输入操作类型，请在以下类型中选择：`,
+        message: exists
+            ? "输入类型不合法，请重新选择："
+            : `当前未输入切换分支类型，请在以下类型中选择：`,
         choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
             name: `${key + ":" + value}`,
             value: key,
@@ -288,24 +290,25 @@ export const chooseOperateType = (commitTypeDict) => {
     };
 };
 
-export const operateTypeOrder = () => {
+export const inputCheckoutBranchName = () => {
     return {
-        name: "operateTypeOrder",
+        name: "checkoutBranchName",
         type: "input",
-        message: "请输入本次操作(需求/Bug/优化)单号：",
+        message: "请输入分支名称, 推荐使用(需求/Bug/优化)单号：",
         required: true,
     };
 };
 
-export const chooseTargetBranch = (branchList) => {
+export const chooseTargetBranch = (branchList, nowBranchName) => {
     return {
         name: "chooseTargetBranch",
         type: "search",
         message: "请选择目标分支(基于哪个分支进行操作), 可输入选择：",
         choices: branchList.map((item) => ({
-            name: item,
+            name: item === nowBranchName ? `${item}(当前分支)` : item,
             value: item,
         })),
+        default: nowBranchName,
     };
 };
 
