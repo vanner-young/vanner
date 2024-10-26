@@ -21,6 +21,9 @@ class Branch extends Inquirer {
         username: "",
     };
     #gitStorage;
+    get commitType() {
+        return Object.keys(CommitTypeDict);
+    }
     start(type, ...args) {
         const typeHandler = new Map([
             ["add", this.addBranch],
