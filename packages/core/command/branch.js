@@ -33,8 +33,8 @@ class Branch extends Inquirer {
             typeHandler.get(type).call(this, ...args);
         }
     }
-    addBranch(branchName, type) {
-        this.#addConfig.type = type;
+    addBranch(branchName, option) {
+        this.#addConfig.type = option.type;
         this.#addConfig.branch = branchName;
 
         this.chooseOption().then(async () => {

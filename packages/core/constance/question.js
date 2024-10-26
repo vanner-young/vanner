@@ -272,7 +272,7 @@ export const alreadyStatusFileCheckout = (fileList) => {
     return {
         name: "alreadyStatusFileCheckout",
         type: "confirm",
-        message: `当前暂存区存在未提交的文件，是否继续提交推送后在切换分支？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+        message: `当前暂存区存在未提交的文件，是否继续提交推送后在继续？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
     };
 };
 

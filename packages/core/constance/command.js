@@ -201,7 +201,7 @@ const commandConfig = () => {
             description: "对项目分支进行添加和删除",
             children: [
                 {
-                    command: "add <branch>",
+                    command: "add",
                     option: [
                         {
                             command: "-t, --type <type>",
