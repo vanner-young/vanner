@@ -9,6 +9,7 @@ const Install = require("../command/install");
 const Commit = require("../command/commit");
 const Run = require("../command/Run");
 const Checkout = require("../command/checkout");
+const Branch = require("../command/branch");
 
 const commandConfig = () => {
     const {
@@ -194,6 +195,21 @@ const commandConfig = () => {
                 },
             ],
             action: Checkout,
+        },
+        {
+            command: "branch",
+            description: "对项目分支进行添加和删除",
+            children: [
+                {
+                    command: "add <branch>",
+                    option: [
+                        {
+                            command: "-t, --type <type>",
+                        },
+                    ],
+                    action: (...rest) => Branch.start("add", ...rest),
+                },
+            ],
         },
     ];
 };

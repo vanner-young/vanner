@@ -12,25 +12,31 @@ const {
 } = require("../constance/question");
 const Commit = require("./commit");
 
-class Checkout extends Inquirer {
-    #config = {
-        origin: "",
+class Branch extends Inquirer {
+    #addConfig = {
         branch: "",
         type: "",
+        origin: "",
         targetBranch: "",
         username: "",
     };
     #gitStorage;
-    get commitType() {
-        return Object.keys(CommitTypeDict);
+    start(type, ...args) {
+        const typeHandler = new Map([
+            ["add", this.addBranch],
+            ["delete", this.deleteBranch],
+        ]);
+        if (typeHandler.has(type)) {
+            typeHandler.get(type).call(this, ...args);
+        }
     }
-    start(branchName, source) {
-        this.#config.type = source.type;
-        this.#config.branch = branchName;
+    addBranch(branchName, type) {
+        this.#addConfig.type = type;
+        this.#addConfig.branch = branchName;
 
         this.chooseOption().then(async () => {
             const { type, origin, branch, username, targetBranch } =
-                this.#config;
+                this.#addConfig;
 
             const newBranchName = `${type}/${username}/${branch}`;
             const localBranch = await this.#gitStorage.getBranchLocal();
@@ -50,7 +56,7 @@ class Checkout extends Inquirer {
     }
     async confirmOrigin(originList) {
         if (originList.length > 1) {
-            this.#config.origin = await this.handler(
+            this.#addConfig.origin = await this.handler(
                 chooseCommitOrigin(
                     originList.map((item) => ({
                         name: `${item.origin}  ${item.remote}`,
@@ -59,12 +65,12 @@ class Checkout extends Inquirer {
                 ),
             );
         } else {
-            this.#config.origin = originList.at(0).origin;
+            this.#addConfig.origin = originList.at(0).origin;
         }
     }
     async invalidBranch() {
         const branchList = await this.#gitStorage.getBranchRemote(
-            this.#config.origin,
+            this.#addConfig.origin,
         );
         if (!branchList.length) {
             throw new Error("当前项目源还未创建分支，请创建后重试!");
@@ -89,23 +95,25 @@ class Checkout extends Inquirer {
             this.#gitStorage.once("load:origin:end", async (originList) => {
                 await this.confirmOrigin(originList);
                 const branchList = await this.invalidBranch();
+
+                // 均是从当前分支作为基准进行切换
                 await this.handlerNotPushFile();
 
-                const { branch, type } = this.#config;
+                const { branch, type } = this.#addConfig;
                 if (!branch) {
-                    this.#config.branch = await this.handler(
+                    this.#addConfig.branch = await this.handler(
                         inputCheckoutBranchName(),
                     );
                 }
 
                 if (!type || !this.commitType.includes(type)) {
-                    this.#config.type = await this.handler(
+                    this.#addConfig.type = await this.handler(
                         chooseOperateType(CommitTypeDict, type),
                     );
                 }
 
                 const nowBranchName = await this.#gitStorage.getNowBranchName();
-                this.#config.targetBranch = await this.handler(
+                this.#addConfig.targetBranch = await this.handler(
                     chooseTargetBranch(branchList, nowBranchName),
                 );
 
@@ -114,12 +122,13 @@ class Checkout extends Inquirer {
                     username = await this.handler(inputGitUserName());
                     await this.#gitStorage.setUserName(username);
                 }
-                this.#config.username = username;
+                this.#addConfig.username = username;
 
-                resolve(this.#config);
+                resolve(this.#addConfig);
             });
         });
     }
+    deleteBranch() {}
 }
 
-module.exports = new Checkout();
+module.exports = new Branch();

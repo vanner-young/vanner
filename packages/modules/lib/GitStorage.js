@@ -15,24 +15,27 @@ class GitStorage extends EventEmitter {
     };
     constructor(option) {
         super();
-        if (basicCommon.isType(option, "string")) {
-            this.initLocalStorage(option);
-            return;
-        }
+        this.hasGit()
+            .then(() => {
+                if (basicCommon.isType(option, "string")) {
+                    this.initLocalStorage(option);
+                    return;
+                }
 
-        const { source, local, branch, isInitPull = true } = option;
-        if (!source || !local)
-            throw new Error("缺少必要的远端仓库地址以及本地映射地址...");
-
-        this.#config.source = source;
-        this.#config.local = local;
-        this.#config.branch = branch || "master";
-        this.#config.isInitPull = isInitPull;
-        this.invalid(async () => {
-            basicCommon.createNotExistsFolder(this.#config.local);
-            await this.load();
-            this.#config.init = true;
-        });
+                const { source, local, branch, isInitPull = true } = option;
+                this.#config.source = source;
+                this.#config.local = local;
+                this.#config.branch = branch || "master";
+                this.#config.isInitPull = isInitPull;
+                this.invalid(async () => {
+                    basicCommon.createNotExistsFolder(this.#config.local);
+                    await this.load();
+                    this.#config.init = true;
+                });
+            })
+            .catch(() => {
+                console.log("当先系统还未安装Git，请安装Git地址后重试");
+            });
     }
     get storageName() {
         return this.#config.storageName;
@@ -44,14 +47,15 @@ class GitStorage extends EventEmitter {
         return this.#config.source;
     }
     async initLocalStorage(localPath) {
-        let originList = [];
         try {
             this.#config.storagePath = localPath;
-            originList = await this.getOriginList();
+            const originList = await this.getOriginList();
+            if (!originList.length)
+                throw new Error("当前项目暂Git源，初始化失败");
+            this.emit("load:origin:end", originList);
         } catch (e) {
-            console.log("初始化本地仓库失败!");
+            throw new Error(e.message || "初始化本地仓库失败");
         }
-        this.emit("load:origin:end", originList);
     }
     async getOriginList() {
         const source = await basicCommon.getExecCommandResult("git remote -v", {
@@ -82,10 +86,12 @@ class GitStorage extends EventEmitter {
         return basicCommon.getExecCommandResult("git -v");
     }
     async invalid(cb) {
+        const { source, local } = this.#config;
+        if (!source || !local)
+            throw new Error("缺少必要的远端仓库地址以及本地映射地址...");
+
         if (!this.invalidGitPath(this.#config.source))
             throw new Error("Git 地址无效，请使用有效的地址");
-        if (!(await this.hasGit()))
-            throw new Error("当先系统还未安装Git，请安装Git地址后重试");
         cb();
     }
     async load() {
