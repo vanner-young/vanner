@@ -55,6 +55,9 @@ class Branch extends Inquirer {
                     targetBranch,
                 );
             }
+            console.log(
+                `新增代码分支成功，已切换为新分支：${newBranchName} \n`,
+            );
         });
     }
     async confirmOrigin(originList) {
@@ -103,7 +106,6 @@ class Branch extends Inquirer {
                 await this.handlerNotPushFile();
 
                 const { branch, type } = this.#addConfig;
-                console.log("branch is:", branch);
                 if (!branch) {
                     this.#addConfig.branch = await this.handler(
                         inputCheckoutBranchName(),
