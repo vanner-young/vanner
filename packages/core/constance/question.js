@@ -272,7 +272,7 @@ export const alreadyStatusFileCheckout = (fileList) => {
     return {
         name: "alreadyStatusFileCheckout",
         type: "confirm",
-        message: `当前暂存区存在未提交的文件，是否继续提交推送后在继续？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+        message: `当前分支的暂存区存在未提交的文件，是否提交推送后继续？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
     };
 };
 
@@ -281,7 +281,7 @@ export const chooseOperateType = (commitTypeDict, exists = false) => {
         name: "chooseOperateType",
         type: "select",
         message: exists
-            ? "输入类型不合法，请重新选择："
+            ? "输入的操作类型不合法，请重新在以下列表中选择："
             : `未输入操作类型，请在以下列表中选择：`,
         choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
             name: `${key + ":" + value}`,

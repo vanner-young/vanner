@@ -78,6 +78,7 @@ class Branch extends Inquirer {
         const branchList = await this.#gitStorage.getBranchRemote(
             this.#addConfig.origin,
         );
+        console.log(branchList);
         if (!branchList.length) {
             throw new Error("当前项目源还未创建分支，请创建后重试!");
         }
