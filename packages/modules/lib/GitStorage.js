@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const { basicCommon, fileAction } = require("@mvanner/common");
+const { basicCommon, fileAction, unionArrayList } = require("@mvanner/common");
 
 class GitStorage extends EventEmitter {
     #config = {
@@ -220,7 +220,14 @@ class GitStorage extends EventEmitter {
                 stdio: ["ignore", "pipe", "ignore"],
             },
         );
-        return branchList.split("\n").map((item) => item.replace("* ", ""));
+        return branchList
+            .split("\n")
+            .map((item) => item.replace("* ", "").trim());
+    }
+    async getBranchLocalAndRemoteList() {
+        const remoteBranch = await this.getBranchRemote();
+        const localBranch = await this.getBranchLocal();
+        return unionArrayList(remoteBranch, localBranch);
     }
     async getCommitNotPushFileList() {
         const conteString = await basicCommon.getExecCommandResult(
