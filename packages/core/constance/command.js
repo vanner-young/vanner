@@ -209,6 +209,10 @@ const commandConfig = () => {
                     ],
                     action: (...rest) => Branch.start("add", ...rest),
                 },
+                {
+                    command: "list",
+                    action: (...rest) => Branch.start("list", ...rest),
+                },
             ],
         },
     ];

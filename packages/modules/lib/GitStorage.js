@@ -229,6 +229,17 @@ class GitStorage extends EventEmitter {
         const localBranch = await this.getBranchLocal();
         return unionArrayList(remoteBranch, localBranch);
     }
+    async getBranch() {
+        const branchList = await basicCommon.getExecCommandResult(
+            `git branch -a`,
+            {
+                stdio: ["ignore", "pipe", "ignore"],
+            },
+        );
+        return branchList
+            .split("\n")
+            .map((item) => item.replace("* ", "").trim());
+    }
     async getCommitNotPushFileList() {
         const conteString = await basicCommon.getExecCommandResult(
             `git log --branches --not --remotes --name-only`,
