@@ -282,7 +282,7 @@ export const chooseOperateType = (commitTypeDict, exists = false) => {
         type: "select",
         message: exists
             ? "输入类型不合法，请重新选择："
-            : `当前未输入切换分支类型，请在以下类型中选择：`,
+            : `未输入操作类型，请在以下列表中选择：`,
         choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
             name: `${key + ":" + value}`,
             value: key,

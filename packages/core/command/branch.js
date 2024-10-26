@@ -103,6 +103,7 @@ class Branch extends Inquirer {
                 await this.handlerNotPushFile();
 
                 const { branch, type } = this.#addConfig;
+                console.log("branch is:", branch);
                 if (!branch) {
                     this.#addConfig.branch = await this.handler(
                         inputCheckoutBranchName(),
