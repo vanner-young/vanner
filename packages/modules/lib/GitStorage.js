@@ -242,8 +242,17 @@ class GitStorage extends EventEmitter {
     }
     async delBranch(branchList, syncRemote = false, origin = "origin") {
         const branchListContent = branchList.join(" ");
+        let delRemoteBranch = [];
+        if (syncRemote) {
+            const remoteBranchList = await this.getBranchRemote();
+            if (remoteBranchList.length) {
+                for (const item of remoteBranchList) {
+                    if (branchList.includes(item)) delRemoteBranch.push(item);
+                }
+            }
+        }
         await basicCommon.execCommandPro(
-            `git branch --delete ${branchListContent} ${syncRemote ? `&& git push ${origin} --delete ${branchListContent}` : ""}`,
+            `git branch --delete ${branchListContent} ${syncRemote && delRemoteBranch.length ? `&& git push ${origin} --delete ${delRemoteBranch.join(" ")}` : ""}`,
             { stdio: "inherit" },
         );
     }
