@@ -12,6 +12,7 @@ const {
     delBranchConfirm,
     chooseDelLocalBranch,
     syncDelRemoteBranch,
+    notDelBranchConfirm,
 } = require("../constance/question");
 const Commit = require("./commit");
 
@@ -24,6 +25,10 @@ class Branch extends Inquirer {
         newBranchName: "",
     };
     #gitStorage;
+    #delBranchSecure = {
+        open: true,
+        notDelBranch: ["master"],
+    };
     get commitType() {
         return Object.keys(CommitTypeDict);
     }
@@ -175,6 +180,32 @@ class Branch extends Inquirer {
     }
     async delLocalBranch(branch) {
         if (!branch.length) throw new Error("缺少需要删除的分支列表...");
+
+        const { open, notDelBranch } = this.#delBranchSecure;
+        if (open) {
+            const notDelBranchList = branch.filter((item) =>
+                notDelBranch.includes(item.toLocaleLowerCase()),
+            );
+            if (notDelBranchList.length) {
+                const delBranchList = differenceArrayList(
+                    branch,
+                    notDelBranchList,
+                );
+                if (delBranchList.length) {
+                    const continueStep = await this.handler(
+                        notDelBranchConfirm(notDelBranchList),
+                    );
+                    if (continueStep) {
+                        return this.delLocalBranch(delBranchList);
+                    }
+                } else {
+                    return console.log(
+                        `${notDelBranchList.join("、")} 分支不可删除`,
+                    );
+                }
+            }
+        }
+
         const branchList = await this.#gitStorage.getBranchLocal();
         const existsBranchList = branch.filter((item) =>
             branchList.includes(item),

@@ -347,3 +347,12 @@ export const syncDelRemoteBranch = () => {
         default: false,
     };
 };
+
+export const notDelBranchConfirm = (branchList) => {
+    return {
+        name: "notDelBranchConfirm",
+        type: "confirm",
+        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
+        default: false,
+    };
+};

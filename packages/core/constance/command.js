@@ -187,21 +187,12 @@ const commandConfig = () => {
             action: Run,
         },
         {
-            command: "checkout [branchName]",
-            description: "基于特定的分支切换新的分支, 并规范分支名称",
-            option: [
-                {
-                    command: "-t, --type <type>",
-                },
-            ],
-            action: Checkout,
-        },
-        {
             command: "branch",
-            description: "对项目分支进行添加和删除",
+            description: "对项目分支进行管理",
             children: [
                 {
                     command: "add [branchName]",
+                    description: "新增一个分支",
                     option: [
                         {
                             command: "-t, --type <type>",
@@ -211,10 +202,12 @@ const commandConfig = () => {
                 },
                 {
                     command: "list",
+                    description: "查看分支列表",
                     action: (...rest) => Branch.start("list", ...rest),
                 },
                 {
                     command: "del [branchName...]",
+                    description: "删除一个分支",
                     action: (...rest) => Branch.start("del", ...rest),
                 },
             ],
