@@ -18,6 +18,14 @@ class Template extends Inquirer {
     #gitStorage;
     #templateDir;
 
+    constructor() {
+        super();
+        this.#templateDir = path.resolve(
+            platform.getProcessEnv("app_cache_template_path"),
+            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
+        );
+    }
+
     start(type, ...rest) {
         const typeHandler = new Map([
             ["list", this.list],
@@ -26,21 +34,15 @@ class Template extends Inquirer {
             ["delete", this.delete],
         ]);
 
-        if (typeHandler.has(type)) {
-            this.#templateDir = path.resolve(
-                platform.getProcessEnv("app_cache_template_path"),
-                INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-            );
-            typeHandler.get(type).call(this, ...rest);
-        }
+        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
     }
     list() {
-        const templateList = basicCommon.readDirPathTypeFile(this.#templateDir);
+        const templateList = this.getTemplateList();
         if (templateList.length) {
             console.log("项目模板列表如下：");
             templateList.forEach((item) =>
                 console.log(
-                    `${item}     ${path.resolve(this.#templateDir, item)}`,
+                    `名称：${item}     路径：${path.resolve(this.#templateDir, item)}`,
                 ),
             );
         } else {
@@ -205,6 +207,9 @@ class Template extends Inquirer {
                 require("./init").createProject(storagePath, localPath);
             }
         });
+    }
+    getTemplateList() {
+        return basicCommon.readDirPathTypeFile(this.#templateDir);
     }
 }
 

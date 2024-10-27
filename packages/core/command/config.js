@@ -9,6 +9,7 @@ const defaultContent = {
     default_package_cli: "npm",
     default_commit_type: "fix",
     default_exec_file: "index.js",
+    branch_secure: true,
 };
 
 class Config extends ConfigModule {

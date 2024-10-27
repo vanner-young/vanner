@@ -356,3 +356,24 @@ export const notDelBranchConfirm = (branchList) => {
         default: false,
     };
 };
+
+export const chooseCreateTemplateName = (templateList) => {
+    return {
+        name: "chooseCreateTemplateName",
+        type: "search",
+        message: "请在以下列表中选择需要创建项目的模板：",
+        choices: templateList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+export const inputProjectName = () => {
+    return {
+        name: "inputProjectName",
+        type: "input",
+        message: "请输入项目名称：",
+        require: true,
+    };
+};

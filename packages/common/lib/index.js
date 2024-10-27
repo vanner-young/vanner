@@ -45,18 +45,6 @@ const delay = async (timeout = 1000) => {
     });
 };
 
-function intersectionArrayList(list, newList) {
-    return list.filter((item) => newList.includes(item));
-}
-
-function differenceArrayList(list, newList) {
-    return list.filter((item) => !newList.includes(item));
-}
-
-function unionArrayList(list, newList) {
-    return [...new Set([...list, ...newList])];
-}
-
 module.exports = {
     platform,
     basicCommon,
@@ -66,7 +54,4 @@ module.exports = {
     fileAction,
     filterEmptyArray,
     delay,
-    intersectionArrayList,
-    differenceArrayList,
-    unionArrayList,
 };

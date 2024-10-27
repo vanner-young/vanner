@@ -1,6 +1,7 @@
 const { Inquirer, GitStorage } = require("@mvanner/modules");
 const { CommitTypeDict } = require("../constance/commandConfig");
-const { delay, differenceArrayList } = require("@mvanner/common");
+const { delay, basicCommon } = require("@mvanner/common");
+const Config = require("./config");
 
 const {
     chooseCommitOrigin,
@@ -39,6 +40,7 @@ class Branch extends Inquirer {
             ["del", this.deleteBranch],
         ]);
         if (typeHandler.has(type)) {
+            this.#delBranchSecure.open = !!Config.getConfig("branch_secure");
             this.invalid().then(() => {
                 typeHandler.get(type).call(this, ...args);
             });
@@ -187,7 +189,7 @@ class Branch extends Inquirer {
                 notDelBranch.includes(item.toLocaleLowerCase()),
             );
             if (notDelBranchList.length) {
-                const delBranchList = differenceArrayList(
+                const delBranchList = basicCommon.differenceArrayList(
                     branch,
                     notDelBranchList,
                 );
@@ -211,7 +213,10 @@ class Branch extends Inquirer {
             branchList.includes(item),
         );
         if (!existsBranchList.length) return this.chooseDelBranch();
-        const unExistsBranch = differenceArrayList(branch, existsBranchList);
+        const unExistsBranch = basicCommon.differenceArrayList(
+            branch,
+            existsBranchList,
+        );
         const confirmDelBranch = await this.handler(
             delBranchConfirm(
                 `本次删除的分支有：${existsBranchList.join(" ")} 确定要继续？${unExistsBranch.length ? `，${unExistsBranch.join(" ")}不存在将忽略` : ""}`,

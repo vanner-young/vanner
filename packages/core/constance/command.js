@@ -8,7 +8,6 @@ const Create = require("../command/create");
 const Install = require("../command/install");
 const Commit = require("../command/commit");
 const Run = require("../command/Run");
-const Checkout = require("../command/checkout");
 const Branch = require("../command/branch");
 
 const commandConfig = () => {
@@ -69,23 +68,46 @@ const commandConfig = () => {
         {
             command: "exec [filename...]",
             description:
-                "可在当前目录或指定的目录下执行命令或脚本文件(.js|.mjs)",
+                "可在当前目录或指定的目录下执行系统命令或JavaScript文件(.js|.mjs)",
             option: [
                 {
-                    command: "-d, --dir <path>",
-                    description: "设置这条命令或执行文件的工作地址",
-                },
-                {
-                    command: "-f, --file",
+                    command: "-f",
                     description:
                         "当值存在时, 将采用Node执行一个JavaScript 文件",
+                },
+                {
+                    command: "-d, --dir <path>",
+                    description:
+                        "设置这条命令或执行文件的工作地址，默认为当前所在目录",
                 },
             ],
             action: Exec,
         },
         {
+            command: "run <command>",
+            option: [
+                {
+                    command: "--env <args...>",
+                    description: "执行命令的额外参数",
+                },
+            ],
+            description: "运行当前项目下的项目命令",
+            action: Run,
+        },
+        {
+            command: "install [package@version...]",
+            description: "安装一个Npm包",
+            option: [
+                {
+                    command: "--cli [name]",
+                    description: "使用的包管理器名称",
+                },
+            ],
+            action: Install,
+        },
+        {
             command: "init",
-            description: "根据脚手架的指示初始化一个前端项目",
+            description: "根据官方或自定义的模板初始化一个项目",
             action: Init,
         },
         {
@@ -124,29 +146,18 @@ const commandConfig = () => {
                     ],
                     action: (...rest) => Template.start("update", ...rest),
                 },
-            ],
-        },
-        {
-            command: "create <projectName>",
-            option: [
                 {
-                    command: "-t, --template <template>",
-                    description: "系统中的模板名称",
+                    command: "create [projectName]",
+                    description: "基于自定义项目模板创建一个项目",
+                    option: [
+                        {
+                            command: "-t, --template <template>",
+                            description: "模板名称",
+                        },
+                    ],
+                    action: Create,
                 },
             ],
-            description: "基于自定义项目模板创建一个项目",
-            action: Create,
-        },
-        {
-            command: "install [package@version...]",
-            description: "安装一个Npm包",
-            option: [
-                {
-                    command: "--cli [name]",
-                    description: "使用的包管理器名称",
-                },
-            ],
-            action: Install,
         },
         {
             command: "commit",
@@ -174,17 +185,6 @@ const commandConfig = () => {
                 },
             ],
             action: Commit,
-        },
-        {
-            command: "run <command>",
-            option: [
-                {
-                    command: "--env <args...>",
-                    description: "执行命令的额外参数",
-                },
-            ],
-            description: "执行当前项目下的脚本命令",
-            action: Run,
         },
         {
             command: "branch",
