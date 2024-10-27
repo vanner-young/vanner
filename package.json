@@ -3,9 +3,17 @@
     "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
+    "repository": "https://gitee.com/memory_s/mv-cli.git",
+    "author": "1157875374@qq.com <1157875374@qq.com>",
     "bin": {
         "mvanner": "lib/index.js"
     },
+    "files": [
+        "lib/**/*",
+        "packages/**/*",
+        "README.md"
+    ],
+    "license": "MIT",
     "scripts": {
         "format": "prettier ./packages/** --write",
         "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,9 +22,10 @@
         "node": ">18.19.1",
         "npm": ">10.2.4"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
+    "keywords": [
+        "cli",
+        "commander"
+    ],
     "workspaces": [
         "packages/*"
     ],
