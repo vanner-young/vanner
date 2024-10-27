@@ -103,18 +103,24 @@ class Branch extends Inquirer {
             resolve(this.#addConfig);
         });
     }
-    async confirmNewBranchName() {
+    async confirmNewBranchName(invalid = false) {
         const { type, username } = this.#addConfig;
         let newBranchName = this.#addConfig.newBranchName;
         const branchList = await this.#gitStorage.getBranchLocalAndRemoteList();
 
         if (!newBranchName) {
-            const newBranch = await this.handler(inputCheckoutBranchName());
+            const newBranch = await this.handler(
+                inputCheckoutBranchName(
+                    invalid
+                        ? "分支名称或(需求/Bug/优化)ID已存在，请重新输入："
+                        : "请输入分支名称, 推荐使用(需求/Bug/优化/)ID：",
+                ),
+            );
             newBranchName = `${type}/${username}/${newBranch}`;
         }
         if (branchList.includes(newBranchName)) {
             this.#addConfig.newBranchName = "";
-            return this.confirmNewBranchName();
+            return this.confirmNewBranchName(true);
         } else {
             return newBranchName;
         }

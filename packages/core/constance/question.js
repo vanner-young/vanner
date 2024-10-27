@@ -290,11 +290,11 @@ export const chooseOperateType = (commitTypeDict, exists = false) => {
     };
 };
 
-export const inputCheckoutBranchName = () => {
+export const inputCheckoutBranchName = (message) => {
     return {
         name: "checkoutBranchName",
         type: "input",
-        message: "请输入分支名称, 推荐使用(需求/Bug/优化)单号：",
+        message,
         required: true,
     };
 };
