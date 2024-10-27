@@ -240,6 +240,13 @@ class GitStorage extends EventEmitter {
             .split("\n")
             .map((item) => item.replace("* ", "").trim());
     }
+    async delBranch(branchList, syncRemote = false, origin = "origin") {
+        const branchListContent = branchList.join(" ");
+        await basicCommon.execCommandPro(
+            `git branch --delete ${branchListContent} ${syncRemote ? `&& git push ${origin} --delete ${branchListContent}` : ""}`,
+            { stdio: "inherit" },
+        );
+    }
     async getCommitNotPushFileList() {
         const conteString = await basicCommon.getExecCommandResult(
             `git log --branches --not --remotes --name-only`,

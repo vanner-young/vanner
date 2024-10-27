@@ -213,6 +213,10 @@ const commandConfig = () => {
                     command: "list",
                     action: (...rest) => Branch.start("list", ...rest),
                 },
+                {
+                    command: "del [branchName...]",
+                    action: (...rest) => Branch.start("del", ...rest),
+                },
             ],
         },
     ];

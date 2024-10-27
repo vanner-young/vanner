@@ -1,6 +1,6 @@
 const { Inquirer, GitStorage } = require("@mvanner/modules");
 const { CommitTypeDict } = require("../constance/commandConfig");
-const { delay } = require("@mvanner/common");
+const { delay, differenceArrayList } = require("@mvanner/common");
 
 const {
     chooseCommitOrigin,
@@ -9,6 +9,9 @@ const {
     inputCheckoutBranchName,
     chooseTargetBranch,
     inputGitUserName,
+    delBranchConfirm,
+    chooseDelLocalBranch,
+    syncDelRemoteBranch,
 } = require("../constance/question");
 const Commit = require("./commit");
 
@@ -26,9 +29,9 @@ class Branch extends Inquirer {
     }
     start(type, ...args) {
         const typeHandler = new Map([
-            ["add", this.addBranch],
-            ["delete", this.deleteBranch],
             ["list", this.listBranch],
+            ["add", this.addBranch],
+            ["del", this.deleteBranch],
         ]);
         if (typeHandler.has(type)) {
             this.invalid().then(() => {
@@ -46,7 +49,7 @@ class Branch extends Inquirer {
     }
     async listBranch() {
         const list = await this.#gitStorage.getBranch();
-        console.log(`项目分支列表如下：(远程/本地)\n${list.join("\n")}`);
+        console.log(`项目分支列表如下：(本地/远程)\n${list.join("\n")}`);
     }
     addBranch(branchName, option) {
         this.#addConfig.type = option.type;
@@ -142,7 +145,41 @@ class Branch extends Inquirer {
             console.log("暂存区代码提交完成！\n");
         }
     }
-    deleteBranch() {}
+    deleteBranch(branch) {
+        if (branch.length) {
+            this.delLocalBranch(branch);
+        } else {
+            this.chooseDelBranch();
+        }
+    }
+    async chooseDelBranch() {
+        const branchList = await this.handler(
+            chooseDelLocalBranch(await this.#gitStorage.getBranchLocal()),
+        );
+        this.delLocalBranch(branchList);
+    }
+    async delLocalBranch(branch) {
+        if (!branch.length) throw new Error("缺少需要删除的分支列表...");
+        const branchList = await this.#gitStorage.getBranchLocal();
+        const existsBranchList = branch.filter((item) =>
+            branchList.includes(item),
+        );
+        if (!existsBranchList.length) return;
+        const unExistsBranch = differenceArrayList(branch, existsBranchList);
+        const confirmDelBranch = await this.handler(
+            delBranchConfirm(
+                `本次删除的分支有：${existsBranchList.join(" ")} 确定要继续？${unExistsBranch.length ? `，${unExistsBranch.join(" ")}不存在将忽略` : ""}`,
+            ),
+        );
+        const delRemoteBranch = await this.handler(syncDelRemoteBranch());
+
+        if (confirmDelBranch)
+            await this.#gitStorage.delBranch(
+                existsBranchList,
+                delRemoteBranch,
+                this.#origin,
+            );
+    }
 }
 
 module.exports = new Branch();

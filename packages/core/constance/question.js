@@ -319,3 +319,31 @@ export const inputGitUserName = () => {
         message: "当前项目未设置Git用户名，请输入你想使用的用户名称后继续：",
     };
 };
+
+export const delBranchConfirm = (message) => {
+    return {
+        name: "delBranchConfirm",
+        type: "confirm",
+        message,
+        default: true,
+    };
+};
+
+export const chooseDelLocalBranch = (branchList) => {
+    return {
+        name: "chooseDelLocalBranch",
+        type: "checkbox",
+        message: `请在如下的分支列表中进行选择: (输入I/A可对文件进行全选或反选)\n`,
+        required: true,
+        choices: branchList.map((item) => ({ name: item, value: item })),
+    };
+};
+
+export const syncDelRemoteBranch = () => {
+    return {
+        name: "syncDelRemoteBranch",
+        type: "confirm",
+        message: "是否同步删除远程分支",
+        default: false,
+    };
+};
