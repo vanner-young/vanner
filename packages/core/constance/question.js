@@ -334,7 +334,7 @@ export const chooseDelLocalBranch = (branchList) => {
         name: "chooseDelLocalBranch",
         type: "checkbox",
         message: `请在如下的分支列表中进行选择: (输入I/A可对文件进行全选或反选)\n`,
-        required: true,
+        required: false,
         choices: branchList.map((item) => ({ name: item, value: item })),
     };
 };

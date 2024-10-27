@@ -18,10 +18,10 @@ const Commit = require("./commit");
 class Branch extends Inquirer {
     #origin = "";
     #addConfig = {
-        branch: "",
         type: "",
-        targetBranch: "",
         username: "",
+        targetBranch: "",
+        newBranchName: "",
     };
     #gitStorage;
     get commitType() {
@@ -53,12 +53,11 @@ class Branch extends Inquirer {
     }
     addBranch(branchName, option) {
         this.#addConfig.type = option.type;
-        this.#addConfig.branch = branchName;
+        this.#addConfig.newBranchName = branchName;
 
         this.chooseOption().then(async () => {
-            const { type, branch, username, targetBranch } = this.#addConfig;
+            const { targetBranch, newBranchName } = this.#addConfig;
 
-            const newBranchName = `${type}/${username}/${branch}`;
             const localBranch = await this.#gitStorage.getBranchLocal();
             if (localBranch.includes(targetBranch)) {
                 await this.#gitStorage.checkoutOnBasicOfLocalBranch(
@@ -78,27 +77,7 @@ class Branch extends Inquirer {
     chooseOption() {
         return new Promise(async (resolve) => {
             const branchList = await this.invalidBranch();
-
-            // 均是从当前分支作为基准进行切换
             await this.handlerNotPushFile();
-
-            const { branch, type } = this.#addConfig;
-            if (!branch) {
-                this.#addConfig.branch = await this.handler(
-                    inputCheckoutBranchName(),
-                );
-            }
-
-            if (!type || !this.commitType.includes(type)) {
-                this.#addConfig.type = await this.handler(
-                    chooseOperateType(CommitTypeDict, type),
-                );
-            }
-
-            const nowBranchName = await this.#gitStorage.getNowBranchName();
-            this.#addConfig.targetBranch = await this.handler(
-                chooseTargetBranch(branchList, nowBranchName),
-            );
 
             let username = await this.#gitStorage.getGitUserName();
             if (!username) {
@@ -107,8 +86,38 @@ class Branch extends Inquirer {
             }
             this.#addConfig.username = username;
 
+            const { type } = this.#addConfig;
+            if (!type || !this.commitType.includes(type)) {
+                this.#addConfig.type = await this.handler(
+                    chooseOperateType(CommitTypeDict, type),
+                );
+            }
+
+            this.#addConfig.newBranchName = await this.confirmNewBranchName();
+
+            const nowBranchName = await this.#gitStorage.getNowBranchName();
+            this.#addConfig.targetBranch = await this.handler(
+                chooseTargetBranch(branchList, nowBranchName),
+            );
+
             resolve(this.#addConfig);
         });
+    }
+    async confirmNewBranchName() {
+        const { type, username } = this.#addConfig;
+        let newBranchName = this.#addConfig.newBranchName;
+        const branchList = await this.#gitStorage.getBranchLocalAndRemoteList();
+
+        if (!newBranchName) {
+            const newBranch = await this.handler(inputCheckoutBranchName());
+            newBranchName = `${type}/${username}/${newBranch}`;
+        }
+        if (branchList.includes(newBranchName)) {
+            this.#addConfig.newBranchName = "";
+            return this.confirmNewBranchName();
+        } else {
+            return newBranchName;
+        }
     }
     async confirmOrigin(originList) {
         if (originList.length > 1) {
@@ -164,7 +173,7 @@ class Branch extends Inquirer {
         const existsBranchList = branch.filter((item) =>
             branchList.includes(item),
         );
-        if (!existsBranchList.length) return;
+        if (!existsBranchList.length) return this.chooseDelBranch();
         const unExistsBranch = differenceArrayList(branch, existsBranchList);
         const confirmDelBranch = await this.handler(
             delBranchConfirm(
