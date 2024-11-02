@@ -30,7 +30,6 @@ class Package {
     }
     async invalidProject(cb) {
         this.execCwd = await platform.findProjectParentExecCwd(this.execCwd);
-        if (!this.execCwd) throw new Error("当前及父级目录下不是一个项目目录");
         await this.getPackageMangerCliName();
 
         if (this.#packageConfig.registry) {

@@ -1,16 +1,12 @@
 const fs = require("fs");
 const path = require("path");
 const { Inquirer } = require("@mvanner/modules");
-const {
-    filterEmptyArray,
-    fileAction,
-    basicCommon,
-} = require("@mvanner/common");
+const { filterEmptyArray, basicCommon, platform } = require("@mvanner/common");
 const { chooseRunCommand } = require("../constance/question");
 
 class Run extends Inquirer {
     #config = {
-        cwd: false,
+        cwd: process.cwd(),
         env: {},
         command: null,
     };
@@ -32,15 +28,17 @@ class Run extends Inquirer {
         });
     }
     async parseCommand(command) {
-        if (!this.#config.cwd) {
-            this.#config.cwd = process.cwd();
-            this.loadCwd();
-        }
-        const { scripts } = require(
-            path.resolve(this.#config.cwd, "package.json"),
+        this.#config.cwd = await platform.findProjectParentExecCwd(
+            this.#config.cwd,
         );
-        const commandList = Object.keys(scripts);
+        const scripts = JSON.parse(
+            fs.readFileSync(path.resolve(this.#config.cwd, "package.json")),
+            "{}",
+        ).scripts;
 
+        const commandList = Object.keys(scripts);
+        if (!commandList.length)
+            return console.log("当前项目下，无运行的命令，请检查后重试。");
         if (!commandList.includes(command))
             this.#config.command = await this.handler(
                 chooseRunCommand(
@@ -60,21 +58,6 @@ class Run extends Inquirer {
                 const [key, value] = item.split("=");
                 this.#config.env[key] = value;
             }
-        }
-    }
-    loadCwd() {
-        const cwdPath = this.findProjectPath(this.#config.cwd);
-        if (!cwdPath)
-            throw new Error("执行失败, 此路径及其父级均不存在可执行的项目");
-        this.#config.cwd = cwdPath;
-    }
-    findProjectPath(targetPath) {
-        if (fileAction.isDrivePath(targetPath)) return false;
-        const packageJsonDir = path.resolve(targetPath, "package.json");
-        if (!fs.existsSync(packageJsonDir)) {
-            return this.findProjectPath(path.dirname(targetPath));
-        } else {
-            return targetPath;
         }
     }
 }

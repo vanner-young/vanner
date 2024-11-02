@@ -247,7 +247,7 @@ export const chooseRunCommand = (command, scriptList) => {
     return {
         name: "command",
         type: "select",
-        message: `${command} 脚本命令不存在，请重新选择:`,
+        message: `${command} 脚本命令不存在，是否需要执行以下的命令:`,
         choices: scriptList,
     };
 };

@@ -96,10 +96,9 @@ const invalidProjectInstallEnv = (targetPath) => {
 /**
  * 判断一个目录是否是盘符目录
  * **/
-const isDriveDirectory = (pathStr) => {
-    const parsedPath = path.parse(pathStr);
-    // 检查路径是否以盘符开头，并且紧跟着一个反斜杠
-    return parsedPath.root === pathStr && parsedPath.dir === pathStr;
+const isDriveDirectory = (targetPath) => {
+    targetPath = path.resolve(targetPath);
+    return targetPath === path.parse(targetPath).root;
 };
 
 /**
@@ -160,8 +159,10 @@ const findParentFile = (targetPath, handler) => {
  * @param { string } targetPath 基准目录
  * @returns { string } 查询到的可执行文件目录
  * **/
-const findProjectParentExecCwd = (targetPath) => {
-    return findParentFile(targetPath, "package.json");
+const findProjectParentExecCwd = async (targetPath) => {
+    const result = await findParentFile(targetPath, "package.json");
+    if (!result) throw new Error("当前及父级目录下不是一个项目目录");
+    return result;
 };
 
 module.exports = {
