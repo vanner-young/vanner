@@ -120,7 +120,7 @@ const commandConfig = () => {
                     action: (...rest) => Template.start("list", ...rest),
                 },
                 {
-                    command: "add <projectName>",
+                    command: "add [gitRemote]",
                     description: "添加一个自定义项目模板",
                     action: (...rest) => Template.start("add", ...rest),
                 },

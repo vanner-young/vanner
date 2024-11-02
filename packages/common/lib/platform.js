@@ -165,6 +165,35 @@ const findProjectParentExecCwd = async (targetPath) => {
     return result;
 };
 
+/**
+ * 检测一个目录是否为有效的Git目录
+ * @param { string } targetPath 目录路径
+ * @returns { boolean } 是否为有效的Git路径
+ * **/
+const isActiveEmptyGitProject = (targetPath) => {
+    const onlyGitFolder = path.resolve(targetPath, ".git");
+    return fs.existsSync(onlyGitFolder);
+    // const packageFilePath = path.resolve(targetPath, "package.json");
+    // const onlyGitFolder = path.resolve(targetPath, ".git");
+    // if (!fs.existsSync(packageFilePath) || !fs.existsSync(onlyGitFolder))
+    //     return;
+    // try {
+    //     const { name, version } = JSON.parse(
+    //         basicCommon.readFileIsExists(packageFilePath).toString(),
+    //     );
+    //     return name.trim() || version.trim();
+    // } catch (e) {
+    //     console.log("check project active is fail...", targetPath);
+    // }
+};
+
+const dfsParser = (dict, result) => {
+    return result.reduce((pre, item) => {
+        pre = pre?.[item];
+        return pre;
+    }, dict);
+};
+
 module.exports = {
     backPlatForm,
     effectiveAppDataHome,
@@ -179,4 +208,6 @@ module.exports = {
     parentExecHandlerPromise,
     findParentFile,
     findProjectParentExecCwd,
+    isActiveEmptyGitProject,
+    dfsParser,
 };

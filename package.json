@@ -6,7 +6,7 @@
     "repository": "https://gitee.com/memory_s/mv-cli.git",
     "author": "1157875374@qq.com <1157875374@qq.com>",
     "bin": {
-        "mvanner": "lib/index.js"
+        "mvanner": "bundle/index.js"
     },
     "files": [
         "lib/**/*",

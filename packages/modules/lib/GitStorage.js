@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const { basicCommon, fileAction } = require("@mvanner/common");
+const { basicCommon, platform } = require("@mvanner/common");
 
 class GitStorage extends EventEmitter {
     #config = {
@@ -88,10 +88,10 @@ class GitStorage extends EventEmitter {
     async invalid(cb) {
         const { source, local } = this.#config;
         if (!source || !local)
-            throw new Error("缺少必要的远端仓库地址以及本地映射地址...");
+            return console.log("缺少必要的远端仓库地址以及本地映射地址...");
 
         if (!this.invalidGitPath(this.#config.source))
-            throw new Error("Git 地址无效，请使用有效的地址");
+            return console.log("Git 地址无效，请使用有效的地址");
         cb();
     }
     async load() {
@@ -105,7 +105,7 @@ class GitStorage extends EventEmitter {
         this.emit("load:end");
     }
     async diff() {
-        const activeGitStorage = fileAction.isActiveEmptyGitProject(
+        const activeGitStorage = platform.isActiveEmptyGitProject(
             this.storagePath,
         );
         if (!activeGitStorage) {
@@ -126,7 +126,7 @@ class GitStorage extends EventEmitter {
             stdio: "inherit",
         });
 
-        if (!fileAction.isActiveEmptyGitProject(this.storagePath))
+        if (!platform.isActiveEmptyGitProject(this.storagePath))
             throw new Error(
                 "Git 仓库拉取失败, 请检查当前网络以及Git链接地址后重试!",
                 this.remote,

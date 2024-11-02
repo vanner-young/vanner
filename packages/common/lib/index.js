@@ -1,9 +1,7 @@
 "use strict";
 
 const platform = require("./platform");
-const dfsParser = require("./dfsParser");
 const basicCommon = require("mv-common");
-const fileAction = require("./fileAction");
 
 const arrayExecSyncHandler = (cb, options) => {
     if (!Array.isArray(options)) return cb(options);
@@ -50,8 +48,6 @@ module.exports = {
     basicCommon,
     filterObject,
     arrayExecSyncHandler,
-    dfsParser,
-    fileAction,
     filterEmptyArray,
     delay,
 };

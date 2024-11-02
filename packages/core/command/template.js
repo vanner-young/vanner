@@ -12,6 +12,8 @@ const {
     updateCustomerTemplateProject,
     updateAllTemplate,
     updateCustomerProject,
+    inputTemplateUrl,
+    chooseTemplateList,
 } = require("../constance/question");
 
 class Template extends Inquirer {
@@ -39,10 +41,9 @@ class Template extends Inquirer {
     list() {
         const templateList = this.getTemplateList();
         if (templateList.length) {
-            console.log("项目模板列表如下：");
             templateList.forEach((item) =>
                 console.log(
-                    `名称：${item}     路径：${path.resolve(this.#templateDir, item)}`,
+                    `\n名称：${item}     路径：${path.resolve(this.#templateDir, item)}`,
                 ),
             );
         } else {
@@ -51,7 +52,11 @@ class Template extends Inquirer {
             );
         }
     }
-    add(gitLink) {
+    async add(gitLink) {
+        if (!gitLink) {
+            gitLink = await this.handler(inputTemplateUrl());
+        }
+
         this.#gitStorage = new GitStorage({
             source: gitLink,
             local: this.#templateDir,
@@ -64,7 +69,6 @@ class Template extends Inquirer {
     async delete(name, source) {
         let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
             deleteTemplateList = [];
-
         if (!templateList.length) return this.list();
         if (source.all) {
             const drop = await this.handler(dropCustomerTemplateAll());
@@ -73,8 +77,9 @@ class Template extends Inquirer {
             deleteTemplateList = templateList;
         } else {
             name = name.filter((item) => item.trim());
-            if (!name.length)
-                return `error: missing required argument 'project'`;
+            if (!name.length) {
+                name = await this.handler(chooseTemplateList(templateList));
+            }
             const projectDict = { exists: [], unExists: [] };
             name.forEach((item) => {
                 if (templateList.includes(item)) projectDict.exists.push(item);
@@ -120,8 +125,10 @@ class Template extends Inquirer {
             updateList = templateList;
         } else {
             name = name.filter((item) => item.trim());
-            if (!name.length)
-                return `error: missing required argument 'project'`;
+            if (!name.length) {
+                name = await this.handler(chooseTemplateList(templateList));
+            }
+
             const projectDict = { exists: [], unExists: [] };
             name.forEach((item) => {
                 if (templateList.includes(item)) projectDict.exists.push(item);
@@ -178,7 +185,7 @@ class Template extends Inquirer {
             let currentBranch = await this.#gitStorage.getCurrentBranch();
 
             if (!branchList.length || !currentBranch)
-                throw new Error(
+                return console.log(
                     "Git 本地分支出现异常，操作失败，请检查网络连接后重试！",
                 );
 

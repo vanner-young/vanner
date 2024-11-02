@@ -1,7 +1,8 @@
 export const createProjectQuestion = [
     {
         name: "type",
-        type: "select",
+        type: "search",
+        required: true,
         message: "请选择项目模板",
         choices: [
             {
@@ -16,7 +17,8 @@ export const createProjectQuestion = [
     },
     {
         name: "buildTools",
-        type: "select",
+        type: "search",
+        required: true,
         message: "请选择项目构建工具",
         choices: [
             {
@@ -31,7 +33,8 @@ export const createProjectQuestion = [
     },
     {
         name: "language",
-        type: "select",
+        type: "search",
+        required: true,
         message: "请选择使用的开发语言?",
         choices: [
             {
@@ -50,7 +53,8 @@ export const initNotExistsCustomerTemplate = (projectName, templateList) => {
     return [
         {
             name: "template",
-            type: "select",
+            type: "search",
+            required: true,
             message: `未找到 ${projectName} 名称的模板，可选择如下模板进行创建：`,
             choices: templateList.map((item) => ({ name: item, value: item })),
         },
@@ -80,7 +84,8 @@ export const cloneStorageCheckoutBranch = (projectName, branch) => {
 export const checkoutBranch = (branchList) => {
     return {
         name: "branch",
-        type: "select",
+        type: "search",
+        required: true,
         message: "请选择如下分支",
         default: false,
         choices: branchList.map((item) => ({
@@ -90,11 +95,33 @@ export const checkoutBranch = (branchList) => {
     };
 };
 
+export const chooseTemplateList = (templateList) => {
+    return {
+        name: "chooseTemplateList",
+        type: "checkbox",
+        message: "请选择模板列表中选择后，进行操作：",
+        required: true,
+        choices: templateList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+export const inputTemplateUrl = () => {
+    return {
+        name: "templateUrl",
+        type: "input",
+        required: true,
+        message: "请输入模板的的Git仓库地址：",
+    };
+};
+
 export const isMoveCreateTemplateForLocal = (projectName) => {
     return {
         name: "move",
         type: "confirm",
-        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目?`,
+        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目？`,
         default: false,
     };
 };
@@ -158,7 +185,8 @@ export const updateCustomerProject = (name, projectList) => {
 export const chooseTemplateProject = (text, projectList) => {
     return {
         name: "project",
-        type: "select",
+        type: "search",
+        required: true,
         message: text || `请选择以下模板进行创建`,
         choices: projectList.map((item) => ({
             name: item,
@@ -186,7 +214,8 @@ export const resetConfigFile = () => {
 export const commitType = (message, commitType, defaultValue) => {
     return {
         name: "type",
-        type: "select",
+        type: "search",
+        required: true,
         default: defaultValue,
         message: message || "请选择本次的代码提交类型:",
         choices: commitType,
@@ -196,7 +225,8 @@ export const commitType = (message, commitType, defaultValue) => {
 export const commitBranch = (branchList, currentBranch) => {
     return {
         name: "commitBranch",
-        type: "select",
+        type: "search",
+        required: true,
         message: "请选择需要提交的分支:",
         default: currentBranch,
         choices: branchList.map((item) => ({
@@ -209,7 +239,8 @@ export const commitBranch = (branchList, currentBranch) => {
 export const chooseCommitOrigin = (message, originList) => {
     return {
         name: "commitOrigin",
-        type: "select",
+        type: "search",
+        required: true,
         message:
             message || "检测项目中存在多个Git提交源，请选择本次提交源地址: ",
         choices: originList,
@@ -246,7 +277,8 @@ export const chooseCommitFile = (fileList) => {
 export const chooseRunCommand = (command, scriptList) => {
     return {
         name: "command",
-        type: "select",
+        type: "search",
+        required: true,
         message: `${command} 脚本命令不存在，是否需要执行以下的命令:`,
         choices: scriptList,
     };
@@ -279,7 +311,8 @@ export const alreadyStatusFileCheckout = (fileList) => {
 export const chooseOperateType = (commitTypeDict, exists = false) => {
     return {
         name: "chooseOperateType",
-        type: "select",
+        type: "search",
+        required: true,
         message: exists
             ? "输入的操作类型不合法，请重新在以下列表中选择："
             : `未输入操作类型，请在以下列表中选择：`,

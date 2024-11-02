@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { Inquirer, GitStorage } = require("@mvanner/modules");
-const { basicCommon, platform, dfsParser } = require("@mvanner/common");
+const { basicCommon, platform } = require("@mvanner/common");
 const {
     createProjectQuestion,
     inputProjectName,
@@ -65,7 +65,7 @@ class Init extends Inquirer {
     }
     async createOfficialTemplate(projectPath, options) {
         const { buildTools, type, language } = options;
-        const templateName = dfsParser(questionDict, [
+        const templateName = platform.dfsParser(questionDict, [
             buildTools,
             type,
             language,
