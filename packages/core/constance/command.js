@@ -6,7 +6,7 @@ const Init = require("../command/init");
 const Template = require("../command/template");
 const Create = require("../command/create");
 const Install = require("../command/install");
-const Commit = require("../command/commit");
+const Push = require("../command/push");
 const Run = require("../command/Run");
 const Branch = require("../command/branch");
 
@@ -160,7 +160,7 @@ const commandConfig = () => {
             ],
         },
         {
-            command: "commit",
+            command: "push",
             description: "提交本地代码至Git仓库",
             option: [
                 {
@@ -184,7 +184,7 @@ const commandConfig = () => {
                     description: "提交的远程源名称",
                 },
             ],
-            action: Commit,
+            action: Push,
         },
         {
             command: "branch",

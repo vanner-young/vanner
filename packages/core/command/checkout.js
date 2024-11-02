@@ -10,7 +10,7 @@ const {
     chooseTargetBranch,
     inputGitUserName,
 } = require("../constance/question");
-const Commit = require("./commit");
+const Push = require("./push");
 
 class Checkout extends Inquirer {
     #config = {
@@ -78,7 +78,7 @@ class Checkout extends Inquirer {
                 alreadyStatusFileCheckout(notPushFile),
             );
             if (!commitPush) process.exit(0);
-            await Commit.start();
+            await Push.start();
             await delay();
             console.log("暂存区代码提交完成！\n");
         }

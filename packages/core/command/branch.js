@@ -15,7 +15,7 @@ const {
     syncDelRemoteBranch,
     notDelBranchConfirm,
 } = require("../constance/question");
-const Commit = require("./commit");
+const Push = require("./push");
 
 class Branch extends Inquirer {
     #origin = "";
@@ -162,7 +162,7 @@ class Branch extends Inquirer {
                 alreadyStatusFileCheckout(notPushFile),
             );
             if (!commitPush) process.exit(0);
-            await Commit.start();
+            await Push.start();
             await delay();
             console.log("暂存区代码提交完成！\n");
         }
