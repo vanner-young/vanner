@@ -1,8 +1,8 @@
 {
     "name": "mvanner",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "",
-    "main": "lib/index.js",
+    "main": "bundle/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
     "author": "1157875374@qq.com <1157875374@qq.com>",
     "bin": {
@@ -10,11 +10,13 @@
     },
     "files": [
         "lib/**/*",
+        "bundle/**/*",
         "packages/**/*",
         "README.md"
     ],
     "license": "MIT",
     "scripts": {
+        "build": "rollup --config script/rollup.config.cjs",
         "format": "prettier ./packages/** --write",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
@@ -30,7 +32,11 @@
         "packages/*"
     ],
     "dependencies": {
-        "@mvanner/core": "workspace:^"
+        "@rollup/plugin-commonjs": "^28.0.1",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^15.3.0",
+        "@rollup/plugin-typescript": "^12.1.1",
+        "rollup": "^4.24.2"
     },
     "devDependencies": {
         "prettier": "^3.3.3"

@@ -12,7 +12,7 @@ class Install {
                 !option.cli || basicCommon.isType(option.cli, "boolean")
                     ? platform.getProcessEnv("default_package_cli")
                     : option.cli,
-            register: platform.getProcessEnv("register"),
+            registry: platform.getProcessEnv("default_registry"),
         }).install();
     }
 }

@@ -4,12 +4,13 @@ const { resetConfigFile } = require("../constance/question");
 const { basicCommon, platform } = require("@mvanner/common");
 
 const defaultContent = {
-    registry: null,
+    branch_secure: true,
     init_storage_pull: false,
+    request_timeout: 3000,
+    default_registry: "https://registry.npmmirror.com/",
     default_package_cli: "npm",
     default_commit_type: "fix",
     default_exec_file: "index.js",
-    branch_secure: true,
 };
 
 class Config extends ConfigModule {
@@ -47,7 +48,7 @@ class Config extends ConfigModule {
         if (Object.keys(defaultContent).includes(key) && !value) {
             return console.log("当前Key为系统固定预设值，必须设定一个值");
         }
-        if (key === "registry") {
+        if (key === "default_registry") {
             if (!basicCommon.isValidUrl(value))
                 return console.log("设置无效，必须是一个有效的http|https链接");
         } else if (key === "default_package_cli") {

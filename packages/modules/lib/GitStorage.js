@@ -18,8 +18,7 @@ class GitStorage extends EventEmitter {
         this.hasGit()
             .then(() => {
                 if (basicCommon.isType(option, "string")) {
-                    this.initLocalStorage(option);
-                    return;
+                    return this.initLocalStorage(option);
                 }
 
                 const { source, local, branch, isInitPull = true } = option;
@@ -54,12 +53,13 @@ class GitStorage extends EventEmitter {
                 throw new Error("当前项目暂Git源，初始化失败");
             this.emit("load:origin:end", originList);
         } catch (e) {
-            throw new Error(e.message || "初始化本地仓库失败");
+            console.log("操作失败。", e.message);
         }
     }
     async getOriginList() {
         const source = await basicCommon.getExecCommandResult("git remote -v", {
             cwd: this.storagePath,
+            stdio: "pipe",
         });
         let pushOriginList = source
             .split("\n")
@@ -160,10 +160,17 @@ class GitStorage extends EventEmitter {
     }
     async diffFile() {
         const diffString = await basicCommon.getExecCommandResult(
-            "git diff --name-only 2> NUL",
+            "git status -s",
             { stdio: ["ignore", "pipe", "ignore"] },
         );
-        return diffString.split("\n").filter((item) => item);
+        const result = diffString
+            .split("\n")
+            .filter((item) => item)
+            .map((item) => {
+                const trimStr = item.trim();
+                return trimStr.slice(trimStr.indexOf(" ") + 1);
+            });
+        return result;
     }
     async status() {
         const fileString =
