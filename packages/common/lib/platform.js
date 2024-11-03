@@ -78,12 +78,55 @@ const getPackageCli = (targetPath) => {
 /**
  * 在某个路径下执行依赖的安装
  * **/
-const installDependencies = (packageCli = null, targetPath) => {
-    packageCli = getPackageCli(targetPath);
-    return mvCommon.execCommandPro(`${packageCli} install`, {
-        cwd: targetPath,
-        stdio: "inherit",
-    });
+const installDependencies = (
+    packageCli = null,
+    targetPath,
+    dependencies = [],
+    registry = null,
+) => {
+    if (!packageCli) packageCli = getPackageCli(targetPath);
+
+    const dependenciesStr = dependencies.length
+            ? ` ${dependencies.join(" ")}`
+            : "",
+        registryStr = registry ? ` --registry ${registry}` : "",
+        packageCliStr = packageCli === "pnpm" ? ` -w` : "";
+    return mvCommon.execCommandPro(
+        `${packageCli} ${packageCli === "yarn" ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
+        {
+            cwd: targetPath,
+            stdio: "inherit",
+        },
+    );
+};
+
+/**
+ * 在某个路径下删除依赖的安装
+ * **/
+const uninstallDependencies = (
+    packageCli = null,
+    targetPath,
+    dependencies = [],
+    registry = null,
+) => {
+    if (!packageCli) packageCli = getPackageCli(targetPath);
+
+    const dependenciesStr = dependencies.length
+            ? ` ${dependencies.join(" ")}`
+            : "",
+        registryStr = registry ? ` --registry ${registry}` : "",
+        packageCliStr = packageCli === "pnpm" ? ` -w` : "",
+        packageRemoveStr = ["yarn", "pnpm"].includes(packageCli)
+            ? "remove"
+            : "uninstall";
+
+    return mvCommon.execCommandPro(
+        `${packageCli} ${packageRemoveStr}${dependenciesStr}${packageCliStr}`,
+        {
+            cwd: targetPath,
+            stdio: "inherit",
+        },
+    );
 };
 
 /**
@@ -210,4 +253,5 @@ module.exports = {
     findProjectParentExecCwd,
     isActiveEmptyGitProject,
     dfsParser,
+    uninstallDependencies,
 };

@@ -4,6 +4,7 @@ const { basicCommon, platform } = require("@mvanner/common");
 class Package {
     execCwd = process.cwd();
     packageCli = "";
+    type = "install";
     #packageConfig = {
         packageList: [],
         registry: null,
@@ -62,32 +63,42 @@ class Package {
             return this.#packageConfig.registry;
         }
     }
-    async initInstall() {
+    async initAction() {
         const registry = await this.confirmRegistry();
-        basicCommon.execCommandPro(
-            `${this.packageCli} install ${registry ? `--registry ${registry}` : ""}`,
-            { cwd: this.execCwd, stdio: "inherit" },
+        platform.installDependencies(
+            this.packageCli,
+            this.execCwd,
+            null,
+            registry,
         );
     }
-    async installPackageName(packageList) {
+    async packageNameAction(packageList) {
         const registry = await this.confirmRegistry();
-        const installStr =
-            this.packageCli === "yarn"
-                ? "yarn add"
-                : `${this.packageCli} install`;
-
-        basicCommon.execCommandPro(
-            `${installStr} ${packageList} ${registry ? `--registry ${registry}` : ""} ${this.packageCli?.toLocaleLowerCase?.() === "pnpm" ? "-w" : ""}`,
-            { cwd: this.execCwd, stdio: "inherit" },
-        );
+        if (this.type === "install")
+            platform.installDependencies(
+                this.packageCli,
+                this.execCwd,
+                packageList,
+                registry,
+            );
+        else
+            platform.uninstallDependencies(
+                this.packageCli,
+                this.execCwd,
+                packageList,
+                registry,
+            );
     }
-    install() {
+    action(type) {
+        if (type) this.type = type;
         this.invalidProject(() => {
-            if (!this.#packageConfig.packageList.length) this.initInstall();
-            else
-                this.installPackageName(
-                    this.#packageConfig.packageList.join(" "),
-                );
+            if (
+                !this.#packageConfig.packageList.length &&
+                this.type === "install"
+            )
+                return this.initAction();
+
+            this.packageNameAction(this.#packageConfig.packageList);
         });
     }
 }

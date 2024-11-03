@@ -6,6 +6,7 @@ const Init = require("../command/init");
 const Template = require("../command/template");
 const Create = require("../command/create");
 const Install = require("../command/install");
+const UnInstall = require("../command/uninstall");
 const Push = require("../command/push");
 const Run = require("../command/Run");
 const Branch = require("../command/branch");
@@ -106,6 +107,17 @@ const commandConfig = () => {
             action: Install,
         },
         {
+            command: "uninstall <package@version...>",
+            description: "删除一个已经安装的Npm包",
+            option: [
+                {
+                    command: "cli [name]",
+                    description: "使用的包管理器名称",
+                },
+            ],
+            action: UnInstall,
+        },
+        {
             command: "init",
             description: "根据官方或自定义的模板初始化一个项目",
             action: Init,
@@ -201,14 +213,14 @@ const commandConfig = () => {
                     action: (...rest) => Branch.start("add", ...rest),
                 },
                 {
-                    command: "list",
-                    description: "查看分支列表",
-                    action: (...rest) => Branch.start("list", ...rest),
-                },
-                {
                     command: "del [branchName...]",
                     description: "删除一个分支",
                     action: (...rest) => Branch.start("del", ...rest),
+                },
+                {
+                    command: "list",
+                    description: "查看分支列表",
+                    action: (...rest) => Branch.start("list", ...rest),
                 },
             ],
         },

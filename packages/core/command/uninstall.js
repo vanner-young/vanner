@@ -1,7 +1,7 @@
 const { Package } = require("@mvanner/modules");
 const { basicCommon, platform } = require("@mvanner/common");
 
-class Install {
+class UnInstall {
     start(packageList, option) {
         if (option.cli === "li")
             return console.log(`error: unknown option '-cli'`);
@@ -13,8 +13,8 @@ class Install {
                     ? platform.getProcessEnv("default_package_cli")
                     : option.cli,
             registry: platform.getProcessEnv("default_registry"),
-        }).action();
+        }).action("uninstall");
     }
 }
 
-module.exports = new Install();
+module.exports = new UnInstall();
