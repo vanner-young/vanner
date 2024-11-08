@@ -264,6 +264,15 @@ export const commitAction = ({ branch, type, file, origin, message }) => {
     };
 };
 
+export const onlyPushLocalFile = () => {
+    return {
+        name: "onlyPushLocalFile",
+        type: "confirm",
+        default: false,
+        message: "确认直接推送提交本至本地的代码到远程吗？",
+    };
+};
+
 export const pushOrigin = () => {
     return {
         name: "pushOrigin",

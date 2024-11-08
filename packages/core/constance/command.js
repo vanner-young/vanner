@@ -195,6 +195,10 @@ const commandConfig = () => {
                     command: "-o, --origin <origin>",
                     description: "提交的远程源名称",
                 },
+                {
+                    command: "--onlyPush",
+                    description: "直接将暂存区的代码推送至远程分支",
+                },
             ],
             action: Push,
         },

@@ -10,6 +10,7 @@ const {
     alreadyStatusFile,
     alreadyCommitFile,
     pushOrigin,
+    onlyPushLocalFile,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
 
@@ -25,6 +26,7 @@ class Commit extends Inquirer {
     diffFile = [];
     statusFile = [];
     push = false;
+    onlyPush = false;
     commitAll = false;
 
     async start(source = {}) {
@@ -34,7 +36,7 @@ class Commit extends Inquirer {
                     return console.log("提交失败，请重试!");
                 }
                 const { type, file, origin, branch, message } = config;
-                if (!this.push) {
+                if (!this.push && !this.onlyPush) {
                     const confirm = await this.handler(
                         commitAction({
                             ...config,
@@ -104,24 +106,26 @@ class Commit extends Inquirer {
     chooseOption(source) {
         return new Promise((resolve) => {
             this.#gitStorage = new GitStorage(process.cwd());
-            let { branch, origin, message } = source;
+            let { branch, origin, message, onlyPush } = source;
             this.#gitStorage.once("load:origin:end", async (originList) => {
-                this.diffFile = await this.#gitStorage.diffFile();
-                if (!this.diffFile.length) {
-                    this.statusFile = await this.#gitStorage.status();
-                    if (!this.statusFile.length) {
-                        const notPushFile =
-                            await this.#gitStorage.getCommitNotPushFileList();
-                        if (!notPushFile.length) {
-                            return console.log(
-                                "当前路径下暂无变更的文件, 无需提交.",
-                            );
-                        } else {
-                            const pushFile = await this.handler(
-                                alreadyCommitFile(notPushFile),
-                            );
-                            if (!pushFile) return;
-                            this.push = true;
+                if (!onlyPush) {
+                    this.diffFile = await this.#gitStorage.diffFile();
+                    if (!this.diffFile.length) {
+                        this.statusFile = await this.#gitStorage.status();
+                        if (!this.statusFile.length) {
+                            const notPushFile =
+                                await this.#gitStorage.getCommitNotPushFileList();
+                            if (!notPushFile.length) {
+                                return console.log(
+                                    "当前路径下暂无变更的文件, 无需提交.",
+                                );
+                            } else {
+                                const pushFile = await this.handler(
+                                    alreadyCommitFile(notPushFile),
+                                );
+                                if (!pushFile) return;
+                                this.push = true;
+                            }
                         }
                     }
                 }
@@ -158,8 +162,18 @@ class Commit extends Inquirer {
 
                 this.#config.origin = origin;
                 this.#config.branch = branch;
+                this.onlyPush = onlyPush;
 
-                if (!this.push) {
+                if (this.onlyPush) {
+                    const notPushFile =
+                        await this.#gitStorage.getCommitNotPushFileList();
+
+                    if (!notPushFile.length)
+                        return console.log("当前分支不存在已提交的本地文件");
+                    if (!(await this.handler(onlyPushLocalFile()))) return;
+                }
+
+                if (!this.push && !this.onlyPush) {
                     await this.chooseType(source);
                     await this.chooseCommitFile(source);
                     if (!this.#config.file.trim()) return;
