@@ -222,6 +222,11 @@ const commandConfig = () => {
                     description: "查看分支列表",
                     action: (...rest) => Branch.start("list", ...rest),
                 },
+                {
+                    command: "status",
+                    description: "查看当前所在分支的变动文件",
+                    action: (...rest) => Branch.start("status", ...rest),
+                },
             ],
         },
     ];

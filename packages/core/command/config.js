@@ -72,7 +72,6 @@ class Config extends ConfigModule {
     getConfig(key) {
         if (!this.has(key)) return console.log(`${key} 不存在此配置`);
         const val = this.get(key);
-        console.log(val);
         return val;
     }
     setConfig(key, value) {

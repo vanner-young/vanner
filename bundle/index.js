@@ -60,13 +60,18 @@ function getAugmentedNamespace(n) {
 var lib$3 = {};
 
 var name = "mvanner";
-var version = "1.0.2";
+var version = "1.0.4";
 var description = "";
 var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
-var author = "1157875374@qq.com <1157875374@qq.com>";
+var author = "vanner <1157875374@qq.com>";
 var bin = {
-	mvanner: "lib/index.js"
+	mvanner: "bundle/index.js",
+	registry: "https://registry.npmjs.org/"
+};
+var publishConfig = {
+	access: "public",
+	registry: "https://registry.npmjs.org/"
 };
 var files = [
 	"lib/**/*",
@@ -109,6 +114,7 @@ var require$$0$2 = {
 	repository: repository,
 	author: author,
 	bin: bin,
+	publishConfig: publishConfig,
 	files: files,
 	license: license,
 	scripts: scripts,
@@ -981,12 +987,54 @@ function requirePlatform () {
 	/**
 	 * 在某个路径下执行依赖的安装
 	 * **/
-	const installDependencies = (packageCli = null, targetPath) => {
-	    packageCli = getPackageCli(targetPath);
-	    return mvCommon.execCommandPro(`${packageCli} install`, {
-	        cwd: targetPath,
-	        stdio: "inherit",
-	    });
+	const installDependencies = (
+	    packageCli = null,
+	    targetPath,
+	    dependencies = [],
+	    registry = null,
+	) => {
+	    if (!packageCli) packageCli = getPackageCli(targetPath);
+
+	    const dependenciesStr = dependencies.length
+	            ? ` ${dependencies.join(" ")}`
+	            : "",
+	        registryStr = registry ? ` --registry ${registry}` : "",
+	        packageCliStr = packageCli === "pnpm" ? ` -w` : "";
+	    return mvCommon.execCommandPro(
+	        `${packageCli} ${packageCli === "yarn" ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
+	        {
+	            cwd: targetPath,
+	            stdio: "inherit",
+	        },
+	    );
+	};
+
+	/**
+	 * 在某个路径下删除依赖的安装
+	 * **/
+	const uninstallDependencies = (
+	    packageCli = null,
+	    targetPath,
+	    dependencies = [],
+	    registry = null,
+	) => {
+	    if (!packageCli) packageCli = getPackageCli(targetPath);
+
+	    const dependenciesStr = dependencies.length
+	            ? ` ${dependencies.join(" ")}`
+	            : "",
+	        packageCliStr = packageCli === "pnpm" ? ` -w` : "",
+	        packageRemoveStr = ["yarn", "pnpm"].includes(packageCli)
+	            ? "remove"
+	            : "uninstall";
+
+	    return mvCommon.execCommandPro(
+	        `${packageCli} ${packageRemoveStr}${dependenciesStr}${packageCliStr}`,
+	        {
+	            cwd: targetPath,
+	            stdio: "inherit",
+	        },
+	    );
 	};
 
 	/**
@@ -1113,6 +1161,7 @@ function requirePlatform () {
 	    findProjectParentExecCwd,
 	    isActiveEmptyGitProject,
 	    dfsParser,
+	    uninstallDependencies,
 	};
 	return platform;
 }
@@ -21184,9 +21233,11 @@ function requireGitStorage () {
 	    async status() {
 	        const fileString =
 	            await basicCommon.getExecCommandResult("git status --short");
+
+	        console.log(123123);
 	        return fileString
 	            .split("\n")
-	            .map((item) => item.replace("M  ", ""))
+	            .map((item) => item.replace("M  ", "").trim())
 	            .filter((item) => item);
 	    }
 	    async pull(branch) {
@@ -43080,6 +43131,7 @@ function requirePackage () {
 	class Package {
 	    execCwd = process.cwd();
 	    packageCli = "";
+	    type = "install";
 	    #packageConfig = {
 	        packageList: [],
 	        registry: null,
@@ -43138,32 +43190,42 @@ function requirePackage () {
 	            return this.#packageConfig.registry;
 	        }
 	    }
-	    async initInstall() {
+	    async initAction() {
 	        const registry = await this.confirmRegistry();
-	        basicCommon.execCommandPro(
-	            `${this.packageCli} install ${registry ? `--registry ${registry}` : ""}`,
-	            { cwd: this.execCwd, stdio: "inherit" },
+	        platform.installDependencies(
+	            this.packageCli,
+	            this.execCwd,
+	            null,
+	            registry,
 	        );
 	    }
-	    async installPackageName(packageList) {
+	    async packageNameAction(packageList) {
 	        const registry = await this.confirmRegistry();
-	        const installStr =
-	            this.packageCli === "yarn"
-	                ? "yarn add"
-	                : `${this.packageCli} install`;
-
-	        basicCommon.execCommandPro(
-	            `${installStr} ${packageList} ${registry ? `--registry ${registry}` : ""} ${this.packageCli?.toLocaleLowerCase?.() === "pnpm" ? "-w" : ""}`,
-	            { cwd: this.execCwd, stdio: "inherit" },
-	        );
+	        if (this.type === "install")
+	            platform.installDependencies(
+	                this.packageCli,
+	                this.execCwd,
+	                packageList,
+	                registry,
+	            );
+	        else
+	            platform.uninstallDependencies(
+	                this.packageCli,
+	                this.execCwd,
+	                packageList,
+	                registry,
+	            );
 	    }
-	    install() {
+	    action(type) {
+	        if (type) this.type = type;
 	        this.invalidProject(() => {
-	            if (!this.#packageConfig.packageList.length) this.initInstall();
-	            else
-	                this.installPackageName(
-	                    this.#packageConfig.packageList.join(" "),
-	                );
+	            if (
+	                !this.#packageConfig.packageList.length &&
+	                this.type === "install"
+	            )
+	                return this.initAction();
+
+	            this.packageNameAction(this.#packageConfig.packageList);
 	        });
 	    }
 	}
@@ -44299,12 +44361,41 @@ function requireInstall () {
 	                    ? platform.getProcessEnv("default_package_cli")
 	                    : option.cli,
 	            registry: platform.getProcessEnv("default_registry"),
-	        }).install();
+	        }).action();
 	    }
 	}
 
 	install = new Install();
 	return install;
+}
+
+var uninstall;
+var hasRequiredUninstall;
+
+function requireUninstall () {
+	if (hasRequiredUninstall) return uninstall;
+	hasRequiredUninstall = 1;
+	const { Package } = requireModules();
+	const { basicCommon, platform } = requireLib$3();
+
+	class UnInstall {
+	    start(packageList, option) {
+	        if (option.cli === "li")
+	            return console.log(`error: unknown option '-cli'`);
+
+	        new Package({
+	            packageList,
+	            packageCli:
+	                !option.cli || basicCommon.isType(option.cli, "boolean")
+	                    ? platform.getProcessEnv("default_package_cli")
+	                    : option.cli,
+	            registry: platform.getProcessEnv("default_registry"),
+	        }).action("uninstall");
+	    }
+	}
+
+	uninstall = new UnInstall();
+	return uninstall;
 }
 
 var commandConfig;
@@ -44638,6 +44729,7 @@ function requireBranch () {
 	            ["list", this.listBranch],
 	            ["add", this.addBranch],
 	            ["del", this.deleteBranch],
+	            ["status", this.statusCurrentBranch],
 	        ]);
 	        if (typeHandler.has(type)) {
 	            this.#delBranchSecure.open = !!Config.getConfig("branch_secure");
@@ -44831,6 +44923,13 @@ function requireBranch () {
 	                this.#origin,
 	            );
 	    }
+	    async statusCurrentBranch() {
+	        const commitNotPushFile =
+	            await this.#gitStorage.getCommitNotPushFileList();
+	        const notCommitFile = await this.#gitStorage.getNotCommitFile();
+	        console.log("暂存区的文件有：\n", commitNotPushFile.join("\n"));
+	        console.log("还未提交的文件有：\n", notCommitFile.join("\n"));
+	    }
 	}
 
 	branch = new Branch();
@@ -44851,6 +44950,7 @@ function requireCommand$1 () {
 	const Template = requireTemplate();
 	const Create = requireCreate();
 	const Install = requireInstall();
+	const UnInstall = requireUninstall();
 	const Push = requirePush();
 	const Run = requireRun();
 	const Branch = requireBranch();
@@ -44951,6 +45051,17 @@ function requireCommand$1 () {
 	            action: Install,
 	        },
 	        {
+	            command: "uninstall <package@version...>",
+	            description: "删除一个已经安装的Npm包",
+	            option: [
+	                {
+	                    command: "cli [name]",
+	                    description: "使用的包管理器名称",
+	                },
+	            ],
+	            action: UnInstall,
+	        },
+	        {
 	            command: "init",
 	            description: "根据官方或自定义的模板初始化一个项目",
 	            action: Init,
@@ -45046,14 +45157,19 @@ function requireCommand$1 () {
 	                    action: (...rest) => Branch.start("add", ...rest),
 	                },
 	                {
+	                    command: "del [branchName...]",
+	                    description: "删除一个分支",
+	                    action: (...rest) => Branch.start("del", ...rest),
+	                },
+	                {
 	                    command: "list",
 	                    description: "查看分支列表",
 	                    action: (...rest) => Branch.start("list", ...rest),
 	                },
 	                {
-	                    command: "del [branchName...]",
-	                    description: "删除一个分支",
-	                    action: (...rest) => Branch.start("del", ...rest),
+	                    command: "status",
+	                    description: "查看当前所在分支的变动文件",
+	                    action: (...rest) => Branch.start("status", ...rest),
 	                },
 	            ],
 	        },

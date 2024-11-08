@@ -38,6 +38,7 @@ class Branch extends Inquirer {
             ["list", this.listBranch],
             ["add", this.addBranch],
             ["del", this.deleteBranch],
+            ["status", this.statusCurrentBranch],
         ]);
         if (typeHandler.has(type)) {
             this.#delBranchSecure.open = !!Config.getConfig("branch_secure");
@@ -230,6 +231,15 @@ class Branch extends Inquirer {
                 delRemoteBranch,
                 this.#origin,
             );
+    }
+    async statusCurrentBranch() {
+        const commitNotPushFile =
+            await this.#gitStorage.getCommitNotPushFileList();
+        const notCommitFile = await this.#gitStorage.getNotCommitFile();
+        console.log("暂存区的文件有：");
+        console.log(commitNotPushFile.join("\n"));
+        console.log("还未提交的文件有：");
+        console.log(notCommitFile.join("\n"));
     }
 }
 

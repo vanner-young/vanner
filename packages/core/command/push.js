@@ -9,6 +9,7 @@ const {
     chooseCommitFile,
     alreadyStatusFile,
     alreadyCommitFile,
+    pushOrigin,
 } = require("../constance/question");
 const { CommitTypeDict } = require("../constance/commandConfig");
 
@@ -50,6 +51,8 @@ class Commit extends Inquirer {
                     if (!confirm) return;
                     this.#gitStorage.addFile(this.commitAll ? "." : file);
                     this.#gitStorage.commit(`${type}: ${message}`);
+
+                    if (!(await this.handler(pushOrigin()))) return;
                 }
                 this.#gitStorage.push(origin, branch, { stdio: "inherit" });
                 resolve(this.#config);
