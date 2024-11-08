@@ -234,12 +234,20 @@ class Branch extends Inquirer {
     }
     async statusCurrentBranch() {
         const commitNotPushFile =
-            await this.#gitStorage.getCommitNotPushFileList();
-        const notCommitFile = await this.#gitStorage.getNotCommitFile();
-        console.log("暂存区的文件有：");
-        console.log(commitNotPushFile.join("\n"));
-        console.log("还未提交的文件有：");
-        console.log(notCommitFile.join("\n"));
+                await this.#gitStorage.getCommitNotPushFileList(),
+            notCommitFile = await this.#gitStorage.getNotCommitFile();
+        if (!commitNotPushFile.length && !notCommitFile.length)
+            return console.log("\n当前分支暂无变更的文件");
+
+        if (commitNotPushFile.length) {
+            console.log("\n暂存区的文件有：");
+            console.log(commitNotPushFile.join("\n"));
+        }
+
+        if (notCommitFile.length) {
+            console.log("\n还未提交的文件有：");
+            console.log(notCommitFile.join("\n"));
+        }
     }
 }
 
