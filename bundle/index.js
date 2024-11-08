@@ -62,11 +62,11 @@ var lib$3 = {};
 var name = "mvanner";
 var version = "1.0.4";
 var description = "";
-var main$1 = "bundle/index.js";
+var main$1 = "lib/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	mvanner: "bundle/index.js",
+	mvanner: "lib/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -21233,11 +21233,9 @@ function requireGitStorage () {
 	    async status() {
 	        const fileString =
 	            await basicCommon.getExecCommandResult("git status --short");
-
-	        console.log(123123);
 	        return fileString
 	            .split("\n")
-	            .map((item) => item.replace("M  ", "").trim())
+	            .map((item) => item.replace("M  ", ""))
 	            .filter((item) => item);
 	    }
 	    async pull(branch) {
@@ -43518,7 +43516,16 @@ const commitAction = ({ branch, type, file, origin, message }) => {
         name: "commitAction",
         type: "confirm",
         default: true,
-        message: `请确认以下提交信息无误:\n\n提交源名称: ${origin}\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交备注信息:\n ${message}\n\n是否提交?`,
+        message: `请确认以下提交信息无误:\n\n提交源名称: ${origin}\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交备注信息:\n ${message}\n\n确认提交本地?`,
+    };
+};
+
+const pushOrigin = () => {
+    return {
+        name: "pushOrigin",
+        type: "confirm",
+        default: false,
+        message: "是否将本地代码推送至远程分支？",
     };
 };
 
@@ -43703,6 +43710,7 @@ var question = /*#__PURE__*/Object.freeze({
 	inputTemplateUrl: inputTemplateUrl,
 	isMoveCreateTemplateForLocal: isMoveCreateTemplateForLocal,
 	notDelBranchConfirm: notDelBranchConfirm,
+	pushOrigin: pushOrigin,
 	resetConfigFile: resetConfigFile,
 	syncDelRemoteBranch: syncDelRemoteBranch,
 	unExistsExecFile: unExistsExecFile,
@@ -43793,7 +43801,6 @@ function requireConfig () {
 	    getConfig(key) {
 	        if (!this.has(key)) return console.log(`${key} 不存在此配置`);
 	        const val = this.get(key);
-	        console.log(val);
 	        return val;
 	    }
 	    setConfig(key, value) {
@@ -44439,6 +44446,7 @@ function requirePush () {
 	    chooseCommitFile,
 	    alreadyStatusFile,
 	    alreadyCommitFile,
+	    pushOrigin,
 	} = require$$4;
 	const { CommitTypeDict } = requireCommandConfig();
 
@@ -44480,6 +44488,9 @@ function requirePush () {
 	                    if (!confirm) return;
 	                    this.#gitStorage.addFile(this.commitAll ? "." : file);
 	                    this.#gitStorage.commit(`${type}: ${message}`);
+
+	                    await basicCommon.sleep(1000);
+	                    if (!(await this.handler(pushOrigin()))) return;
 	                }
 	                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
 	                resolve(this.#config);
@@ -44925,10 +44936,20 @@ function requireBranch () {
 	    }
 	    async statusCurrentBranch() {
 	        const commitNotPushFile =
-	            await this.#gitStorage.getCommitNotPushFileList();
-	        const notCommitFile = await this.#gitStorage.getNotCommitFile();
-	        console.log("暂存区的文件有：\n", commitNotPushFile.join("\n"));
-	        console.log("还未提交的文件有：\n", notCommitFile.join("\n"));
+	                await this.#gitStorage.getCommitNotPushFileList(),
+	            notCommitFile = await this.#gitStorage.getNotCommitFile();
+	        if (!commitNotPushFile.length && !notCommitFile.length)
+	            return console.log("\n当前分支暂无变更的文件");
+
+	        if (commitNotPushFile.length) {
+	            console.log("\n暂存区的文件有：");
+	            console.log(commitNotPushFile.join("\n"));
+	        }
+
+	        if (notCommitFile.length) {
+	            console.log("\n还未提交的文件有：");
+	            console.log(notCommitFile.join("\n"));
+	        }
 	    }
 	}
 
