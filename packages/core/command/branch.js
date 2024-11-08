@@ -57,7 +57,24 @@ class Branch extends Inquirer {
     }
     async listBranch() {
         const list = await this.#gitStorage.getBranch();
-        console.log(`项目分支列表如下：(本地/远程)\n${list.join("\n")}`);
+        const { local, remote } = this.distinguishBranchType(list);
+        if (!local.length && !remote.length)
+            return console.log("当前仓库暂无代码分支");
+
+        if (local.length) console.log(`\n本地分支如下：\n${local.join("\n")}`);
+        if (local.length) console.log(`\n远程分支如下：\n${remote.join("\n")}`);
+    }
+    distinguishBranchType(branchList) {
+        return branchList.reduce(
+            (pre, next) => {
+                if (next.startsWith(`remotes/${this.#origin}/`))
+                    pre.remote.push(next);
+                else pre.local.push(next);
+
+                return pre;
+            },
+            { local: [], remote: [] },
+        );
     }
     addBranch(branchName, option) {
         this.#addConfig.type = option.type;
@@ -239,15 +256,11 @@ class Branch extends Inquirer {
         if (!commitNotPushFile.length && !notCommitFile.length)
             return console.log("\n当前分支暂无变更的文件");
 
-        if (commitNotPushFile.length) {
-            console.log("\n暂存区的文件有：");
-            console.log(commitNotPushFile.join("\n"));
-        }
+        if (commitNotPushFile.length)
+            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
 
-        if (notCommitFile.length) {
-            console.log("\n还未提交的文件有：");
-            console.log(notCommitFile.join("\n"));
-        }
+        if (notCommitFile.length)
+            console.log(`\n还未提交的文件有：\n${notCommitFile.join("\n")}`);
     }
 }
 
