@@ -1,7 +1,8 @@
-const { Config: ConfigModule, Inquirer } = require("@mvanner/modules");
-const { getProcessEnv } = require("@mvanner/common/lib/platform");
+const Inquirer = require("@mvanners/inquirer");
+const ConfigModule = require("@mvanners/config");
+const { getProcessEnv } = require("@mvanners/common/lib/platform");
 const { resetConfigFile } = require("../constance/question");
-const { basicCommon, platform } = require("@mvanner/common");
+const { basicCommon, platform } = require("@mvanners/common");
 
 const defaultContent = {
     branch_secure: true,

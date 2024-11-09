@@ -1,5 +1,6 @@
-const { Inquirer, GitStorage } = require("@mvanner/modules");
-const { basicCommon, platform } = require("@mvanner/common");
+const Inquirer = require("@mvanners/inquirer");
+const GitStorage = require("@mvanners/gitStorage");
+const { basicCommon, platform } = require("@mvanners/common");
 
 const {
     commitType,

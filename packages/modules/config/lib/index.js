@@ -1,6 +1,6 @@
 const ini = require("ini");
 const path = require("path");
-const { basicCommon } = require("@mvanner/common");
+const { basicCommon } = require("@mvanners/common");
 
 class Config {
     #source;

@@ -1,6 +1,6 @@
 {
-    "name": "@mvanners/common",
-    "version": "0.0.1",
+    "name": "@mvanners/gitStorage",
+    "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
     "scripts": {
@@ -10,6 +10,6 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "mv-common": "^1.0.2"
+        "@mvanners/common": "workspace:^"
     }
 }

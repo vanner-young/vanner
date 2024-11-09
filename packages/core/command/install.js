@@ -1,5 +1,5 @@
-const { Package } = require("@mvanner/modules");
-const { basicCommon, platform } = require("@mvanner/common");
+const Package = require("@mvanners/package");
+const { basicCommon, platform } = require("@mvanners/common");
 
 class Install {
     start(packageList, option) {

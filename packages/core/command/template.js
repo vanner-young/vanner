@@ -1,6 +1,7 @@
 const path = require("path");
-const { platform, basicCommon } = require("@mvanner/common");
-const { Inquirer, GitStorage } = require("@mvanner/modules");
+const { platform, basicCommon } = require("@mvanners/common");
+const Inquirer = require("@mvanners/inquirer");
+const GitStorage = require("@mvanners/gitStorage");
 const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = require("../constance");
 const {
     checkoutBranch,

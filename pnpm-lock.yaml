@@ -8,6 +8,11 @@ importers:
 
   .:
     dependencies:
+      packages:
+
+        specifier: link:F:/workspace/npm-packages/mvanner/packages
+
+        version: link:packages
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
         version: 28.0.1(rollup@4.24.2)
@@ -36,28 +41,63 @@ importers:
 
   packages/core:
     dependencies:
-      '@mvanner/common':
+      '@mvanners/common':
         specifier: workspace:^
         version: link:../common
-      '@mvanner/modules':
+      '@mvanners/config':
         specifier: workspace:^
-        version: link:../modules
+        version: link:../modules/config
+      '@mvanners/gitStorage':
+        specifier: workspace:^
+        version: link:../modules/gitStorage
+      '@mvanners/inquirer':
+        specifier: workspace:^
+        version: link:../modules/inquirer
+      '@mvanners/package':
+        specifier: workspace:^
+        version: link:../modules/package
+      '@mvanners/registerCommand':
+        specifier: workspace:^
+        version: link:../modules/registerCommand
 
-  packages/modules:
+  packages/modules/config:
+    dependencies:
+      '@mvanners/common':
+        specifier: workspace:^
+        version: link:../../common
+      ini:
+        specifier: ^5.0.0
+        version: 5.0.0
+
+  packages/modules/gitStorage:
+    dependencies:
+      '@mvanners/common':
+        specifier: workspace:^
+        version: link:../../common
+
+  packages/modules/inquirer:
     dependencies:
       '@inquirer/prompts':
         specifier: ^6.0.1
         version: 6.0.1
-      '@mvanner/common':
+      '@mvanners/common':
         specifier: workspace:^
-        version: link:../common
-      ini:
-        specifier: ^5.0.0
-        version: 5.0.0
-    devDependencies:
+        version: link:../../common
+
+  packages/modules/package:
+    dependencies:
+      '@mvanners/common':
+        specifier: workspace:^
+        version: link:../../common
       axios:
         specifier: ^1.7.7
         version: 1.7.7
+
+  packages/modules/registerCommand:
+    dependencies:
+      '@mvanners/common':
+        specifier: workspace:^
+        version: link:../../common
       commander:
         specifier: ^12.1.0
         version: 12.1.0

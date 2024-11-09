@@ -1,5 +1,5 @@
-const { Inquirer } = require("@mvanner/modules");
-const { basicCommon, platform } = require("@mvanner/common");
+const Inquirer = require("@mvanners/inquirer");
+const { basicCommon, platform } = require("@mvanners/common");
 
 class Exec extends Inquirer {
     defaultFileName;

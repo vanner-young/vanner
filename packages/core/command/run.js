@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const { Inquirer } = require("@mvanner/modules");
-const { filterEmptyArray, basicCommon, platform } = require("@mvanner/common");
+const Inquirer = require("@mvanners/inquirer");
+const { filterEmptyArray, basicCommon, platform } = require("@mvanners/common");
 const { chooseRunCommand } = require("../constance/question");
 
 class Run extends Inquirer {

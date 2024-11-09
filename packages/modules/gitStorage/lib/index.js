@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const { basicCommon, platform } = require("@mvanner/common");
+const { basicCommon, platform } = require("@mvanners/common");
 
 class GitStorage extends EventEmitter {
     #config = {

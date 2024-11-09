@@ -1,6 +1,7 @@
-const { Inquirer, GitStorage } = require("@mvanner/modules");
+const { delay } = require("@mvanners/common");
+const Inquirer = require("@mvanners/inquirer");
+const GitStorage = require("@mvanners/gitStorage");
 const { CommitTypeDict } = require("../constance/commandConfig");
-const { delay } = require("@mvanner/common");
 
 const {
     chooseCommitOrigin,

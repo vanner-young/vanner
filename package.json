@@ -1,6 +1,6 @@
 {
-    "name": "mvanner",
-    "version": "1.0.5",
+    "name": "mvanners",
+    "version": "1.0.6",
     "description": "",
     "main": "bundle/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
@@ -34,13 +34,14 @@
         "commander"
     ],
     "workspaces": [
-        "packages/*"
+        "packages/**/*"
     ],
     "dependencies": {
         "@rollup/plugin-commonjs": "^28.0.1",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^15.3.0",
         "@rollup/plugin-typescript": "^12.1.1",
+        "packages": "link:F:/workspace/npm-packages/mvanner/packages",
         "rollup": "^4.24.2"
     },
     "devDependencies": {

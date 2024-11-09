@@ -7,9 +7,10 @@ var require$$0$3 = require('node:fs');
 var require$$1$1 = require('node:path');
 var require$$2$1 = require('node:os');
 var require$$3$1 = require('node:child_process');
-var require$$0$5 = require('node:async_hooks');
-var require$$0$6 = require('node:tty');
-var require$$0$7 = require('node:process');
+var require$$0$5 = require('node:events');
+var require$$4$1 = require('node:process');
+var require$$0$6 = require('node:async_hooks');
+var require$$0$7 = require('node:tty');
 var require$$0$8 = require('tty');
 var require$$0$9 = require('node:readline');
 var require$$1$3 = require('stream');
@@ -19,10 +20,9 @@ var require$$0$b = require('buffer');
 var require$$1$4 = require('string_decoder');
 var require$$2$2 = require('crypto');
 var require$$2$3 = require('events');
-var require$$0$c = require('node:events');
 var require$$3$2 = require('http');
 var require$$4$2 = require('https');
-var require$$0$d = require('url');
+var require$$0$c = require('url');
 var require$$4$3 = require('assert');
 var require$$7$1 = require('zlib');
 
@@ -57,16 +57,16 @@ function getAugmentedNamespace(n) {
 	return a;
 }
 
-var lib$3 = {};
+var lib$8 = {};
 
-var name = "mvanner";
-var version = "1.0.4";
+var name = "mvanners";
+var version = "1.0.6";
 var description = "";
-var main$1 = "lib/index.js";
+var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	mvanner: "lib/index.js",
+	mvanner: "bundle/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -94,13 +94,14 @@ var keywords = [
 	"commander"
 ];
 var workspaces = [
-	"packages/*"
+	"packages/**/*"
 ];
 var dependencies = {
 	"@rollup/plugin-commonjs": "^28.0.1",
 	"@rollup/plugin-json": "^6.1.0",
 	"@rollup/plugin-node-resolve": "^15.3.0",
 	"@rollup/plugin-typescript": "^12.1.1",
+	packages: "link:F:/workspace/npm-packages/mvanner/packages",
 	rollup: "^4.24.2"
 };
 var devDependencies = {
@@ -1166,12 +1167,12 @@ function requirePlatform () {
 	return platform;
 }
 
-var lib$2;
-var hasRequiredLib$3;
+var lib$7;
+var hasRequiredLib$8;
 
-function requireLib$3 () {
-	if (hasRequiredLib$3) return lib$2;
-	hasRequiredLib$3 = 1;
+function requireLib$8 () {
+	if (hasRequiredLib$8) return lib$7;
+	hasRequiredLib$8 = 1;
 
 	const platform = requirePlatform();
 	const basicCommon = requireCommon();
@@ -1216,7 +1217,7 @@ function requireLib$3 () {
 	    });
 	};
 
-	lib$2 = {
+	lib$7 = {
 	    platform,
 	    basicCommon,
 	    filterObject,
@@ -1224,7 +1225,7 @@ function requireLib$3 () {
 	    filterEmptyArray,
 	    delay,
 	};
-	return lib$2;
+	return lib$7;
 }
 
 var constance;
@@ -1247,395 +1248,3863 @@ function requireConstance () {
 	return constance;
 }
 
-var ini;
-var hasRequiredIni;
+var commander = {};
 
-function requireIni () {
-	if (hasRequiredIni) return ini;
-	hasRequiredIni = 1;
-	const { hasOwnProperty } = Object.prototype;
+var argument = {};
 
-	const encode = (obj, opt = {}) => {
-	  if (typeof opt === 'string') {
-	    opt = { section: opt };
+var error = {};
+
+/**
+ * CommanderError class
+ */
+
+var hasRequiredError;
+
+function requireError () {
+	if (hasRequiredError) return error;
+	hasRequiredError = 1;
+	class CommanderError extends Error {
+	  /**
+	   * Constructs the CommanderError class
+	   * @param {number} exitCode suggested exit code which could be used with process.exit
+	   * @param {string} code an id string representing the error
+	   * @param {string} message human-readable description of the error
+	   */
+	  constructor(exitCode, code, message) {
+	    super(message);
+	    // properly capture stack trace in Node.js
+	    Error.captureStackTrace(this, this.constructor);
+	    this.name = this.constructor.name;
+	    this.code = code;
+	    this.exitCode = exitCode;
+	    this.nestedError = undefined;
 	  }
-	  opt.align = opt.align === true;
-	  opt.newline = opt.newline === true;
-	  opt.sort = opt.sort === true;
-	  opt.whitespace = opt.whitespace === true || opt.align === true;
-	  // The `typeof` check is required because accessing the `process` directly fails on browsers.
-	  /* istanbul ignore next */
-	  opt.platform = opt.platform || (typeof process !== 'undefined' && process.platform);
-	  opt.bracketedArray = opt.bracketedArray !== false;
-
-	  /* istanbul ignore next */
-	  const eol = opt.platform === 'win32' ? '\r\n' : '\n';
-	  const separator = opt.whitespace ? ' = ' : '=';
-	  const children = [];
-
-	  const keys = opt.sort ? Object.keys(obj).sort() : Object.keys(obj);
-
-	  let padToChars = 0;
-	  // If aligning on the separator, then padToChars is determined as follows:
-	  // 1. Get the keys
-	  // 2. Exclude keys pointing to objects unless the value is null or an array
-	  // 3. Add `[]` to array keys
-	  // 4. Ensure non empty set of keys
-	  // 5. Reduce the set to the longest `safe` key
-	  // 6. Get the `safe` length
-	  if (opt.align) {
-	    padToChars = safe(
-	      (
-	        keys
-	          .filter(k => obj[k] === null || Array.isArray(obj[k]) || typeof obj[k] !== 'object')
-	          .map(k => Array.isArray(obj[k]) ? `${k}[]` : k)
-	      )
-	        .concat([''])
-	        .reduce((a, b) => safe(a).length >= safe(b).length ? a : b)
-	    ).length;
-	  }
-
-	  let out = '';
-	  const arraySuffix = opt.bracketedArray ? '[]' : '';
-
-	  for (const k of keys) {
-	    const val = obj[k];
-	    if (val && Array.isArray(val)) {
-	      for (const item of val) {
-	        out += safe(`${k}${arraySuffix}`).padEnd(padToChars, ' ') + separator + safe(item) + eol;
-	      }
-	    } else if (val && typeof val === 'object') {
-	      children.push(k);
-	    } else {
-	      out += safe(k).padEnd(padToChars, ' ') + separator + safe(val) + eol;
-	    }
-	  }
-
-	  if (opt.section && out.length) {
-	    out = '[' + safe(opt.section) + ']' + (opt.newline ? eol + eol : eol) + out;
-	  }
-
-	  for (const k of children) {
-	    const nk = splitSections(k, '.').join('\\.');
-	    const section = (opt.section ? opt.section + '.' : '') + nk;
-	    const child = encode(obj[k], {
-	      ...opt,
-	      section,
-	    });
-	    if (out.length && child.length) {
-	      out += eol;
-	    }
-
-	    out += child;
-	  }
-
-	  return out
-	};
-
-	function splitSections (str, separator) {
-	  var lastMatchIndex = 0;
-	  var lastSeparatorIndex = 0;
-	  var nextIndex = 0;
-	  var sections = [];
-
-	  do {
-	    nextIndex = str.indexOf(separator, lastMatchIndex);
-
-	    if (nextIndex !== -1) {
-	      lastMatchIndex = nextIndex + separator.length;
-
-	      if (nextIndex > 0 && str[nextIndex - 1] === '\\') {
-	        continue
-	      }
-
-	      sections.push(str.slice(lastSeparatorIndex, nextIndex));
-	      lastSeparatorIndex = nextIndex + separator.length;
-	    }
-	  } while (nextIndex !== -1)
-
-	  sections.push(str.slice(lastSeparatorIndex));
-
-	  return sections
 	}
 
-	const decode = (str, opt = {}) => {
-	  opt.bracketedArray = opt.bracketedArray !== false;
-	  const out = Object.create(null);
-	  let p = out;
-	  let section = null;
-	  //          section          |key      = value
-	  const re = /^\[([^\]]*)\]\s*$|^([^=]+)(=(.*))?$/i;
-	  const lines = str.split(/[\r\n]+/g);
-	  const duplicates = {};
-
-	  for (const line of lines) {
-	    if (!line || line.match(/^\s*[;#]/) || line.match(/^\s*$/)) {
-	      continue
-	    }
-	    const match = line.match(re);
-	    if (!match) {
-	      continue
-	    }
-	    if (match[1] !== undefined) {
-	      section = unsafe(match[1]);
-	      if (section === '__proto__') {
-	        // not allowed
-	        // keep parsing the section, but don't attach it.
-	        p = Object.create(null);
-	        continue
-	      }
-	      p = out[section] = out[section] || Object.create(null);
-	      continue
-	    }
-	    const keyRaw = unsafe(match[2]);
-	    let isArray;
-	    if (opt.bracketedArray) {
-	      isArray = keyRaw.length > 2 && keyRaw.slice(-2) === '[]';
-	    } else {
-	      duplicates[keyRaw] = (duplicates?.[keyRaw] || 0) + 1;
-	      isArray = duplicates[keyRaw] > 1;
-	    }
-	    const key = isArray && keyRaw.endsWith('[]')
-	      ? keyRaw.slice(0, -2) : keyRaw;
-
-	    if (key === '__proto__') {
-	      continue
-	    }
-	    const valueRaw = match[3] ? unsafe(match[4]) : true;
-	    const value = valueRaw === 'true' ||
-	      valueRaw === 'false' ||
-	      valueRaw === 'null' ? JSON.parse(valueRaw)
-	      : valueRaw;
-
-	    // Convert keys with '[]' suffix to an array
-	    if (isArray) {
-	      if (!hasOwnProperty.call(p, key)) {
-	        p[key] = [];
-	      } else if (!Array.isArray(p[key])) {
-	        p[key] = [p[key]];
-	      }
-	    }
-
-	    // safeguard against resetting a previously defined
-	    // array by accidentally forgetting the brackets
-	    if (Array.isArray(p[key])) {
-	      p[key].push(value);
-	    } else {
-	      p[key] = value;
-	    }
+	/**
+	 * InvalidArgumentError class
+	 */
+	class InvalidArgumentError extends CommanderError {
+	  /**
+	   * Constructs the InvalidArgumentError class
+	   * @param {string} [message] explanation of why argument is invalid
+	   */
+	  constructor(message) {
+	    super(1, 'commander.invalidArgument', message);
+	    // properly capture stack trace in Node.js
+	    Error.captureStackTrace(this, this.constructor);
+	    this.name = this.constructor.name;
 	  }
+	}
 
-	  // {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
-	  // use a filter to return the keys that have to be deleted.
-	  const remove = [];
-	  for (const k of Object.keys(out)) {
-	    if (!hasOwnProperty.call(out, k) ||
-	      typeof out[k] !== 'object' ||
-	      Array.isArray(out[k])) {
-	      continue
-	    }
-
-	    // see if the parent section is also an object.
-	    // if so, add it to that, and mark this one for deletion
-	    const parts = splitSections(k, '.');
-	    p = out;
-	    const l = parts.pop();
-	    const nl = l.replace(/\\\./g, '.');
-	    for (const part of parts) {
-	      if (part === '__proto__') {
-	        continue
-	      }
-	      if (!hasOwnProperty.call(p, part) || typeof p[part] !== 'object') {
-	        p[part] = Object.create(null);
-	      }
-	      p = p[part];
-	    }
-	    if (p === out && nl === l) {
-	      continue
-	    }
-
-	    p[nl] = out[k];
-	    remove.push(k);
-	  }
-	  for (const del of remove) {
-	    delete out[del];
-	  }
-
-	  return out
-	};
-
-	const isQuoted = val => {
-	  return (val.startsWith('"') && val.endsWith('"')) ||
-	    (val.startsWith("'") && val.endsWith("'"))
-	};
-
-	const safe = val => {
-	  if (
-	    typeof val !== 'string' ||
-	    val.match(/[=\r\n]/) ||
-	    val.match(/^\[/) ||
-	    (val.length > 1 && isQuoted(val)) ||
-	    val !== val.trim()
-	  ) {
-	    return JSON.stringify(val)
-	  }
-	  return val.split(';').join('\\;').split('#').join('\\#')
-	};
-
-	const unsafe = val => {
-	  val = (val || '').trim();
-	  if (isQuoted(val)) {
-	    // remove the single quotes before calling JSON.parse
-	    if (val.charAt(0) === "'") {
-	      val = val.slice(1, -1);
-	    }
-	    try {
-	      val = JSON.parse(val);
-	    } catch {
-	      // ignore errors
-	    }
-	  } else {
-	    // walk the val to find the first not-escaped ; character
-	    let esc = false;
-	    let unesc = '';
-	    for (let i = 0, l = val.length; i < l; i++) {
-	      const c = val.charAt(i);
-	      if (esc) {
-	        if ('\\;#'.indexOf(c) !== -1) {
-	          unesc += c;
-	        } else {
-	          unesc += '\\' + c;
-	        }
-
-	        esc = false;
-	      } else if (';#'.indexOf(c) !== -1) {
-	        break
-	      } else if (c === '\\') {
-	        esc = true;
-	      } else {
-	        unesc += c;
-	      }
-	    }
-	    if (esc) {
-	      unesc += '\\';
-	    }
-
-	    return unesc.trim()
-	  }
-	  return val
-	};
-
-	ini = {
-	  parse: decode,
-	  decode,
-	  stringify: encode,
-	  encode,
-	  safe,
-	  unsafe,
-	};
-	return ini;
+	error.CommanderError = CommanderError;
+	error.InvalidArgumentError = InvalidArgumentError;
+	return error;
 }
 
-var Config_1;
-var hasRequiredConfig$1;
+var hasRequiredArgument;
 
-function requireConfig$1 () {
-	if (hasRequiredConfig$1) return Config_1;
-	hasRequiredConfig$1 = 1;
-	const ini = requireIni();
-	const path = require$$1$2;
-	const { basicCommon } = requireLib$3();
+function requireArgument () {
+	if (hasRequiredArgument) return argument;
+	hasRequiredArgument = 1;
+	const { InvalidArgumentError } = requireError();
 
-	class Config {
-	    #source;
-	    #encoding = "utf8";
-	    #defaultContent = {};
-	    data = new Map();
-	    constructor({ source, encoding, defaultContent }) {
-	        this.#source = source;
-	        this.#encoding = encoding || this.#encoding;
-	        this.#defaultContent = defaultContent;
+	class Argument {
+	  /**
+	   * Initialize a new command argument with the given name and description.
+	   * The default is that the argument is required, and you can explicitly
+	   * indicate this with <> around the name. Put [] around the name for an optional argument.
+	   *
+	   * @param {string} name
+	   * @param {string} [description]
+	   */
 
-	        this.load();
+	  constructor(name, description) {
+	    this.description = description || '';
+	    this.variadic = false;
+	    this.parseArg = undefined;
+	    this.defaultValue = undefined;
+	    this.defaultValueDescription = undefined;
+	    this.argChoices = undefined;
+
+	    switch (name[0]) {
+	      case '<': // e.g. <required>
+	        this.required = true;
+	        this._name = name.slice(1, -1);
+	        break;
+	      case '[': // e.g. [optional]
+	        this.required = false;
+	        this._name = name.slice(1, -1);
+	        break;
+	      default:
+	        this.required = true;
+	        this._name = name;
+	        break;
 	    }
-	    #coverContent(parseContent) {
-	        if (Object.keys(parseContent)?.length) {
-	            this.data.clear();
-	            Object.entries(parseContent).forEach(([key, value]) => {
-	                this.data.set(key, value);
-	            });
+
+	    if (this._name.length > 3 && this._name.slice(-3) === '...') {
+	      this.variadic = true;
+	      this._name = this._name.slice(0, -3);
+	    }
+	  }
+
+	  /**
+	   * Return argument name.
+	   *
+	   * @return {string}
+	   */
+
+	  name() {
+	    return this._name;
+	  }
+
+	  /**
+	   * @package
+	   */
+
+	  _concatValue(value, previous) {
+	    if (previous === this.defaultValue || !Array.isArray(previous)) {
+	      return [value];
+	    }
+
+	    return previous.concat(value);
+	  }
+
+	  /**
+	   * Set the default value, and optionally supply the description to be displayed in the help.
+	   *
+	   * @param {*} value
+	   * @param {string} [description]
+	   * @return {Argument}
+	   */
+
+	  default(value, description) {
+	    this.defaultValue = value;
+	    this.defaultValueDescription = description;
+	    return this;
+	  }
+
+	  /**
+	   * Set the custom handler for processing CLI command arguments into argument values.
+	   *
+	   * @param {Function} [fn]
+	   * @return {Argument}
+	   */
+
+	  argParser(fn) {
+	    this.parseArg = fn;
+	    return this;
+	  }
+
+	  /**
+	   * Only allow argument value to be one of choices.
+	   *
+	   * @param {string[]} values
+	   * @return {Argument}
+	   */
+
+	  choices(values) {
+	    this.argChoices = values.slice();
+	    this.parseArg = (arg, previous) => {
+	      if (!this.argChoices.includes(arg)) {
+	        throw new InvalidArgumentError(
+	          `Allowed choices are ${this.argChoices.join(', ')}.`,
+	        );
+	      }
+	      if (this.variadic) {
+	        return this._concatValue(arg, previous);
+	      }
+	      return arg;
+	    };
+	    return this;
+	  }
+
+	  /**
+	   * Make argument required.
+	   *
+	   * @returns {Argument}
+	   */
+	  argRequired() {
+	    this.required = true;
+	    return this;
+	  }
+
+	  /**
+	   * Make argument optional.
+	   *
+	   * @returns {Argument}
+	   */
+	  argOptional() {
+	    this.required = false;
+	    return this;
+	  }
+	}
+
+	/**
+	 * Takes an argument and returns its human readable equivalent for help usage.
+	 *
+	 * @param {Argument} arg
+	 * @return {string}
+	 * @private
+	 */
+
+	function humanReadableArgName(arg) {
+	  const nameOutput = arg.name() + (arg.variadic === true ? '...' : '');
+
+	  return arg.required ? '<' + nameOutput + '>' : '[' + nameOutput + ']';
+	}
+
+	argument.Argument = Argument;
+	argument.humanReadableArgName = humanReadableArgName;
+	return argument;
+}
+
+var command$2 = {};
+
+var help = {};
+
+var hasRequiredHelp;
+
+function requireHelp () {
+	if (hasRequiredHelp) return help;
+	hasRequiredHelp = 1;
+	const { humanReadableArgName } = requireArgument();
+
+	/**
+	 * TypeScript import types for JSDoc, used by Visual Studio Code IntelliSense and `npm run typescript-checkJS`
+	 * https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#import-types
+	 * @typedef { import("./argument.js").Argument } Argument
+	 * @typedef { import("./command.js").Command } Command
+	 * @typedef { import("./option.js").Option } Option
+	 */
+
+	// Although this is a class, methods are static in style to allow override using subclass or just functions.
+	class Help {
+	  constructor() {
+	    this.helpWidth = undefined;
+	    this.sortSubcommands = false;
+	    this.sortOptions = false;
+	    this.showGlobalOptions = false;
+	  }
+
+	  /**
+	   * Get an array of the visible subcommands. Includes a placeholder for the implicit help command, if there is one.
+	   *
+	   * @param {Command} cmd
+	   * @returns {Command[]}
+	   */
+
+	  visibleCommands(cmd) {
+	    const visibleCommands = cmd.commands.filter((cmd) => !cmd._hidden);
+	    const helpCommand = cmd._getHelpCommand();
+	    if (helpCommand && !helpCommand._hidden) {
+	      visibleCommands.push(helpCommand);
+	    }
+	    if (this.sortSubcommands) {
+	      visibleCommands.sort((a, b) => {
+	        // @ts-ignore: because overloaded return type
+	        return a.name().localeCompare(b.name());
+	      });
+	    }
+	    return visibleCommands;
+	  }
+
+	  /**
+	   * Compare options for sort.
+	   *
+	   * @param {Option} a
+	   * @param {Option} b
+	   * @returns {number}
+	   */
+	  compareOptions(a, b) {
+	    const getSortKey = (option) => {
+	      // WYSIWYG for order displayed in help. Short used for comparison if present. No special handling for negated.
+	      return option.short
+	        ? option.short.replace(/^-/, '')
+	        : option.long.replace(/^--/, '');
+	    };
+	    return getSortKey(a).localeCompare(getSortKey(b));
+	  }
+
+	  /**
+	   * Get an array of the visible options. Includes a placeholder for the implicit help option, if there is one.
+	   *
+	   * @param {Command} cmd
+	   * @returns {Option[]}
+	   */
+
+	  visibleOptions(cmd) {
+	    const visibleOptions = cmd.options.filter((option) => !option.hidden);
+	    // Built-in help option.
+	    const helpOption = cmd._getHelpOption();
+	    if (helpOption && !helpOption.hidden) {
+	      // Automatically hide conflicting flags. Bit dubious but a historical behaviour that is convenient for single-command programs.
+	      const removeShort = helpOption.short && cmd._findOption(helpOption.short);
+	      const removeLong = helpOption.long && cmd._findOption(helpOption.long);
+	      if (!removeShort && !removeLong) {
+	        visibleOptions.push(helpOption); // no changes needed
+	      } else if (helpOption.long && !removeLong) {
+	        visibleOptions.push(
+	          cmd.createOption(helpOption.long, helpOption.description),
+	        );
+	      } else if (helpOption.short && !removeShort) {
+	        visibleOptions.push(
+	          cmd.createOption(helpOption.short, helpOption.description),
+	        );
+	      }
+	    }
+	    if (this.sortOptions) {
+	      visibleOptions.sort(this.compareOptions);
+	    }
+	    return visibleOptions;
+	  }
+
+	  /**
+	   * Get an array of the visible global options. (Not including help.)
+	   *
+	   * @param {Command} cmd
+	   * @returns {Option[]}
+	   */
+
+	  visibleGlobalOptions(cmd) {
+	    if (!this.showGlobalOptions) return [];
+
+	    const globalOptions = [];
+	    for (
+	      let ancestorCmd = cmd.parent;
+	      ancestorCmd;
+	      ancestorCmd = ancestorCmd.parent
+	    ) {
+	      const visibleOptions = ancestorCmd.options.filter(
+	        (option) => !option.hidden,
+	      );
+	      globalOptions.push(...visibleOptions);
+	    }
+	    if (this.sortOptions) {
+	      globalOptions.sort(this.compareOptions);
+	    }
+	    return globalOptions;
+	  }
+
+	  /**
+	   * Get an array of the arguments if any have a description.
+	   *
+	   * @param {Command} cmd
+	   * @returns {Argument[]}
+	   */
+
+	  visibleArguments(cmd) {
+	    // Side effect! Apply the legacy descriptions before the arguments are displayed.
+	    if (cmd._argsDescription) {
+	      cmd.registeredArguments.forEach((argument) => {
+	        argument.description =
+	          argument.description || cmd._argsDescription[argument.name()] || '';
+	      });
+	    }
+
+	    // If there are any arguments with a description then return all the arguments.
+	    if (cmd.registeredArguments.find((argument) => argument.description)) {
+	      return cmd.registeredArguments;
+	    }
+	    return [];
+	  }
+
+	  /**
+	   * Get the command term to show in the list of subcommands.
+	   *
+	   * @param {Command} cmd
+	   * @returns {string}
+	   */
+
+	  subcommandTerm(cmd) {
+	    // Legacy. Ignores custom usage string, and nested commands.
+	    const args = cmd.registeredArguments
+	      .map((arg) => humanReadableArgName(arg))
+	      .join(' ');
+	    return (
+	      cmd._name +
+	      (cmd._aliases[0] ? '|' + cmd._aliases[0] : '') +
+	      (cmd.options.length ? ' [options]' : '') + // simplistic check for non-help option
+	      (args ? ' ' + args : '')
+	    );
+	  }
+
+	  /**
+	   * Get the option term to show in the list of options.
+	   *
+	   * @param {Option} option
+	   * @returns {string}
+	   */
+
+	  optionTerm(option) {
+	    return option.flags;
+	  }
+
+	  /**
+	   * Get the argument term to show in the list of arguments.
+	   *
+	   * @param {Argument} argument
+	   * @returns {string}
+	   */
+
+	  argumentTerm(argument) {
+	    return argument.name();
+	  }
+
+	  /**
+	   * Get the longest command term length.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {number}
+	   */
+
+	  longestSubcommandTermLength(cmd, helper) {
+	    return helper.visibleCommands(cmd).reduce((max, command) => {
+	      return Math.max(max, helper.subcommandTerm(command).length);
+	    }, 0);
+	  }
+
+	  /**
+	   * Get the longest option term length.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {number}
+	   */
+
+	  longestOptionTermLength(cmd, helper) {
+	    return helper.visibleOptions(cmd).reduce((max, option) => {
+	      return Math.max(max, helper.optionTerm(option).length);
+	    }, 0);
+	  }
+
+	  /**
+	   * Get the longest global option term length.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {number}
+	   */
+
+	  longestGlobalOptionTermLength(cmd, helper) {
+	    return helper.visibleGlobalOptions(cmd).reduce((max, option) => {
+	      return Math.max(max, helper.optionTerm(option).length);
+	    }, 0);
+	  }
+
+	  /**
+	   * Get the longest argument term length.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {number}
+	   */
+
+	  longestArgumentTermLength(cmd, helper) {
+	    return helper.visibleArguments(cmd).reduce((max, argument) => {
+	      return Math.max(max, helper.argumentTerm(argument).length);
+	    }, 0);
+	  }
+
+	  /**
+	   * Get the command usage to be displayed at the top of the built-in help.
+	   *
+	   * @param {Command} cmd
+	   * @returns {string}
+	   */
+
+	  commandUsage(cmd) {
+	    // Usage
+	    let cmdName = cmd._name;
+	    if (cmd._aliases[0]) {
+	      cmdName = cmdName + '|' + cmd._aliases[0];
+	    }
+	    let ancestorCmdNames = '';
+	    for (
+	      let ancestorCmd = cmd.parent;
+	      ancestorCmd;
+	      ancestorCmd = ancestorCmd.parent
+	    ) {
+	      ancestorCmdNames = ancestorCmd.name() + ' ' + ancestorCmdNames;
+	    }
+	    return ancestorCmdNames + cmdName + ' ' + cmd.usage();
+	  }
+
+	  /**
+	   * Get the description for the command.
+	   *
+	   * @param {Command} cmd
+	   * @returns {string}
+	   */
+
+	  commandDescription(cmd) {
+	    // @ts-ignore: because overloaded return type
+	    return cmd.description();
+	  }
+
+	  /**
+	   * Get the subcommand summary to show in the list of subcommands.
+	   * (Fallback to description for backwards compatibility.)
+	   *
+	   * @param {Command} cmd
+	   * @returns {string}
+	   */
+
+	  subcommandDescription(cmd) {
+	    // @ts-ignore: because overloaded return type
+	    return cmd.summary() || cmd.description();
+	  }
+
+	  /**
+	   * Get the option description to show in the list of options.
+	   *
+	   * @param {Option} option
+	   * @return {string}
+	   */
+
+	  optionDescription(option) {
+	    const extraInfo = [];
+
+	    if (option.argChoices) {
+	      extraInfo.push(
+	        // use stringify to match the display of the default value
+	        `choices: ${option.argChoices.map((choice) => JSON.stringify(choice)).join(', ')}`,
+	      );
+	    }
+	    if (option.defaultValue !== undefined) {
+	      // default for boolean and negated more for programmer than end user,
+	      // but show true/false for boolean option as may be for hand-rolled env or config processing.
+	      const showDefault =
+	        option.required ||
+	        option.optional ||
+	        (option.isBoolean() && typeof option.defaultValue === 'boolean');
+	      if (showDefault) {
+	        extraInfo.push(
+	          `default: ${option.defaultValueDescription || JSON.stringify(option.defaultValue)}`,
+	        );
+	      }
+	    }
+	    // preset for boolean and negated are more for programmer than end user
+	    if (option.presetArg !== undefined && option.optional) {
+	      extraInfo.push(`preset: ${JSON.stringify(option.presetArg)}`);
+	    }
+	    if (option.envVar !== undefined) {
+	      extraInfo.push(`env: ${option.envVar}`);
+	    }
+	    if (extraInfo.length > 0) {
+	      return `${option.description} (${extraInfo.join(', ')})`;
+	    }
+
+	    return option.description;
+	  }
+
+	  /**
+	   * Get the argument description to show in the list of arguments.
+	   *
+	   * @param {Argument} argument
+	   * @return {string}
+	   */
+
+	  argumentDescription(argument) {
+	    const extraInfo = [];
+	    if (argument.argChoices) {
+	      extraInfo.push(
+	        // use stringify to match the display of the default value
+	        `choices: ${argument.argChoices.map((choice) => JSON.stringify(choice)).join(', ')}`,
+	      );
+	    }
+	    if (argument.defaultValue !== undefined) {
+	      extraInfo.push(
+	        `default: ${argument.defaultValueDescription || JSON.stringify(argument.defaultValue)}`,
+	      );
+	    }
+	    if (extraInfo.length > 0) {
+	      const extraDescripton = `(${extraInfo.join(', ')})`;
+	      if (argument.description) {
+	        return `${argument.description} ${extraDescripton}`;
+	      }
+	      return extraDescripton;
+	    }
+	    return argument.description;
+	  }
+
+	  /**
+	   * Generate the built-in help text.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {string}
+	   */
+
+	  formatHelp(cmd, helper) {
+	    const termWidth = helper.padWidth(cmd, helper);
+	    const helpWidth = helper.helpWidth || 80;
+	    const itemIndentWidth = 2;
+	    const itemSeparatorWidth = 2; // between term and description
+	    function formatItem(term, description) {
+	      if (description) {
+	        const fullText = `${term.padEnd(termWidth + itemSeparatorWidth)}${description}`;
+	        return helper.wrap(
+	          fullText,
+	          helpWidth - itemIndentWidth,
+	          termWidth + itemSeparatorWidth,
+	        );
+	      }
+	      return term;
+	    }
+	    function formatList(textArray) {
+	      return textArray.join('\n').replace(/^/gm, ' '.repeat(itemIndentWidth));
+	    }
+
+	    // Usage
+	    let output = [`Usage: ${helper.commandUsage(cmd)}`, ''];
+
+	    // Description
+	    const commandDescription = helper.commandDescription(cmd);
+	    if (commandDescription.length > 0) {
+	      output = output.concat([
+	        helper.wrap(commandDescription, helpWidth, 0),
+	        '',
+	      ]);
+	    }
+
+	    // Arguments
+	    const argumentList = helper.visibleArguments(cmd).map((argument) => {
+	      return formatItem(
+	        helper.argumentTerm(argument),
+	        helper.argumentDescription(argument),
+	      );
+	    });
+	    if (argumentList.length > 0) {
+	      output = output.concat(['Arguments:', formatList(argumentList), '']);
+	    }
+
+	    // Options
+	    const optionList = helper.visibleOptions(cmd).map((option) => {
+	      return formatItem(
+	        helper.optionTerm(option),
+	        helper.optionDescription(option),
+	      );
+	    });
+	    if (optionList.length > 0) {
+	      output = output.concat(['Options:', formatList(optionList), '']);
+	    }
+
+	    if (this.showGlobalOptions) {
+	      const globalOptionList = helper
+	        .visibleGlobalOptions(cmd)
+	        .map((option) => {
+	          return formatItem(
+	            helper.optionTerm(option),
+	            helper.optionDescription(option),
+	          );
+	        });
+	      if (globalOptionList.length > 0) {
+	        output = output.concat([
+	          'Global Options:',
+	          formatList(globalOptionList),
+	          '',
+	        ]);
+	      }
+	    }
+
+	    // Commands
+	    const commandList = helper.visibleCommands(cmd).map((cmd) => {
+	      return formatItem(
+	        helper.subcommandTerm(cmd),
+	        helper.subcommandDescription(cmd),
+	      );
+	    });
+	    if (commandList.length > 0) {
+	      output = output.concat(['Commands:', formatList(commandList), '']);
+	    }
+
+	    return output.join('\n');
+	  }
+
+	  /**
+	   * Calculate the pad width from the maximum term length.
+	   *
+	   * @param {Command} cmd
+	   * @param {Help} helper
+	   * @returns {number}
+	   */
+
+	  padWidth(cmd, helper) {
+	    return Math.max(
+	      helper.longestOptionTermLength(cmd, helper),
+	      helper.longestGlobalOptionTermLength(cmd, helper),
+	      helper.longestSubcommandTermLength(cmd, helper),
+	      helper.longestArgumentTermLength(cmd, helper),
+	    );
+	  }
+
+	  /**
+	   * Wrap the given string to width characters per line, with lines after the first indented.
+	   * Do not wrap if insufficient room for wrapping (minColumnWidth), or string is manually formatted.
+	   *
+	   * @param {string} str
+	   * @param {number} width
+	   * @param {number} indent
+	   * @param {number} [minColumnWidth=40]
+	   * @return {string}
+	   *
+	   */
+
+	  wrap(str, width, indent, minColumnWidth = 40) {
+	    // Full \s characters, minus the linefeeds.
+	    const indents =
+	      ' \\f\\t\\v\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff';
+	    // Detect manually wrapped and indented strings by searching for line break followed by spaces.
+	    const manualIndent = new RegExp(`[\\n][${indents}]+`);
+	    if (str.match(manualIndent)) return str;
+	    // Do not wrap if not enough room for a wrapped column of text (as could end up with a word per line).
+	    const columnWidth = width - indent;
+	    if (columnWidth < minColumnWidth) return str;
+
+	    const leadingStr = str.slice(0, indent);
+	    const columnText = str.slice(indent).replace('\r\n', '\n');
+	    const indentString = ' '.repeat(indent);
+	    const zeroWidthSpace = '\u200B';
+	    const breaks = `\\s${zeroWidthSpace}`;
+	    // Match line end (so empty lines don't collapse),
+	    // or as much text as will fit in column, or excess text up to first break.
+	    const regex = new RegExp(
+	      `\n|.{1,${columnWidth - 1}}([${breaks}]|$)|[^${breaks}]+?([${breaks}]|$)`,
+	      'g',
+	    );
+	    const lines = columnText.match(regex) || [];
+	    return (
+	      leadingStr +
+	      lines
+	        .map((line, i) => {
+	          if (line === '\n') return ''; // preserve empty lines
+	          return (i > 0 ? indentString : '') + line.trimEnd();
+	        })
+	        .join('\n')
+	    );
+	  }
+	}
+
+	help.Help = Help;
+	return help;
+}
+
+var option = {};
+
+var hasRequiredOption;
+
+function requireOption () {
+	if (hasRequiredOption) return option;
+	hasRequiredOption = 1;
+	const { InvalidArgumentError } = requireError();
+
+	class Option {
+	  /**
+	   * Initialize a new `Option` with the given `flags` and `description`.
+	   *
+	   * @param {string} flags
+	   * @param {string} [description]
+	   */
+
+	  constructor(flags, description) {
+	    this.flags = flags;
+	    this.description = description || '';
+
+	    this.required = flags.includes('<'); // A value must be supplied when the option is specified.
+	    this.optional = flags.includes('['); // A value is optional when the option is specified.
+	    // variadic test ignores <value,...> et al which might be used to describe custom splitting of single argument
+	    this.variadic = /\w\.\.\.[>\]]$/.test(flags); // The option can take multiple values.
+	    this.mandatory = false; // The option must have a value after parsing, which usually means it must be specified on command line.
+	    const optionFlags = splitOptionFlags(flags);
+	    this.short = optionFlags.shortFlag;
+	    this.long = optionFlags.longFlag;
+	    this.negate = false;
+	    if (this.long) {
+	      this.negate = this.long.startsWith('--no-');
+	    }
+	    this.defaultValue = undefined;
+	    this.defaultValueDescription = undefined;
+	    this.presetArg = undefined;
+	    this.envVar = undefined;
+	    this.parseArg = undefined;
+	    this.hidden = false;
+	    this.argChoices = undefined;
+	    this.conflictsWith = [];
+	    this.implied = undefined;
+	  }
+
+	  /**
+	   * Set the default value, and optionally supply the description to be displayed in the help.
+	   *
+	   * @param {*} value
+	   * @param {string} [description]
+	   * @return {Option}
+	   */
+
+	  default(value, description) {
+	    this.defaultValue = value;
+	    this.defaultValueDescription = description;
+	    return this;
+	  }
+
+	  /**
+	   * Preset to use when option used without option-argument, especially optional but also boolean and negated.
+	   * The custom processing (parseArg) is called.
+	   *
+	   * @example
+	   * new Option('--color').default('GREYSCALE').preset('RGB');
+	   * new Option('--donate [amount]').preset('20').argParser(parseFloat);
+	   *
+	   * @param {*} arg
+	   * @return {Option}
+	   */
+
+	  preset(arg) {
+	    this.presetArg = arg;
+	    return this;
+	  }
+
+	  /**
+	   * Add option name(s) that conflict with this option.
+	   * An error will be displayed if conflicting options are found during parsing.
+	   *
+	   * @example
+	   * new Option('--rgb').conflicts('cmyk');
+	   * new Option('--js').conflicts(['ts', 'jsx']);
+	   *
+	   * @param {(string | string[])} names
+	   * @return {Option}
+	   */
+
+	  conflicts(names) {
+	    this.conflictsWith = this.conflictsWith.concat(names);
+	    return this;
+	  }
+
+	  /**
+	   * Specify implied option values for when this option is set and the implied options are not.
+	   *
+	   * The custom processing (parseArg) is not called on the implied values.
+	   *
+	   * @example
+	   * program
+	   *   .addOption(new Option('--log', 'write logging information to file'))
+	   *   .addOption(new Option('--trace', 'log extra details').implies({ log: 'trace.txt' }));
+	   *
+	   * @param {object} impliedOptionValues
+	   * @return {Option}
+	   */
+	  implies(impliedOptionValues) {
+	    let newImplied = impliedOptionValues;
+	    if (typeof impliedOptionValues === 'string') {
+	      // string is not documented, but easy mistake and we can do what user probably intended.
+	      newImplied = { [impliedOptionValues]: true };
+	    }
+	    this.implied = Object.assign(this.implied || {}, newImplied);
+	    return this;
+	  }
+
+	  /**
+	   * Set environment variable to check for option value.
+	   *
+	   * An environment variable is only used if when processed the current option value is
+	   * undefined, or the source of the current value is 'default' or 'config' or 'env'.
+	   *
+	   * @param {string} name
+	   * @return {Option}
+	   */
+
+	  env(name) {
+	    this.envVar = name;
+	    return this;
+	  }
+
+	  /**
+	   * Set the custom handler for processing CLI option arguments into option values.
+	   *
+	   * @param {Function} [fn]
+	   * @return {Option}
+	   */
+
+	  argParser(fn) {
+	    this.parseArg = fn;
+	    return this;
+	  }
+
+	  /**
+	   * Whether the option is mandatory and must have a value after parsing.
+	   *
+	   * @param {boolean} [mandatory=true]
+	   * @return {Option}
+	   */
+
+	  makeOptionMandatory(mandatory = true) {
+	    this.mandatory = !!mandatory;
+	    return this;
+	  }
+
+	  /**
+	   * Hide option in help.
+	   *
+	   * @param {boolean} [hide=true]
+	   * @return {Option}
+	   */
+
+	  hideHelp(hide = true) {
+	    this.hidden = !!hide;
+	    return this;
+	  }
+
+	  /**
+	   * @package
+	   */
+
+	  _concatValue(value, previous) {
+	    if (previous === this.defaultValue || !Array.isArray(previous)) {
+	      return [value];
+	    }
+
+	    return previous.concat(value);
+	  }
+
+	  /**
+	   * Only allow option value to be one of choices.
+	   *
+	   * @param {string[]} values
+	   * @return {Option}
+	   */
+
+	  choices(values) {
+	    this.argChoices = values.slice();
+	    this.parseArg = (arg, previous) => {
+	      if (!this.argChoices.includes(arg)) {
+	        throw new InvalidArgumentError(
+	          `Allowed choices are ${this.argChoices.join(', ')}.`,
+	        );
+	      }
+	      if (this.variadic) {
+	        return this._concatValue(arg, previous);
+	      }
+	      return arg;
+	    };
+	    return this;
+	  }
+
+	  /**
+	   * Return option name.
+	   *
+	   * @return {string}
+	   */
+
+	  name() {
+	    if (this.long) {
+	      return this.long.replace(/^--/, '');
+	    }
+	    return this.short.replace(/^-/, '');
+	  }
+
+	  /**
+	   * Return option name, in a camelcase format that can be used
+	   * as a object attribute key.
+	   *
+	   * @return {string}
+	   */
+
+	  attributeName() {
+	    return camelcase(this.name().replace(/^no-/, ''));
+	  }
+
+	  /**
+	   * Check if `arg` matches the short or long flag.
+	   *
+	   * @param {string} arg
+	   * @return {boolean}
+	   * @package
+	   */
+
+	  is(arg) {
+	    return this.short === arg || this.long === arg;
+	  }
+
+	  /**
+	   * Return whether a boolean option.
+	   *
+	   * Options are one of boolean, negated, required argument, or optional argument.
+	   *
+	   * @return {boolean}
+	   * @package
+	   */
+
+	  isBoolean() {
+	    return !this.required && !this.optional && !this.negate;
+	  }
+	}
+
+	/**
+	 * This class is to make it easier to work with dual options, without changing the existing
+	 * implementation. We support separate dual options for separate positive and negative options,
+	 * like `--build` and `--no-build`, which share a single option value. This works nicely for some
+	 * use cases, but is tricky for others where we want separate behaviours despite
+	 * the single shared option value.
+	 */
+	class DualOptions {
+	  /**
+	   * @param {Option[]} options
+	   */
+	  constructor(options) {
+	    this.positiveOptions = new Map();
+	    this.negativeOptions = new Map();
+	    this.dualOptions = new Set();
+	    options.forEach((option) => {
+	      if (option.negate) {
+	        this.negativeOptions.set(option.attributeName(), option);
+	      } else {
+	        this.positiveOptions.set(option.attributeName(), option);
+	      }
+	    });
+	    this.negativeOptions.forEach((value, key) => {
+	      if (this.positiveOptions.has(key)) {
+	        this.dualOptions.add(key);
+	      }
+	    });
+	  }
+
+	  /**
+	   * Did the value come from the option, and not from possible matching dual option?
+	   *
+	   * @param {*} value
+	   * @param {Option} option
+	   * @returns {boolean}
+	   */
+	  valueFromOption(value, option) {
+	    const optionKey = option.attributeName();
+	    if (!this.dualOptions.has(optionKey)) return true;
+
+	    // Use the value to deduce if (probably) came from the option.
+	    const preset = this.negativeOptions.get(optionKey).presetArg;
+	    const negativeValue = preset !== undefined ? preset : false;
+	    return option.negate === (negativeValue === value);
+	  }
+	}
+
+	/**
+	 * Convert string from kebab-case to camelCase.
+	 *
+	 * @param {string} str
+	 * @return {string}
+	 * @private
+	 */
+
+	function camelcase(str) {
+	  return str.split('-').reduce((str, word) => {
+	    return str + word[0].toUpperCase() + word.slice(1);
+	  });
+	}
+
+	/**
+	 * Split the short and long flag out of something like '-m,--mixed <value>'
+	 *
+	 * @private
+	 */
+
+	function splitOptionFlags(flags) {
+	  let shortFlag;
+	  let longFlag;
+	  // Use original very loose parsing to maintain backwards compatibility for now,
+	  // which allowed for example unintended `-sw, --short-word` [sic].
+	  const flagParts = flags.split(/[ |,]+/);
+	  if (flagParts.length > 1 && !/^[[<]/.test(flagParts[1]))
+	    shortFlag = flagParts.shift();
+	  longFlag = flagParts.shift();
+	  // Add support for lone short flag without significantly changing parsing!
+	  if (!shortFlag && /^-[^-]$/.test(longFlag)) {
+	    shortFlag = longFlag;
+	    longFlag = undefined;
+	  }
+	  return { shortFlag, longFlag };
+	}
+
+	option.Option = Option;
+	option.DualOptions = DualOptions;
+	return option;
+}
+
+var suggestSimilar = {};
+
+var hasRequiredSuggestSimilar;
+
+function requireSuggestSimilar () {
+	if (hasRequiredSuggestSimilar) return suggestSimilar;
+	hasRequiredSuggestSimilar = 1;
+	const maxDistance = 3;
+
+	function editDistance(a, b) {
+	  // https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
+	  // Calculating optimal string alignment distance, no substring is edited more than once.
+	  // (Simple implementation.)
+
+	  // Quick early exit, return worst case.
+	  if (Math.abs(a.length - b.length) > maxDistance)
+	    return Math.max(a.length, b.length);
+
+	  // distance between prefix substrings of a and b
+	  const d = [];
+
+	  // pure deletions turn a into empty string
+	  for (let i = 0; i <= a.length; i++) {
+	    d[i] = [i];
+	  }
+	  // pure insertions turn empty string into b
+	  for (let j = 0; j <= b.length; j++) {
+	    d[0][j] = j;
+	  }
+
+	  // fill matrix
+	  for (let j = 1; j <= b.length; j++) {
+	    for (let i = 1; i <= a.length; i++) {
+	      let cost = 1;
+	      if (a[i - 1] === b[j - 1]) {
+	        cost = 0;
+	      } else {
+	        cost = 1;
+	      }
+	      d[i][j] = Math.min(
+	        d[i - 1][j] + 1, // deletion
+	        d[i][j - 1] + 1, // insertion
+	        d[i - 1][j - 1] + cost, // substitution
+	      );
+	      // transposition
+	      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+	        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+	      }
+	    }
+	  }
+
+	  return d[a.length][b.length];
+	}
+
+	/**
+	 * Find close matches, restricted to same number of edits.
+	 *
+	 * @param {string} word
+	 * @param {string[]} candidates
+	 * @returns {string}
+	 */
+
+	function suggestSimilar$1(word, candidates) {
+	  if (!candidates || candidates.length === 0) return '';
+	  // remove possible duplicates
+	  candidates = Array.from(new Set(candidates));
+
+	  const searchingOptions = word.startsWith('--');
+	  if (searchingOptions) {
+	    word = word.slice(2);
+	    candidates = candidates.map((candidate) => candidate.slice(2));
+	  }
+
+	  let similar = [];
+	  let bestDistance = maxDistance;
+	  const minSimilarity = 0.4;
+	  candidates.forEach((candidate) => {
+	    if (candidate.length <= 1) return; // no one character guesses
+
+	    const distance = editDistance(word, candidate);
+	    const length = Math.max(word.length, candidate.length);
+	    const similarity = (length - distance) / length;
+	    if (similarity > minSimilarity) {
+	      if (distance < bestDistance) {
+	        // better edit distance, throw away previous worse matches
+	        bestDistance = distance;
+	        similar = [candidate];
+	      } else if (distance === bestDistance) {
+	        similar.push(candidate);
+	      }
+	    }
+	  });
+
+	  similar.sort((a, b) => a.localeCompare(b));
+	  if (searchingOptions) {
+	    similar = similar.map((candidate) => `--${candidate}`);
+	  }
+
+	  if (similar.length > 1) {
+	    return `\n(Did you mean one of ${similar.join(', ')}?)`;
+	  }
+	  if (similar.length === 1) {
+	    return `\n(Did you mean ${similar[0]}?)`;
+	  }
+	  return '';
+	}
+
+	suggestSimilar.suggestSimilar = suggestSimilar$1;
+	return suggestSimilar;
+}
+
+var hasRequiredCommand$2;
+
+function requireCommand$2 () {
+	if (hasRequiredCommand$2) return command$2;
+	hasRequiredCommand$2 = 1;
+	const EventEmitter = require$$0$5.EventEmitter;
+	const childProcess = require$$3$1;
+	const path = require$$1$1;
+	const fs = require$$0$3;
+	const process = require$$4$1;
+
+	const { Argument, humanReadableArgName } = requireArgument();
+	const { CommanderError } = requireError();
+	const { Help } = requireHelp();
+	const { Option, DualOptions } = requireOption();
+	const { suggestSimilar } = requireSuggestSimilar();
+
+	class Command extends EventEmitter {
+	  /**
+	   * Initialize a new `Command`.
+	   *
+	   * @param {string} [name]
+	   */
+
+	  constructor(name) {
+	    super();
+	    /** @type {Command[]} */
+	    this.commands = [];
+	    /** @type {Option[]} */
+	    this.options = [];
+	    this.parent = null;
+	    this._allowUnknownOption = false;
+	    this._allowExcessArguments = true;
+	    /** @type {Argument[]} */
+	    this.registeredArguments = [];
+	    this._args = this.registeredArguments; // deprecated old name
+	    /** @type {string[]} */
+	    this.args = []; // cli args with options removed
+	    this.rawArgs = [];
+	    this.processedArgs = []; // like .args but after custom processing and collecting variadic
+	    this._scriptPath = null;
+	    this._name = name || '';
+	    this._optionValues = {};
+	    this._optionValueSources = {}; // default, env, cli etc
+	    this._storeOptionsAsProperties = false;
+	    this._actionHandler = null;
+	    this._executableHandler = false;
+	    this._executableFile = null; // custom name for executable
+	    this._executableDir = null; // custom search directory for subcommands
+	    this._defaultCommandName = null;
+	    this._exitCallback = null;
+	    this._aliases = [];
+	    this._combineFlagAndOptionalValue = true;
+	    this._description = '';
+	    this._summary = '';
+	    this._argsDescription = undefined; // legacy
+	    this._enablePositionalOptions = false;
+	    this._passThroughOptions = false;
+	    this._lifeCycleHooks = {}; // a hash of arrays
+	    /** @type {(boolean | string)} */
+	    this._showHelpAfterError = false;
+	    this._showSuggestionAfterError = true;
+
+	    // see .configureOutput() for docs
+	    this._outputConfiguration = {
+	      writeOut: (str) => process.stdout.write(str),
+	      writeErr: (str) => process.stderr.write(str),
+	      getOutHelpWidth: () =>
+	        process.stdout.isTTY ? process.stdout.columns : undefined,
+	      getErrHelpWidth: () =>
+	        process.stderr.isTTY ? process.stderr.columns : undefined,
+	      outputError: (str, write) => write(str),
+	    };
+
+	    this._hidden = false;
+	    /** @type {(Option | null | undefined)} */
+	    this._helpOption = undefined; // Lazy created on demand. May be null if help option is disabled.
+	    this._addImplicitHelpCommand = undefined; // undecided whether true or false yet, not inherited
+	    /** @type {Command} */
+	    this._helpCommand = undefined; // lazy initialised, inherited
+	    this._helpConfiguration = {};
+	  }
+
+	  /**
+	   * Copy settings that are useful to have in common across root command and subcommands.
+	   *
+	   * (Used internally when adding a command using `.command()` so subcommands inherit parent settings.)
+	   *
+	   * @param {Command} sourceCommand
+	   * @return {Command} `this` command for chaining
+	   */
+	  copyInheritedSettings(sourceCommand) {
+	    this._outputConfiguration = sourceCommand._outputConfiguration;
+	    this._helpOption = sourceCommand._helpOption;
+	    this._helpCommand = sourceCommand._helpCommand;
+	    this._helpConfiguration = sourceCommand._helpConfiguration;
+	    this._exitCallback = sourceCommand._exitCallback;
+	    this._storeOptionsAsProperties = sourceCommand._storeOptionsAsProperties;
+	    this._combineFlagAndOptionalValue =
+	      sourceCommand._combineFlagAndOptionalValue;
+	    this._allowExcessArguments = sourceCommand._allowExcessArguments;
+	    this._enablePositionalOptions = sourceCommand._enablePositionalOptions;
+	    this._showHelpAfterError = sourceCommand._showHelpAfterError;
+	    this._showSuggestionAfterError = sourceCommand._showSuggestionAfterError;
+
+	    return this;
+	  }
+
+	  /**
+	   * @returns {Command[]}
+	   * @private
+	   */
+
+	  _getCommandAndAncestors() {
+	    const result = [];
+	    // eslint-disable-next-line @typescript-eslint/no-this-alias
+	    for (let command = this; command; command = command.parent) {
+	      result.push(command);
+	    }
+	    return result;
+	  }
+
+	  /**
+	   * Define a command.
+	   *
+	   * There are two styles of command: pay attention to where to put the description.
+	   *
+	   * @example
+	   * // Command implemented using action handler (description is supplied separately to `.command`)
+	   * program
+	   *   .command('clone <source> [destination]')
+	   *   .description('clone a repository into a newly created directory')
+	   *   .action((source, destination) => {
+	   *     console.log('clone command called');
+	   *   });
+	   *
+	   * // Command implemented using separate executable file (description is second parameter to `.command`)
+	   * program
+	   *   .command('start <service>', 'start named service')
+	   *   .command('stop [service]', 'stop named service, or all if no name supplied');
+	   *
+	   * @param {string} nameAndArgs - command name and arguments, args are `<required>` or `[optional]` and last may also be `variadic...`
+	   * @param {(object | string)} [actionOptsOrExecDesc] - configuration options (for action), or description (for executable)
+	   * @param {object} [execOpts] - configuration options (for executable)
+	   * @return {Command} returns new command for action handler, or `this` for executable command
+	   */
+
+	  command(nameAndArgs, actionOptsOrExecDesc, execOpts) {
+	    let desc = actionOptsOrExecDesc;
+	    let opts = execOpts;
+	    if (typeof desc === 'object' && desc !== null) {
+	      opts = desc;
+	      desc = null;
+	    }
+	    opts = opts || {};
+	    const [, name, args] = nameAndArgs.match(/([^ ]+) *(.*)/);
+
+	    const cmd = this.createCommand(name);
+	    if (desc) {
+	      cmd.description(desc);
+	      cmd._executableHandler = true;
+	    }
+	    if (opts.isDefault) this._defaultCommandName = cmd._name;
+	    cmd._hidden = !!(opts.noHelp || opts.hidden); // noHelp is deprecated old name for hidden
+	    cmd._executableFile = opts.executableFile || null; // Custom name for executable file, set missing to null to match constructor
+	    if (args) cmd.arguments(args);
+	    this._registerCommand(cmd);
+	    cmd.parent = this;
+	    cmd.copyInheritedSettings(this);
+
+	    if (desc) return this;
+	    return cmd;
+	  }
+
+	  /**
+	   * Factory routine to create a new unattached command.
+	   *
+	   * See .command() for creating an attached subcommand, which uses this routine to
+	   * create the command. You can override createCommand to customise subcommands.
+	   *
+	   * @param {string} [name]
+	   * @return {Command} new command
+	   */
+
+	  createCommand(name) {
+	    return new Command(name);
+	  }
+
+	  /**
+	   * You can customise the help with a subclass of Help by overriding createHelp,
+	   * or by overriding Help properties using configureHelp().
+	   *
+	   * @return {Help}
+	   */
+
+	  createHelp() {
+	    return Object.assign(new Help(), this.configureHelp());
+	  }
+
+	  /**
+	   * You can customise the help by overriding Help properties using configureHelp(),
+	   * or with a subclass of Help by overriding createHelp().
+	   *
+	   * @param {object} [configuration] - configuration options
+	   * @return {(Command | object)} `this` command for chaining, or stored configuration
+	   */
+
+	  configureHelp(configuration) {
+	    if (configuration === undefined) return this._helpConfiguration;
+
+	    this._helpConfiguration = configuration;
+	    return this;
+	  }
+
+	  /**
+	   * The default output goes to stdout and stderr. You can customise this for special
+	   * applications. You can also customise the display of errors by overriding outputError.
+	   *
+	   * The configuration properties are all functions:
+	   *
+	   *     // functions to change where being written, stdout and stderr
+	   *     writeOut(str)
+	   *     writeErr(str)
+	   *     // matching functions to specify width for wrapping help
+	   *     getOutHelpWidth()
+	   *     getErrHelpWidth()
+	   *     // functions based on what is being written out
+	   *     outputError(str, write) // used for displaying errors, and not used for displaying help
+	   *
+	   * @param {object} [configuration] - configuration options
+	   * @return {(Command | object)} `this` command for chaining, or stored configuration
+	   */
+
+	  configureOutput(configuration) {
+	    if (configuration === undefined) return this._outputConfiguration;
+
+	    Object.assign(this._outputConfiguration, configuration);
+	    return this;
+	  }
+
+	  /**
+	   * Display the help or a custom message after an error occurs.
+	   *
+	   * @param {(boolean|string)} [displayHelp]
+	   * @return {Command} `this` command for chaining
+	   */
+	  showHelpAfterError(displayHelp = true) {
+	    if (typeof displayHelp !== 'string') displayHelp = !!displayHelp;
+	    this._showHelpAfterError = displayHelp;
+	    return this;
+	  }
+
+	  /**
+	   * Display suggestion of similar commands for unknown commands, or options for unknown options.
+	   *
+	   * @param {boolean} [displaySuggestion]
+	   * @return {Command} `this` command for chaining
+	   */
+	  showSuggestionAfterError(displaySuggestion = true) {
+	    this._showSuggestionAfterError = !!displaySuggestion;
+	    return this;
+	  }
+
+	  /**
+	   * Add a prepared subcommand.
+	   *
+	   * See .command() for creating an attached subcommand which inherits settings from its parent.
+	   *
+	   * @param {Command} cmd - new subcommand
+	   * @param {object} [opts] - configuration options
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  addCommand(cmd, opts) {
+	    if (!cmd._name) {
+	      throw new Error(`Command passed to .addCommand() must have a name
+- specify the name in Command constructor or using .name()`);
+	    }
+
+	    opts = opts || {};
+	    if (opts.isDefault) this._defaultCommandName = cmd._name;
+	    if (opts.noHelp || opts.hidden) cmd._hidden = true; // modifying passed command due to existing implementation
+
+	    this._registerCommand(cmd);
+	    cmd.parent = this;
+	    cmd._checkForBrokenPassThrough();
+
+	    return this;
+	  }
+
+	  /**
+	   * Factory routine to create a new unattached argument.
+	   *
+	   * See .argument() for creating an attached argument, which uses this routine to
+	   * create the argument. You can override createArgument to return a custom argument.
+	   *
+	   * @param {string} name
+	   * @param {string} [description]
+	   * @return {Argument} new argument
+	   */
+
+	  createArgument(name, description) {
+	    return new Argument(name, description);
+	  }
+
+	  /**
+	   * Define argument syntax for command.
+	   *
+	   * The default is that the argument is required, and you can explicitly
+	   * indicate this with <> around the name. Put [] around the name for an optional argument.
+	   *
+	   * @example
+	   * program.argument('<input-file>');
+	   * program.argument('[output-file]');
+	   *
+	   * @param {string} name
+	   * @param {string} [description]
+	   * @param {(Function|*)} [fn] - custom argument processing function
+	   * @param {*} [defaultValue]
+	   * @return {Command} `this` command for chaining
+	   */
+	  argument(name, description, fn, defaultValue) {
+	    const argument = this.createArgument(name, description);
+	    if (typeof fn === 'function') {
+	      argument.default(defaultValue).argParser(fn);
+	    } else {
+	      argument.default(fn);
+	    }
+	    this.addArgument(argument);
+	    return this;
+	  }
+
+	  /**
+	   * Define argument syntax for command, adding multiple at once (without descriptions).
+	   *
+	   * See also .argument().
+	   *
+	   * @example
+	   * program.arguments('<cmd> [env]');
+	   *
+	   * @param {string} names
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  arguments(names) {
+	    names
+	      .trim()
+	      .split(/ +/)
+	      .forEach((detail) => {
+	        this.argument(detail);
+	      });
+	    return this;
+	  }
+
+	  /**
+	   * Define argument syntax for command, adding a prepared argument.
+	   *
+	   * @param {Argument} argument
+	   * @return {Command} `this` command for chaining
+	   */
+	  addArgument(argument) {
+	    const previousArgument = this.registeredArguments.slice(-1)[0];
+	    if (previousArgument && previousArgument.variadic) {
+	      throw new Error(
+	        `only the last argument can be variadic '${previousArgument.name()}'`,
+	      );
+	    }
+	    if (
+	      argument.required &&
+	      argument.defaultValue !== undefined &&
+	      argument.parseArg === undefined
+	    ) {
+	      throw new Error(
+	        `a default value for a required argument is never used: '${argument.name()}'`,
+	      );
+	    }
+	    this.registeredArguments.push(argument);
+	    return this;
+	  }
+
+	  /**
+	   * Customise or override default help command. By default a help command is automatically added if your command has subcommands.
+	   *
+	   * @example
+	   *    program.helpCommand('help [cmd]');
+	   *    program.helpCommand('help [cmd]', 'show help');
+	   *    program.helpCommand(false); // suppress default help command
+	   *    program.helpCommand(true); // add help command even if no subcommands
+	   *
+	   * @param {string|boolean} enableOrNameAndArgs - enable with custom name and/or arguments, or boolean to override whether added
+	   * @param {string} [description] - custom description
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  helpCommand(enableOrNameAndArgs, description) {
+	    if (typeof enableOrNameAndArgs === 'boolean') {
+	      this._addImplicitHelpCommand = enableOrNameAndArgs;
+	      return this;
+	    }
+
+	    enableOrNameAndArgs = enableOrNameAndArgs ?? 'help [command]';
+	    const [, helpName, helpArgs] = enableOrNameAndArgs.match(/([^ ]+) *(.*)/);
+	    const helpDescription = description ?? 'display help for command';
+
+	    const helpCommand = this.createCommand(helpName);
+	    helpCommand.helpOption(false);
+	    if (helpArgs) helpCommand.arguments(helpArgs);
+	    if (helpDescription) helpCommand.description(helpDescription);
+
+	    this._addImplicitHelpCommand = true;
+	    this._helpCommand = helpCommand;
+
+	    return this;
+	  }
+
+	  /**
+	   * Add prepared custom help command.
+	   *
+	   * @param {(Command|string|boolean)} helpCommand - custom help command, or deprecated enableOrNameAndArgs as for `.helpCommand()`
+	   * @param {string} [deprecatedDescription] - deprecated custom description used with custom name only
+	   * @return {Command} `this` command for chaining
+	   */
+	  addHelpCommand(helpCommand, deprecatedDescription) {
+	    // If not passed an object, call through to helpCommand for backwards compatibility,
+	    // as addHelpCommand was originally used like helpCommand is now.
+	    if (typeof helpCommand !== 'object') {
+	      this.helpCommand(helpCommand, deprecatedDescription);
+	      return this;
+	    }
+
+	    this._addImplicitHelpCommand = true;
+	    this._helpCommand = helpCommand;
+	    return this;
+	  }
+
+	  /**
+	   * Lazy create help command.
+	   *
+	   * @return {(Command|null)}
+	   * @package
+	   */
+	  _getHelpCommand() {
+	    const hasImplicitHelpCommand =
+	      this._addImplicitHelpCommand ??
+	      (this.commands.length &&
+	        !this._actionHandler &&
+	        !this._findCommand('help'));
+
+	    if (hasImplicitHelpCommand) {
+	      if (this._helpCommand === undefined) {
+	        this.helpCommand(undefined, undefined); // use default name and description
+	      }
+	      return this._helpCommand;
+	    }
+	    return null;
+	  }
+
+	  /**
+	   * Add hook for life cycle event.
+	   *
+	   * @param {string} event
+	   * @param {Function} listener
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  hook(event, listener) {
+	    const allowedValues = ['preSubcommand', 'preAction', 'postAction'];
+	    if (!allowedValues.includes(event)) {
+	      throw new Error(`Unexpected value for event passed to hook : '${event}'.
+Expecting one of '${allowedValues.join("', '")}'`);
+	    }
+	    if (this._lifeCycleHooks[event]) {
+	      this._lifeCycleHooks[event].push(listener);
+	    } else {
+	      this._lifeCycleHooks[event] = [listener];
+	    }
+	    return this;
+	  }
+
+	  /**
+	   * Register callback to use as replacement for calling process.exit.
+	   *
+	   * @param {Function} [fn] optional callback which will be passed a CommanderError, defaults to throwing
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  exitOverride(fn) {
+	    if (fn) {
+	      this._exitCallback = fn;
+	    } else {
+	      this._exitCallback = (err) => {
+	        if (err.code !== 'commander.executeSubCommandAsync') {
+	          throw err;
 	        }
-	        this.save();
+	      };
 	    }
-	    #writeNotExistsDefaultData() {
-	        Object.keys(this.#defaultContent).forEach((key) => {
-	            if (!this.data.has(key)) {
-	                this.data.set(key, this.#defaultContent[key]);
+	    return this;
+	  }
+
+	  /**
+	   * Call process.exit, and _exitCallback if defined.
+	   *
+	   * @param {number} exitCode exit code for using with process.exit
+	   * @param {string} code an id string representing the error
+	   * @param {string} message human-readable description of the error
+	   * @return never
+	   * @private
+	   */
+
+	  _exit(exitCode, code, message) {
+	    if (this._exitCallback) {
+	      this._exitCallback(new CommanderError(exitCode, code, message));
+	      // Expecting this line is not reached.
+	    }
+	    process.exit(exitCode);
+	  }
+
+	  /**
+	   * Register callback `fn` for the command.
+	   *
+	   * @example
+	   * program
+	   *   .command('serve')
+	   *   .description('start service')
+	   *   .action(function() {
+	   *      // do work here
+	   *   });
+	   *
+	   * @param {Function} fn
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  action(fn) {
+	    const listener = (args) => {
+	      // The .action callback takes an extra parameter which is the command or options.
+	      const expectedArgsCount = this.registeredArguments.length;
+	      const actionArgs = args.slice(0, expectedArgsCount);
+	      if (this._storeOptionsAsProperties) {
+	        actionArgs[expectedArgsCount] = this; // backwards compatible "options"
+	      } else {
+	        actionArgs[expectedArgsCount] = this.opts();
+	      }
+	      actionArgs.push(this);
+
+	      return fn.apply(this, actionArgs);
+	    };
+	    this._actionHandler = listener;
+	    return this;
+	  }
+
+	  /**
+	   * Factory routine to create a new unattached option.
+	   *
+	   * See .option() for creating an attached option, which uses this routine to
+	   * create the option. You can override createOption to return a custom option.
+	   *
+	   * @param {string} flags
+	   * @param {string} [description]
+	   * @return {Option} new option
+	   */
+
+	  createOption(flags, description) {
+	    return new Option(flags, description);
+	  }
+
+	  /**
+	   * Wrap parseArgs to catch 'commander.invalidArgument'.
+	   *
+	   * @param {(Option | Argument)} target
+	   * @param {string} value
+	   * @param {*} previous
+	   * @param {string} invalidArgumentMessage
+	   * @private
+	   */
+
+	  _callParseArg(target, value, previous, invalidArgumentMessage) {
+	    try {
+	      return target.parseArg(value, previous);
+	    } catch (err) {
+	      if (err.code === 'commander.invalidArgument') {
+	        const message = `${invalidArgumentMessage} ${err.message}`;
+	        this.error(message, { exitCode: err.exitCode, code: err.code });
+	      }
+	      throw err;
+	    }
+	  }
+
+	  /**
+	   * Check for option flag conflicts.
+	   * Register option if no conflicts found, or throw on conflict.
+	   *
+	   * @param {Option} option
+	   * @private
+	   */
+
+	  _registerOption(option) {
+	    const matchingOption =
+	      (option.short && this._findOption(option.short)) ||
+	      (option.long && this._findOption(option.long));
+	    if (matchingOption) {
+	      const matchingFlag =
+	        option.long && this._findOption(option.long)
+	          ? option.long
+	          : option.short;
+	      throw new Error(`Cannot add option '${option.flags}'${this._name && ` to command '${this._name}'`} due to conflicting flag '${matchingFlag}'
+-  already used by option '${matchingOption.flags}'`);
+	    }
+
+	    this.options.push(option);
+	  }
+
+	  /**
+	   * Check for command name and alias conflicts with existing commands.
+	   * Register command if no conflicts found, or throw on conflict.
+	   *
+	   * @param {Command} command
+	   * @private
+	   */
+
+	  _registerCommand(command) {
+	    const knownBy = (cmd) => {
+	      return [cmd.name()].concat(cmd.aliases());
+	    };
+
+	    const alreadyUsed = knownBy(command).find((name) =>
+	      this._findCommand(name),
+	    );
+	    if (alreadyUsed) {
+	      const existingCmd = knownBy(this._findCommand(alreadyUsed)).join('|');
+	      const newCmd = knownBy(command).join('|');
+	      throw new Error(
+	        `cannot add command '${newCmd}' as already have command '${existingCmd}'`,
+	      );
+	    }
+
+	    this.commands.push(command);
+	  }
+
+	  /**
+	   * Add an option.
+	   *
+	   * @param {Option} option
+	   * @return {Command} `this` command for chaining
+	   */
+	  addOption(option) {
+	    this._registerOption(option);
+
+	    const oname = option.name();
+	    const name = option.attributeName();
+
+	    // store default value
+	    if (option.negate) {
+	      // --no-foo is special and defaults foo to true, unless a --foo option is already defined
+	      const positiveLongFlag = option.long.replace(/^--no-/, '--');
+	      if (!this._findOption(positiveLongFlag)) {
+	        this.setOptionValueWithSource(
+	          name,
+	          option.defaultValue === undefined ? true : option.defaultValue,
+	          'default',
+	        );
+	      }
+	    } else if (option.defaultValue !== undefined) {
+	      this.setOptionValueWithSource(name, option.defaultValue, 'default');
+	    }
+
+	    // handler for cli and env supplied values
+	    const handleOptionValue = (val, invalidValueMessage, valueSource) => {
+	      // val is null for optional option used without an optional-argument.
+	      // val is undefined for boolean and negated option.
+	      if (val == null && option.presetArg !== undefined) {
+	        val = option.presetArg;
+	      }
+
+	      // custom processing
+	      const oldValue = this.getOptionValue(name);
+	      if (val !== null && option.parseArg) {
+	        val = this._callParseArg(option, val, oldValue, invalidValueMessage);
+	      } else if (val !== null && option.variadic) {
+	        val = option._concatValue(val, oldValue);
+	      }
+
+	      // Fill-in appropriate missing values. Long winded but easy to follow.
+	      if (val == null) {
+	        if (option.negate) {
+	          val = false;
+	        } else if (option.isBoolean() || option.optional) {
+	          val = true;
+	        } else {
+	          val = ''; // not normal, parseArg might have failed or be a mock function for testing
+	        }
+	      }
+	      this.setOptionValueWithSource(name, val, valueSource);
+	    };
+
+	    this.on('option:' + oname, (val) => {
+	      const invalidValueMessage = `error: option '${option.flags}' argument '${val}' is invalid.`;
+	      handleOptionValue(val, invalidValueMessage, 'cli');
+	    });
+
+	    if (option.envVar) {
+	      this.on('optionEnv:' + oname, (val) => {
+	        const invalidValueMessage = `error: option '${option.flags}' value '${val}' from env '${option.envVar}' is invalid.`;
+	        handleOptionValue(val, invalidValueMessage, 'env');
+	      });
+	    }
+
+	    return this;
+	  }
+
+	  /**
+	   * Internal implementation shared by .option() and .requiredOption()
+	   *
+	   * @return {Command} `this` command for chaining
+	   * @private
+	   */
+	  _optionEx(config, flags, description, fn, defaultValue) {
+	    if (typeof flags === 'object' && flags instanceof Option) {
+	      throw new Error(
+	        'To add an Option object use addOption() instead of option() or requiredOption()',
+	      );
+	    }
+	    const option = this.createOption(flags, description);
+	    option.makeOptionMandatory(!!config.mandatory);
+	    if (typeof fn === 'function') {
+	      option.default(defaultValue).argParser(fn);
+	    } else if (fn instanceof RegExp) {
+	      // deprecated
+	      const regex = fn;
+	      fn = (val, def) => {
+	        const m = regex.exec(val);
+	        return m ? m[0] : def;
+	      };
+	      option.default(defaultValue).argParser(fn);
+	    } else {
+	      option.default(fn);
+	    }
+
+	    return this.addOption(option);
+	  }
+
+	  /**
+	   * Define option with `flags`, `description`, and optional argument parsing function or `defaultValue` or both.
+	   *
+	   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space. A required
+	   * option-argument is indicated by `<>` and an optional option-argument by `[]`.
+	   *
+	   * See the README for more details, and see also addOption() and requiredOption().
+	   *
+	   * @example
+	   * program
+	   *     .option('-p, --pepper', 'add pepper')
+	   *     .option('-p, --pizza-type <TYPE>', 'type of pizza') // required option-argument
+	   *     .option('-c, --cheese [CHEESE]', 'add extra cheese', 'mozzarella') // optional option-argument with default
+	   *     .option('-t, --tip <VALUE>', 'add tip to purchase cost', parseFloat) // custom parse function
+	   *
+	   * @param {string} flags
+	   * @param {string} [description]
+	   * @param {(Function|*)} [parseArg] - custom option processing function or default value
+	   * @param {*} [defaultValue]
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  option(flags, description, parseArg, defaultValue) {
+	    return this._optionEx({}, flags, description, parseArg, defaultValue);
+	  }
+
+	  /**
+	   * Add a required option which must have a value after parsing. This usually means
+	   * the option must be specified on the command line. (Otherwise the same as .option().)
+	   *
+	   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space.
+	   *
+	   * @param {string} flags
+	   * @param {string} [description]
+	   * @param {(Function|*)} [parseArg] - custom option processing function or default value
+	   * @param {*} [defaultValue]
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  requiredOption(flags, description, parseArg, defaultValue) {
+	    return this._optionEx(
+	      { mandatory: true },
+	      flags,
+	      description,
+	      parseArg,
+	      defaultValue,
+	    );
+	  }
+
+	  /**
+	   * Alter parsing of short flags with optional values.
+	   *
+	   * @example
+	   * // for `.option('-f,--flag [value]'):
+	   * program.combineFlagAndOptionalValue(true);  // `-f80` is treated like `--flag=80`, this is the default behaviour
+	   * program.combineFlagAndOptionalValue(false) // `-fb` is treated like `-f -b`
+	   *
+	   * @param {boolean} [combine] - if `true` or omitted, an optional value can be specified directly after the flag.
+	   * @return {Command} `this` command for chaining
+	   */
+	  combineFlagAndOptionalValue(combine = true) {
+	    this._combineFlagAndOptionalValue = !!combine;
+	    return this;
+	  }
+
+	  /**
+	   * Allow unknown options on the command line.
+	   *
+	   * @param {boolean} [allowUnknown] - if `true` or omitted, no error will be thrown for unknown options.
+	   * @return {Command} `this` command for chaining
+	   */
+	  allowUnknownOption(allowUnknown = true) {
+	    this._allowUnknownOption = !!allowUnknown;
+	    return this;
+	  }
+
+	  /**
+	   * Allow excess command-arguments on the command line. Pass false to make excess arguments an error.
+	   *
+	   * @param {boolean} [allowExcess] - if `true` or omitted, no error will be thrown for excess arguments.
+	   * @return {Command} `this` command for chaining
+	   */
+	  allowExcessArguments(allowExcess = true) {
+	    this._allowExcessArguments = !!allowExcess;
+	    return this;
+	  }
+
+	  /**
+	   * Enable positional options. Positional means global options are specified before subcommands which lets
+	   * subcommands reuse the same option names, and also enables subcommands to turn on passThroughOptions.
+	   * The default behaviour is non-positional and global options may appear anywhere on the command line.
+	   *
+	   * @param {boolean} [positional]
+	   * @return {Command} `this` command for chaining
+	   */
+	  enablePositionalOptions(positional = true) {
+	    this._enablePositionalOptions = !!positional;
+	    return this;
+	  }
+
+	  /**
+	   * Pass through options that come after command-arguments rather than treat them as command-options,
+	   * so actual command-options come before command-arguments. Turning this on for a subcommand requires
+	   * positional options to have been enabled on the program (parent commands).
+	   * The default behaviour is non-positional and options may appear before or after command-arguments.
+	   *
+	   * @param {boolean} [passThrough] for unknown options.
+	   * @return {Command} `this` command for chaining
+	   */
+	  passThroughOptions(passThrough = true) {
+	    this._passThroughOptions = !!passThrough;
+	    this._checkForBrokenPassThrough();
+	    return this;
+	  }
+
+	  /**
+	   * @private
+	   */
+
+	  _checkForBrokenPassThrough() {
+	    if (
+	      this.parent &&
+	      this._passThroughOptions &&
+	      !this.parent._enablePositionalOptions
+	    ) {
+	      throw new Error(
+	        `passThroughOptions cannot be used for '${this._name}' without turning on enablePositionalOptions for parent command(s)`,
+	      );
+	    }
+	  }
+
+	  /**
+	   * Whether to store option values as properties on command object,
+	   * or store separately (specify false). In both cases the option values can be accessed using .opts().
+	   *
+	   * @param {boolean} [storeAsProperties=true]
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  storeOptionsAsProperties(storeAsProperties = true) {
+	    if (this.options.length) {
+	      throw new Error('call .storeOptionsAsProperties() before adding options');
+	    }
+	    if (Object.keys(this._optionValues).length) {
+	      throw new Error(
+	        'call .storeOptionsAsProperties() before setting option values',
+	      );
+	    }
+	    this._storeOptionsAsProperties = !!storeAsProperties;
+	    return this;
+	  }
+
+	  /**
+	   * Retrieve option value.
+	   *
+	   * @param {string} key
+	   * @return {object} value
+	   */
+
+	  getOptionValue(key) {
+	    if (this._storeOptionsAsProperties) {
+	      return this[key];
+	    }
+	    return this._optionValues[key];
+	  }
+
+	  /**
+	   * Store option value.
+	   *
+	   * @param {string} key
+	   * @param {object} value
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  setOptionValue(key, value) {
+	    return this.setOptionValueWithSource(key, value, undefined);
+	  }
+
+	  /**
+	   * Store option value and where the value came from.
+	   *
+	   * @param {string} key
+	   * @param {object} value
+	   * @param {string} source - expected values are default/config/env/cli/implied
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  setOptionValueWithSource(key, value, source) {
+	    if (this._storeOptionsAsProperties) {
+	      this[key] = value;
+	    } else {
+	      this._optionValues[key] = value;
+	    }
+	    this._optionValueSources[key] = source;
+	    return this;
+	  }
+
+	  /**
+	   * Get source of option value.
+	   * Expected values are default | config | env | cli | implied
+	   *
+	   * @param {string} key
+	   * @return {string}
+	   */
+
+	  getOptionValueSource(key) {
+	    return this._optionValueSources[key];
+	  }
+
+	  /**
+	   * Get source of option value. See also .optsWithGlobals().
+	   * Expected values are default | config | env | cli | implied
+	   *
+	   * @param {string} key
+	   * @return {string}
+	   */
+
+	  getOptionValueSourceWithGlobals(key) {
+	    // global overwrites local, like optsWithGlobals
+	    let source;
+	    this._getCommandAndAncestors().forEach((cmd) => {
+	      if (cmd.getOptionValueSource(key) !== undefined) {
+	        source = cmd.getOptionValueSource(key);
+	      }
+	    });
+	    return source;
+	  }
+
+	  /**
+	   * Get user arguments from implied or explicit arguments.
+	   * Side-effects: set _scriptPath if args included script. Used for default program name, and subcommand searches.
+	   *
+	   * @private
+	   */
+
+	  _prepareUserArgs(argv, parseOptions) {
+	    if (argv !== undefined && !Array.isArray(argv)) {
+	      throw new Error('first parameter to parse must be array or undefined');
+	    }
+	    parseOptions = parseOptions || {};
+
+	    // auto-detect argument conventions if nothing supplied
+	    if (argv === undefined && parseOptions.from === undefined) {
+	      if (process.versions?.electron) {
+	        parseOptions.from = 'electron';
+	      }
+	      // check node specific options for scenarios where user CLI args follow executable without scriptname
+	      const execArgv = process.execArgv ?? [];
+	      if (
+	        execArgv.includes('-e') ||
+	        execArgv.includes('--eval') ||
+	        execArgv.includes('-p') ||
+	        execArgv.includes('--print')
+	      ) {
+	        parseOptions.from = 'eval'; // internal usage, not documented
+	      }
+	    }
+
+	    // default to using process.argv
+	    if (argv === undefined) {
+	      argv = process.argv;
+	    }
+	    this.rawArgs = argv.slice();
+
+	    // extract the user args and scriptPath
+	    let userArgs;
+	    switch (parseOptions.from) {
+	      case undefined:
+	      case 'node':
+	        this._scriptPath = argv[1];
+	        userArgs = argv.slice(2);
+	        break;
+	      case 'electron':
+	        // @ts-ignore: because defaultApp is an unknown property
+	        if (process.defaultApp) {
+	          this._scriptPath = argv[1];
+	          userArgs = argv.slice(2);
+	        } else {
+	          userArgs = argv.slice(1);
+	        }
+	        break;
+	      case 'user':
+	        userArgs = argv.slice(0);
+	        break;
+	      case 'eval':
+	        userArgs = argv.slice(1);
+	        break;
+	      default:
+	        throw new Error(
+	          `unexpected parse option { from: '${parseOptions.from}' }`,
+	        );
+	    }
+
+	    // Find default name for program from arguments.
+	    if (!this._name && this._scriptPath)
+	      this.nameFromFilename(this._scriptPath);
+	    this._name = this._name || 'program';
+
+	    return userArgs;
+	  }
+
+	  /**
+	   * Parse `argv`, setting options and invoking commands when defined.
+	   *
+	   * Use parseAsync instead of parse if any of your action handlers are async.
+	   *
+	   * Call with no parameters to parse `process.argv`. Detects Electron and special node options like `node --eval`. Easy mode!
+	   *
+	   * Or call with an array of strings to parse, and optionally where the user arguments start by specifying where the arguments are `from`:
+	   * - `'node'`: default, `argv[0]` is the application and `argv[1]` is the script being run, with user arguments after that
+	   * - `'electron'`: `argv[0]` is the application and `argv[1]` varies depending on whether the electron application is packaged
+	   * - `'user'`: just user arguments
+	   *
+	   * @example
+	   * program.parse(); // parse process.argv and auto-detect electron and special node flags
+	   * program.parse(process.argv); // assume argv[0] is app and argv[1] is script
+	   * program.parse(my-args, { from: 'user' }); // just user supplied arguments, nothing special about argv[0]
+	   *
+	   * @param {string[]} [argv] - optional, defaults to process.argv
+	   * @param {object} [parseOptions] - optionally specify style of options with from: node/user/electron
+	   * @param {string} [parseOptions.from] - where the args are from: 'node', 'user', 'electron'
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  parse(argv, parseOptions) {
+	    const userArgs = this._prepareUserArgs(argv, parseOptions);
+	    this._parseCommand([], userArgs);
+
+	    return this;
+	  }
+
+	  /**
+	   * Parse `argv`, setting options and invoking commands when defined.
+	   *
+	   * Call with no parameters to parse `process.argv`. Detects Electron and special node options like `node --eval`. Easy mode!
+	   *
+	   * Or call with an array of strings to parse, and optionally where the user arguments start by specifying where the arguments are `from`:
+	   * - `'node'`: default, `argv[0]` is the application and `argv[1]` is the script being run, with user arguments after that
+	   * - `'electron'`: `argv[0]` is the application and `argv[1]` varies depending on whether the electron application is packaged
+	   * - `'user'`: just user arguments
+	   *
+	   * @example
+	   * await program.parseAsync(); // parse process.argv and auto-detect electron and special node flags
+	   * await program.parseAsync(process.argv); // assume argv[0] is app and argv[1] is script
+	   * await program.parseAsync(my-args, { from: 'user' }); // just user supplied arguments, nothing special about argv[0]
+	   *
+	   * @param {string[]} [argv]
+	   * @param {object} [parseOptions]
+	   * @param {string} parseOptions.from - where the args are from: 'node', 'user', 'electron'
+	   * @return {Promise}
+	   */
+
+	  async parseAsync(argv, parseOptions) {
+	    const userArgs = this._prepareUserArgs(argv, parseOptions);
+	    await this._parseCommand([], userArgs);
+
+	    return this;
+	  }
+
+	  /**
+	   * Execute a sub-command executable.
+	   *
+	   * @private
+	   */
+
+	  _executeSubCommand(subcommand, args) {
+	    args = args.slice();
+	    let launchWithNode = false; // Use node for source targets so do not need to get permissions correct, and on Windows.
+	    const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
+
+	    function findFile(baseDir, baseName) {
+	      // Look for specified file
+	      const localBin = path.resolve(baseDir, baseName);
+	      if (fs.existsSync(localBin)) return localBin;
+
+	      // Stop looking if candidate already has an expected extension.
+	      if (sourceExt.includes(path.extname(baseName))) return undefined;
+
+	      // Try all the extensions.
+	      const foundExt = sourceExt.find((ext) =>
+	        fs.existsSync(`${localBin}${ext}`),
+	      );
+	      if (foundExt) return `${localBin}${foundExt}`;
+
+	      return undefined;
+	    }
+
+	    // Not checking for help first. Unlikely to have mandatory and executable, and can't robustly test for help flags in external command.
+	    this._checkForMissingMandatoryOptions();
+	    this._checkForConflictingOptions();
+
+	    // executableFile and executableDir might be full path, or just a name
+	    let executableFile =
+	      subcommand._executableFile || `${this._name}-${subcommand._name}`;
+	    let executableDir = this._executableDir || '';
+	    if (this._scriptPath) {
+	      let resolvedScriptPath; // resolve possible symlink for installed npm binary
+	      try {
+	        resolvedScriptPath = fs.realpathSync(this._scriptPath);
+	      } catch (err) {
+	        resolvedScriptPath = this._scriptPath;
+	      }
+	      executableDir = path.resolve(
+	        path.dirname(resolvedScriptPath),
+	        executableDir,
+	      );
+	    }
+
+	    // Look for a local file in preference to a command in PATH.
+	    if (executableDir) {
+	      let localFile = findFile(executableDir, executableFile);
+
+	      // Legacy search using prefix of script name instead of command name
+	      if (!localFile && !subcommand._executableFile && this._scriptPath) {
+	        const legacyName = path.basename(
+	          this._scriptPath,
+	          path.extname(this._scriptPath),
+	        );
+	        if (legacyName !== this._name) {
+	          localFile = findFile(
+	            executableDir,
+	            `${legacyName}-${subcommand._name}`,
+	          );
+	        }
+	      }
+	      executableFile = localFile || executableFile;
+	    }
+
+	    launchWithNode = sourceExt.includes(path.extname(executableFile));
+
+	    let proc;
+	    if (process.platform !== 'win32') {
+	      if (launchWithNode) {
+	        args.unshift(executableFile);
+	        // add executable arguments to spawn
+	        args = incrementNodeInspectorPort(process.execArgv).concat(args);
+
+	        proc = childProcess.spawn(process.argv[0], args, { stdio: 'inherit' });
+	      } else {
+	        proc = childProcess.spawn(executableFile, args, { stdio: 'inherit' });
+	      }
+	    } else {
+	      args.unshift(executableFile);
+	      // add executable arguments to spawn
+	      args = incrementNodeInspectorPort(process.execArgv).concat(args);
+	      proc = childProcess.spawn(process.execPath, args, { stdio: 'inherit' });
+	    }
+
+	    if (!proc.killed) {
+	      // testing mainly to avoid leak warnings during unit tests with mocked spawn
+	      const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
+	      signals.forEach((signal) => {
+	        process.on(signal, () => {
+	          if (proc.killed === false && proc.exitCode === null) {
+	            // @ts-ignore because signals not typed to known strings
+	            proc.kill(signal);
+	          }
+	        });
+	      });
+	    }
+
+	    // By default terminate process when spawned process terminates.
+	    const exitCallback = this._exitCallback;
+	    proc.on('close', (code) => {
+	      code = code ?? 1; // code is null if spawned process terminated due to a signal
+	      if (!exitCallback) {
+	        process.exit(code);
+	      } else {
+	        exitCallback(
+	          new CommanderError(
+	            code,
+	            'commander.executeSubCommandAsync',
+	            '(close)',
+	          ),
+	        );
+	      }
+	    });
+	    proc.on('error', (err) => {
+	      // @ts-ignore: because err.code is an unknown property
+	      if (err.code === 'ENOENT') {
+	        const executableDirMessage = executableDir
+	          ? `searched for local subcommand relative to directory '${executableDir}'`
+	          : 'no directory for search for local subcommand, use .executableDir() to supply a custom directory';
+	        const executableMissing = `'${executableFile}' does not exist
+ - if '${subcommand._name}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
+ - if the default executable name is not suitable, use the executableFile option to supply a custom name or path
+ - ${executableDirMessage}`;
+	        throw new Error(executableMissing);
+	        // @ts-ignore: because err.code is an unknown property
+	      } else if (err.code === 'EACCES') {
+	        throw new Error(`'${executableFile}' not executable`);
+	      }
+	      if (!exitCallback) {
+	        process.exit(1);
+	      } else {
+	        const wrappedError = new CommanderError(
+	          1,
+	          'commander.executeSubCommandAsync',
+	          '(error)',
+	        );
+	        wrappedError.nestedError = err;
+	        exitCallback(wrappedError);
+	      }
+	    });
+
+	    // Store the reference to the child process
+	    this.runningCommand = proc;
+	  }
+
+	  /**
+	   * @private
+	   */
+
+	  _dispatchSubcommand(commandName, operands, unknown) {
+	    const subCommand = this._findCommand(commandName);
+	    if (!subCommand) this.help({ error: true });
+
+	    let promiseChain;
+	    promiseChain = this._chainOrCallSubCommandHook(
+	      promiseChain,
+	      subCommand,
+	      'preSubcommand',
+	    );
+	    promiseChain = this._chainOrCall(promiseChain, () => {
+	      if (subCommand._executableHandler) {
+	        this._executeSubCommand(subCommand, operands.concat(unknown));
+	      } else {
+	        return subCommand._parseCommand(operands, unknown);
+	      }
+	    });
+	    return promiseChain;
+	  }
+
+	  /**
+	   * Invoke help directly if possible, or dispatch if necessary.
+	   * e.g. help foo
+	   *
+	   * @private
+	   */
+
+	  _dispatchHelpCommand(subcommandName) {
+	    if (!subcommandName) {
+	      this.help();
+	    }
+	    const subCommand = this._findCommand(subcommandName);
+	    if (subCommand && !subCommand._executableHandler) {
+	      subCommand.help();
+	    }
+
+	    // Fallback to parsing the help flag to invoke the help.
+	    return this._dispatchSubcommand(
+	      subcommandName,
+	      [],
+	      [this._getHelpOption()?.long ?? this._getHelpOption()?.short ?? '--help'],
+	    );
+	  }
+
+	  /**
+	   * Check this.args against expected this.registeredArguments.
+	   *
+	   * @private
+	   */
+
+	  _checkNumberOfArguments() {
+	    // too few
+	    this.registeredArguments.forEach((arg, i) => {
+	      if (arg.required && this.args[i] == null) {
+	        this.missingArgument(arg.name());
+	      }
+	    });
+	    // too many
+	    if (
+	      this.registeredArguments.length > 0 &&
+	      this.registeredArguments[this.registeredArguments.length - 1].variadic
+	    ) {
+	      return;
+	    }
+	    if (this.args.length > this.registeredArguments.length) {
+	      this._excessArguments(this.args);
+	    }
+	  }
+
+	  /**
+	   * Process this.args using this.registeredArguments and save as this.processedArgs!
+	   *
+	   * @private
+	   */
+
+	  _processArguments() {
+	    const myParseArg = (argument, value, previous) => {
+	      // Extra processing for nice error message on parsing failure.
+	      let parsedValue = value;
+	      if (value !== null && argument.parseArg) {
+	        const invalidValueMessage = `error: command-argument value '${value}' is invalid for argument '${argument.name()}'.`;
+	        parsedValue = this._callParseArg(
+	          argument,
+	          value,
+	          previous,
+	          invalidValueMessage,
+	        );
+	      }
+	      return parsedValue;
+	    };
+
+	    this._checkNumberOfArguments();
+
+	    const processedArgs = [];
+	    this.registeredArguments.forEach((declaredArg, index) => {
+	      let value = declaredArg.defaultValue;
+	      if (declaredArg.variadic) {
+	        // Collect together remaining arguments for passing together as an array.
+	        if (index < this.args.length) {
+	          value = this.args.slice(index);
+	          if (declaredArg.parseArg) {
+	            value = value.reduce((processed, v) => {
+	              return myParseArg(declaredArg, v, processed);
+	            }, declaredArg.defaultValue);
+	          }
+	        } else if (value === undefined) {
+	          value = [];
+	        }
+	      } else if (index < this.args.length) {
+	        value = this.args[index];
+	        if (declaredArg.parseArg) {
+	          value = myParseArg(declaredArg, value, declaredArg.defaultValue);
+	        }
+	      }
+	      processedArgs[index] = value;
+	    });
+	    this.processedArgs = processedArgs;
+	  }
+
+	  /**
+	   * Once we have a promise we chain, but call synchronously until then.
+	   *
+	   * @param {(Promise|undefined)} promise
+	   * @param {Function} fn
+	   * @return {(Promise|undefined)}
+	   * @private
+	   */
+
+	  _chainOrCall(promise, fn) {
+	    // thenable
+	    if (promise && promise.then && typeof promise.then === 'function') {
+	      // already have a promise, chain callback
+	      return promise.then(() => fn());
+	    }
+	    // callback might return a promise
+	    return fn();
+	  }
+
+	  /**
+	   *
+	   * @param {(Promise|undefined)} promise
+	   * @param {string} event
+	   * @return {(Promise|undefined)}
+	   * @private
+	   */
+
+	  _chainOrCallHooks(promise, event) {
+	    let result = promise;
+	    const hooks = [];
+	    this._getCommandAndAncestors()
+	      .reverse()
+	      .filter((cmd) => cmd._lifeCycleHooks[event] !== undefined)
+	      .forEach((hookedCommand) => {
+	        hookedCommand._lifeCycleHooks[event].forEach((callback) => {
+	          hooks.push({ hookedCommand, callback });
+	        });
+	      });
+	    if (event === 'postAction') {
+	      hooks.reverse();
+	    }
+
+	    hooks.forEach((hookDetail) => {
+	      result = this._chainOrCall(result, () => {
+	        return hookDetail.callback(hookDetail.hookedCommand, this);
+	      });
+	    });
+	    return result;
+	  }
+
+	  /**
+	   *
+	   * @param {(Promise|undefined)} promise
+	   * @param {Command} subCommand
+	   * @param {string} event
+	   * @return {(Promise|undefined)}
+	   * @private
+	   */
+
+	  _chainOrCallSubCommandHook(promise, subCommand, event) {
+	    let result = promise;
+	    if (this._lifeCycleHooks[event] !== undefined) {
+	      this._lifeCycleHooks[event].forEach((hook) => {
+	        result = this._chainOrCall(result, () => {
+	          return hook(this, subCommand);
+	        });
+	      });
+	    }
+	    return result;
+	  }
+
+	  /**
+	   * Process arguments in context of this command.
+	   * Returns action result, in case it is a promise.
+	   *
+	   * @private
+	   */
+
+	  _parseCommand(operands, unknown) {
+	    const parsed = this.parseOptions(unknown);
+	    this._parseOptionsEnv(); // after cli, so parseArg not called on both cli and env
+	    this._parseOptionsImplied();
+	    operands = operands.concat(parsed.operands);
+	    unknown = parsed.unknown;
+	    this.args = operands.concat(unknown);
+
+	    if (operands && this._findCommand(operands[0])) {
+	      return this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
+	    }
+	    if (
+	      this._getHelpCommand() &&
+	      operands[0] === this._getHelpCommand().name()
+	    ) {
+	      return this._dispatchHelpCommand(operands[1]);
+	    }
+	    if (this._defaultCommandName) {
+	      this._outputHelpIfRequested(unknown); // Run the help for default command from parent rather than passing to default command
+	      return this._dispatchSubcommand(
+	        this._defaultCommandName,
+	        operands,
+	        unknown,
+	      );
+	    }
+	    if (
+	      this.commands.length &&
+	      this.args.length === 0 &&
+	      !this._actionHandler &&
+	      !this._defaultCommandName
+	    ) {
+	      // probably missing subcommand and no handler, user needs help (and exit)
+	      this.help({ error: true });
+	    }
+
+	    this._outputHelpIfRequested(parsed.unknown);
+	    this._checkForMissingMandatoryOptions();
+	    this._checkForConflictingOptions();
+
+	    // We do not always call this check to avoid masking a "better" error, like unknown command.
+	    const checkForUnknownOptions = () => {
+	      if (parsed.unknown.length > 0) {
+	        this.unknownOption(parsed.unknown[0]);
+	      }
+	    };
+
+	    const commandEvent = `command:${this.name()}`;
+	    if (this._actionHandler) {
+	      checkForUnknownOptions();
+	      this._processArguments();
+
+	      let promiseChain;
+	      promiseChain = this._chainOrCallHooks(promiseChain, 'preAction');
+	      promiseChain = this._chainOrCall(promiseChain, () =>
+	        this._actionHandler(this.processedArgs),
+	      );
+	      if (this.parent) {
+	        promiseChain = this._chainOrCall(promiseChain, () => {
+	          this.parent.emit(commandEvent, operands, unknown); // legacy
+	        });
+	      }
+	      promiseChain = this._chainOrCallHooks(promiseChain, 'postAction');
+	      return promiseChain;
+	    }
+	    if (this.parent && this.parent.listenerCount(commandEvent)) {
+	      checkForUnknownOptions();
+	      this._processArguments();
+	      this.parent.emit(commandEvent, operands, unknown); // legacy
+	    } else if (operands.length) {
+	      if (this._findCommand('*')) {
+	        // legacy default command
+	        return this._dispatchSubcommand('*', operands, unknown);
+	      }
+	      if (this.listenerCount('command:*')) {
+	        // skip option check, emit event for possible misspelling suggestion
+	        this.emit('command:*', operands, unknown);
+	      } else if (this.commands.length) {
+	        this.unknownCommand();
+	      } else {
+	        checkForUnknownOptions();
+	        this._processArguments();
+	      }
+	    } else if (this.commands.length) {
+	      checkForUnknownOptions();
+	      // This command has subcommands and nothing hooked up at this level, so display help (and exit).
+	      this.help({ error: true });
+	    } else {
+	      checkForUnknownOptions();
+	      this._processArguments();
+	      // fall through for caller to handle after calling .parse()
+	    }
+	  }
+
+	  /**
+	   * Find matching command.
+	   *
+	   * @private
+	   * @return {Command | undefined}
+	   */
+	  _findCommand(name) {
+	    if (!name) return undefined;
+	    return this.commands.find(
+	      (cmd) => cmd._name === name || cmd._aliases.includes(name),
+	    );
+	  }
+
+	  /**
+	   * Return an option matching `arg` if any.
+	   *
+	   * @param {string} arg
+	   * @return {Option}
+	   * @package
+	   */
+
+	  _findOption(arg) {
+	    return this.options.find((option) => option.is(arg));
+	  }
+
+	  /**
+	   * Display an error message if a mandatory option does not have a value.
+	   * Called after checking for help flags in leaf subcommand.
+	   *
+	   * @private
+	   */
+
+	  _checkForMissingMandatoryOptions() {
+	    // Walk up hierarchy so can call in subcommand after checking for displaying help.
+	    this._getCommandAndAncestors().forEach((cmd) => {
+	      cmd.options.forEach((anOption) => {
+	        if (
+	          anOption.mandatory &&
+	          cmd.getOptionValue(anOption.attributeName()) === undefined
+	        ) {
+	          cmd.missingMandatoryOptionValue(anOption);
+	        }
+	      });
+	    });
+	  }
+
+	  /**
+	   * Display an error message if conflicting options are used together in this.
+	   *
+	   * @private
+	   */
+	  _checkForConflictingLocalOptions() {
+	    const definedNonDefaultOptions = this.options.filter((option) => {
+	      const optionKey = option.attributeName();
+	      if (this.getOptionValue(optionKey) === undefined) {
+	        return false;
+	      }
+	      return this.getOptionValueSource(optionKey) !== 'default';
+	    });
+
+	    const optionsWithConflicting = definedNonDefaultOptions.filter(
+	      (option) => option.conflictsWith.length > 0,
+	    );
+
+	    optionsWithConflicting.forEach((option) => {
+	      const conflictingAndDefined = definedNonDefaultOptions.find((defined) =>
+	        option.conflictsWith.includes(defined.attributeName()),
+	      );
+	      if (conflictingAndDefined) {
+	        this._conflictingOption(option, conflictingAndDefined);
+	      }
+	    });
+	  }
+
+	  /**
+	   * Display an error message if conflicting options are used together.
+	   * Called after checking for help flags in leaf subcommand.
+	   *
+	   * @private
+	   */
+	  _checkForConflictingOptions() {
+	    // Walk up hierarchy so can call in subcommand after checking for displaying help.
+	    this._getCommandAndAncestors().forEach((cmd) => {
+	      cmd._checkForConflictingLocalOptions();
+	    });
+	  }
+
+	  /**
+	   * Parse options from `argv` removing known options,
+	   * and return argv split into operands and unknown arguments.
+	   *
+	   * Examples:
+	   *
+	   *     argv => operands, unknown
+	   *     --known kkk op => [op], []
+	   *     op --known kkk => [op], []
+	   *     sub --unknown uuu op => [sub], [--unknown uuu op]
+	   *     sub -- --unknown uuu op => [sub --unknown uuu op], []
+	   *
+	   * @param {string[]} argv
+	   * @return {{operands: string[], unknown: string[]}}
+	   */
+
+	  parseOptions(argv) {
+	    const operands = []; // operands, not options or values
+	    const unknown = []; // first unknown option and remaining unknown args
+	    let dest = operands;
+	    const args = argv.slice();
+
+	    function maybeOption(arg) {
+	      return arg.length > 1 && arg[0] === '-';
+	    }
+
+	    // parse options
+	    let activeVariadicOption = null;
+	    while (args.length) {
+	      const arg = args.shift();
+
+	      // literal
+	      if (arg === '--') {
+	        if (dest === unknown) dest.push(arg);
+	        dest.push(...args);
+	        break;
+	      }
+
+	      if (activeVariadicOption && !maybeOption(arg)) {
+	        this.emit(`option:${activeVariadicOption.name()}`, arg);
+	        continue;
+	      }
+	      activeVariadicOption = null;
+
+	      if (maybeOption(arg)) {
+	        const option = this._findOption(arg);
+	        // recognised option, call listener to assign value with possible custom processing
+	        if (option) {
+	          if (option.required) {
+	            const value = args.shift();
+	            if (value === undefined) this.optionMissingArgument(option);
+	            this.emit(`option:${option.name()}`, value);
+	          } else if (option.optional) {
+	            let value = null;
+	            // historical behaviour is optional value is following arg unless an option
+	            if (args.length > 0 && !maybeOption(args[0])) {
+	              value = args.shift();
+	            }
+	            this.emit(`option:${option.name()}`, value);
+	          } else {
+	            // boolean flag
+	            this.emit(`option:${option.name()}`);
+	          }
+	          activeVariadicOption = option.variadic ? option : null;
+	          continue;
+	        }
+	      }
+
+	      // Look for combo options following single dash, eat first one if known.
+	      if (arg.length > 2 && arg[0] === '-' && arg[1] !== '-') {
+	        const option = this._findOption(`-${arg[1]}`);
+	        if (option) {
+	          if (
+	            option.required ||
+	            (option.optional && this._combineFlagAndOptionalValue)
+	          ) {
+	            // option with value following in same argument
+	            this.emit(`option:${option.name()}`, arg.slice(2));
+	          } else {
+	            // boolean option, emit and put back remainder of arg for further processing
+	            this.emit(`option:${option.name()}`);
+	            args.unshift(`-${arg.slice(2)}`);
+	          }
+	          continue;
+	        }
+	      }
+
+	      // Look for known long flag with value, like --foo=bar
+	      if (/^--[^=]+=/.test(arg)) {
+	        const index = arg.indexOf('=');
+	        const option = this._findOption(arg.slice(0, index));
+	        if (option && (option.required || option.optional)) {
+	          this.emit(`option:${option.name()}`, arg.slice(index + 1));
+	          continue;
+	        }
+	      }
+
+	      // Not a recognised option by this command.
+	      // Might be a command-argument, or subcommand option, or unknown option, or help command or option.
+
+	      // An unknown option means further arguments also classified as unknown so can be reprocessed by subcommands.
+	      if (maybeOption(arg)) {
+	        dest = unknown;
+	      }
+
+	      // If using positionalOptions, stop processing our options at subcommand.
+	      if (
+	        (this._enablePositionalOptions || this._passThroughOptions) &&
+	        operands.length === 0 &&
+	        unknown.length === 0
+	      ) {
+	        if (this._findCommand(arg)) {
+	          operands.push(arg);
+	          if (args.length > 0) unknown.push(...args);
+	          break;
+	        } else if (
+	          this._getHelpCommand() &&
+	          arg === this._getHelpCommand().name()
+	        ) {
+	          operands.push(arg);
+	          if (args.length > 0) operands.push(...args);
+	          break;
+	        } else if (this._defaultCommandName) {
+	          unknown.push(arg);
+	          if (args.length > 0) unknown.push(...args);
+	          break;
+	        }
+	      }
+
+	      // If using passThroughOptions, stop processing options at first command-argument.
+	      if (this._passThroughOptions) {
+	        dest.push(arg);
+	        if (args.length > 0) dest.push(...args);
+	        break;
+	      }
+
+	      // add arg
+	      dest.push(arg);
+	    }
+
+	    return { operands, unknown };
+	  }
+
+	  /**
+	   * Return an object containing local option values as key-value pairs.
+	   *
+	   * @return {object}
+	   */
+	  opts() {
+	    if (this._storeOptionsAsProperties) {
+	      // Preserve original behaviour so backwards compatible when still using properties
+	      const result = {};
+	      const len = this.options.length;
+
+	      for (let i = 0; i < len; i++) {
+	        const key = this.options[i].attributeName();
+	        result[key] =
+	          key === this._versionOptionName ? this._version : this[key];
+	      }
+	      return result;
+	    }
+
+	    return this._optionValues;
+	  }
+
+	  /**
+	   * Return an object containing merged local and global option values as key-value pairs.
+	   *
+	   * @return {object}
+	   */
+	  optsWithGlobals() {
+	    // globals overwrite locals
+	    return this._getCommandAndAncestors().reduce(
+	      (combinedOptions, cmd) => Object.assign(combinedOptions, cmd.opts()),
+	      {},
+	    );
+	  }
+
+	  /**
+	   * Display error message and exit (or call exitOverride).
+	   *
+	   * @param {string} message
+	   * @param {object} [errorOptions]
+	   * @param {string} [errorOptions.code] - an id string representing the error
+	   * @param {number} [errorOptions.exitCode] - used with process.exit
+	   */
+	  error(message, errorOptions) {
+	    // output handling
+	    this._outputConfiguration.outputError(
+	      `${message}\n`,
+	      this._outputConfiguration.writeErr,
+	    );
+	    if (typeof this._showHelpAfterError === 'string') {
+	      this._outputConfiguration.writeErr(`${this._showHelpAfterError}\n`);
+	    } else if (this._showHelpAfterError) {
+	      this._outputConfiguration.writeErr('\n');
+	      this.outputHelp({ error: true });
+	    }
+
+	    // exit handling
+	    const config = errorOptions || {};
+	    const exitCode = config.exitCode || 1;
+	    const code = config.code || 'commander.error';
+	    this._exit(exitCode, code, message);
+	  }
+
+	  /**
+	   * Apply any option related environment variables, if option does
+	   * not have a value from cli or client code.
+	   *
+	   * @private
+	   */
+	  _parseOptionsEnv() {
+	    this.options.forEach((option) => {
+	      if (option.envVar && option.envVar in process.env) {
+	        const optionKey = option.attributeName();
+	        // Priority check. Do not overwrite cli or options from unknown source (client-code).
+	        if (
+	          this.getOptionValue(optionKey) === undefined ||
+	          ['default', 'config', 'env'].includes(
+	            this.getOptionValueSource(optionKey),
+	          )
+	        ) {
+	          if (option.required || option.optional) {
+	            // option can take a value
+	            // keep very simple, optional always takes value
+	            this.emit(`optionEnv:${option.name()}`, process.env[option.envVar]);
+	          } else {
+	            // boolean
+	            // keep very simple, only care that envVar defined and not the value
+	            this.emit(`optionEnv:${option.name()}`);
+	          }
+	        }
+	      }
+	    });
+	  }
+
+	  /**
+	   * Apply any implied option values, if option is undefined or default value.
+	   *
+	   * @private
+	   */
+	  _parseOptionsImplied() {
+	    const dualHelper = new DualOptions(this.options);
+	    const hasCustomOptionValue = (optionKey) => {
+	      return (
+	        this.getOptionValue(optionKey) !== undefined &&
+	        !['default', 'implied'].includes(this.getOptionValueSource(optionKey))
+	      );
+	    };
+	    this.options
+	      .filter(
+	        (option) =>
+	          option.implied !== undefined &&
+	          hasCustomOptionValue(option.attributeName()) &&
+	          dualHelper.valueFromOption(
+	            this.getOptionValue(option.attributeName()),
+	            option,
+	          ),
+	      )
+	      .forEach((option) => {
+	        Object.keys(option.implied)
+	          .filter((impliedKey) => !hasCustomOptionValue(impliedKey))
+	          .forEach((impliedKey) => {
+	            this.setOptionValueWithSource(
+	              impliedKey,
+	              option.implied[impliedKey],
+	              'implied',
+	            );
+	          });
+	      });
+	  }
+
+	  /**
+	   * Argument `name` is missing.
+	   *
+	   * @param {string} name
+	   * @private
+	   */
+
+	  missingArgument(name) {
+	    const message = `error: missing required argument '${name}'`;
+	    this.error(message, { code: 'commander.missingArgument' });
+	  }
+
+	  /**
+	   * `Option` is missing an argument.
+	   *
+	   * @param {Option} option
+	   * @private
+	   */
+
+	  optionMissingArgument(option) {
+	    const message = `error: option '${option.flags}' argument missing`;
+	    this.error(message, { code: 'commander.optionMissingArgument' });
+	  }
+
+	  /**
+	   * `Option` does not have a value, and is a mandatory option.
+	   *
+	   * @param {Option} option
+	   * @private
+	   */
+
+	  missingMandatoryOptionValue(option) {
+	    const message = `error: required option '${option.flags}' not specified`;
+	    this.error(message, { code: 'commander.missingMandatoryOptionValue' });
+	  }
+
+	  /**
+	   * `Option` conflicts with another option.
+	   *
+	   * @param {Option} option
+	   * @param {Option} conflictingOption
+	   * @private
+	   */
+	  _conflictingOption(option, conflictingOption) {
+	    // The calling code does not know whether a negated option is the source of the
+	    // value, so do some work to take an educated guess.
+	    const findBestOptionFromValue = (option) => {
+	      const optionKey = option.attributeName();
+	      const optionValue = this.getOptionValue(optionKey);
+	      const negativeOption = this.options.find(
+	        (target) => target.negate && optionKey === target.attributeName(),
+	      );
+	      const positiveOption = this.options.find(
+	        (target) => !target.negate && optionKey === target.attributeName(),
+	      );
+	      if (
+	        negativeOption &&
+	        ((negativeOption.presetArg === undefined && optionValue === false) ||
+	          (negativeOption.presetArg !== undefined &&
+	            optionValue === negativeOption.presetArg))
+	      ) {
+	        return negativeOption;
+	      }
+	      return positiveOption || option;
+	    };
+
+	    const getErrorMessage = (option) => {
+	      const bestOption = findBestOptionFromValue(option);
+	      const optionKey = bestOption.attributeName();
+	      const source = this.getOptionValueSource(optionKey);
+	      if (source === 'env') {
+	        return `environment variable '${bestOption.envVar}'`;
+	      }
+	      return `option '${bestOption.flags}'`;
+	    };
+
+	    const message = `error: ${getErrorMessage(option)} cannot be used with ${getErrorMessage(conflictingOption)}`;
+	    this.error(message, { code: 'commander.conflictingOption' });
+	  }
+
+	  /**
+	   * Unknown option `flag`.
+	   *
+	   * @param {string} flag
+	   * @private
+	   */
+
+	  unknownOption(flag) {
+	    if (this._allowUnknownOption) return;
+	    let suggestion = '';
+
+	    if (flag.startsWith('--') && this._showSuggestionAfterError) {
+	      // Looping to pick up the global options too
+	      let candidateFlags = [];
+	      // eslint-disable-next-line @typescript-eslint/no-this-alias
+	      let command = this;
+	      do {
+	        const moreFlags = command
+	          .createHelp()
+	          .visibleOptions(command)
+	          .filter((option) => option.long)
+	          .map((option) => option.long);
+	        candidateFlags = candidateFlags.concat(moreFlags);
+	        command = command.parent;
+	      } while (command && !command._enablePositionalOptions);
+	      suggestion = suggestSimilar(flag, candidateFlags);
+	    }
+
+	    const message = `error: unknown option '${flag}'${suggestion}`;
+	    this.error(message, { code: 'commander.unknownOption' });
+	  }
+
+	  /**
+	   * Excess arguments, more than expected.
+	   *
+	   * @param {string[]} receivedArgs
+	   * @private
+	   */
+
+	  _excessArguments(receivedArgs) {
+	    if (this._allowExcessArguments) return;
+
+	    const expected = this.registeredArguments.length;
+	    const s = expected === 1 ? '' : 's';
+	    const forSubcommand = this.parent ? ` for '${this.name()}'` : '';
+	    const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${receivedArgs.length}.`;
+	    this.error(message, { code: 'commander.excessArguments' });
+	  }
+
+	  /**
+	   * Unknown command.
+	   *
+	   * @private
+	   */
+
+	  unknownCommand() {
+	    const unknownName = this.args[0];
+	    let suggestion = '';
+
+	    if (this._showSuggestionAfterError) {
+	      const candidateNames = [];
+	      this.createHelp()
+	        .visibleCommands(this)
+	        .forEach((command) => {
+	          candidateNames.push(command.name());
+	          // just visible alias
+	          if (command.alias()) candidateNames.push(command.alias());
+	        });
+	      suggestion = suggestSimilar(unknownName, candidateNames);
+	    }
+
+	    const message = `error: unknown command '${unknownName}'${suggestion}`;
+	    this.error(message, { code: 'commander.unknownCommand' });
+	  }
+
+	  /**
+	   * Get or set the program version.
+	   *
+	   * This method auto-registers the "-V, --version" option which will print the version number.
+	   *
+	   * You can optionally supply the flags and description to override the defaults.
+	   *
+	   * @param {string} [str]
+	   * @param {string} [flags]
+	   * @param {string} [description]
+	   * @return {(this | string | undefined)} `this` command for chaining, or version string if no arguments
+	   */
+
+	  version(str, flags, description) {
+	    if (str === undefined) return this._version;
+	    this._version = str;
+	    flags = flags || '-V, --version';
+	    description = description || 'output the version number';
+	    const versionOption = this.createOption(flags, description);
+	    this._versionOptionName = versionOption.attributeName();
+	    this._registerOption(versionOption);
+
+	    this.on('option:' + versionOption.name(), () => {
+	      this._outputConfiguration.writeOut(`${str}\n`);
+	      this._exit(0, 'commander.version', str);
+	    });
+	    return this;
+	  }
+
+	  /**
+	   * Set the description.
+	   *
+	   * @param {string} [str]
+	   * @param {object} [argsDescription]
+	   * @return {(string|Command)}
+	   */
+	  description(str, argsDescription) {
+	    if (str === undefined && argsDescription === undefined)
+	      return this._description;
+	    this._description = str;
+	    if (argsDescription) {
+	      this._argsDescription = argsDescription;
+	    }
+	    return this;
+	  }
+
+	  /**
+	   * Set the summary. Used when listed as subcommand of parent.
+	   *
+	   * @param {string} [str]
+	   * @return {(string|Command)}
+	   */
+	  summary(str) {
+	    if (str === undefined) return this._summary;
+	    this._summary = str;
+	    return this;
+	  }
+
+	  /**
+	   * Set an alias for the command.
+	   *
+	   * You may call more than once to add multiple aliases. Only the first alias is shown in the auto-generated help.
+	   *
+	   * @param {string} [alias]
+	   * @return {(string|Command)}
+	   */
+
+	  alias(alias) {
+	    if (alias === undefined) return this._aliases[0]; // just return first, for backwards compatibility
+
+	    /** @type {Command} */
+	    // eslint-disable-next-line @typescript-eslint/no-this-alias
+	    let command = this;
+	    if (
+	      this.commands.length !== 0 &&
+	      this.commands[this.commands.length - 1]._executableHandler
+	    ) {
+	      // assume adding alias for last added executable subcommand, rather than this
+	      command = this.commands[this.commands.length - 1];
+	    }
+
+	    if (alias === command._name)
+	      throw new Error("Command alias can't be the same as its name");
+	    const matchingCommand = this.parent?._findCommand(alias);
+	    if (matchingCommand) {
+	      // c.f. _registerCommand
+	      const existingCmd = [matchingCommand.name()]
+	        .concat(matchingCommand.aliases())
+	        .join('|');
+	      throw new Error(
+	        `cannot add alias '${alias}' to command '${this.name()}' as already have command '${existingCmd}'`,
+	      );
+	    }
+
+	    command._aliases.push(alias);
+	    return this;
+	  }
+
+	  /**
+	   * Set aliases for the command.
+	   *
+	   * Only the first alias is shown in the auto-generated help.
+	   *
+	   * @param {string[]} [aliases]
+	   * @return {(string[]|Command)}
+	   */
+
+	  aliases(aliases) {
+	    // Getter for the array of aliases is the main reason for having aliases() in addition to alias().
+	    if (aliases === undefined) return this._aliases;
+
+	    aliases.forEach((alias) => this.alias(alias));
+	    return this;
+	  }
+
+	  /**
+	   * Set / get the command usage `str`.
+	   *
+	   * @param {string} [str]
+	   * @return {(string|Command)}
+	   */
+
+	  usage(str) {
+	    if (str === undefined) {
+	      if (this._usage) return this._usage;
+
+	      const args = this.registeredArguments.map((arg) => {
+	        return humanReadableArgName(arg);
+	      });
+	      return []
+	        .concat(
+	          this.options.length || this._helpOption !== null ? '[options]' : [],
+	          this.commands.length ? '[command]' : [],
+	          this.registeredArguments.length ? args : [],
+	        )
+	        .join(' ');
+	    }
+
+	    this._usage = str;
+	    return this;
+	  }
+
+	  /**
+	   * Get or set the name of the command.
+	   *
+	   * @param {string} [str]
+	   * @return {(string|Command)}
+	   */
+
+	  name(str) {
+	    if (str === undefined) return this._name;
+	    this._name = str;
+	    return this;
+	  }
+
+	  /**
+	   * Set the name of the command from script filename, such as process.argv[1],
+	   * or require.main.filename, or __filename.
+	   *
+	   * (Used internally and public although not documented in README.)
+	   *
+	   * @example
+	   * program.nameFromFilename(require.main.filename);
+	   *
+	   * @param {string} filename
+	   * @return {Command}
+	   */
+
+	  nameFromFilename(filename) {
+	    this._name = path.basename(filename, path.extname(filename));
+
+	    return this;
+	  }
+
+	  /**
+	   * Get or set the directory for searching for executable subcommands of this command.
+	   *
+	   * @example
+	   * program.executableDir(__dirname);
+	   * // or
+	   * program.executableDir('subcommands');
+	   *
+	   * @param {string} [path]
+	   * @return {(string|null|Command)}
+	   */
+
+	  executableDir(path) {
+	    if (path === undefined) return this._executableDir;
+	    this._executableDir = path;
+	    return this;
+	  }
+
+	  /**
+	   * Return program help documentation.
+	   *
+	   * @param {{ error: boolean }} [contextOptions] - pass {error:true} to wrap for stderr instead of stdout
+	   * @return {string}
+	   */
+
+	  helpInformation(contextOptions) {
+	    const helper = this.createHelp();
+	    if (helper.helpWidth === undefined) {
+	      helper.helpWidth =
+	        contextOptions && contextOptions.error
+	          ? this._outputConfiguration.getErrHelpWidth()
+	          : this._outputConfiguration.getOutHelpWidth();
+	    }
+	    return helper.formatHelp(this, helper);
+	  }
+
+	  /**
+	   * @private
+	   */
+
+	  _getHelpContext(contextOptions) {
+	    contextOptions = contextOptions || {};
+	    const context = { error: !!contextOptions.error };
+	    let write;
+	    if (context.error) {
+	      write = (arg) => this._outputConfiguration.writeErr(arg);
+	    } else {
+	      write = (arg) => this._outputConfiguration.writeOut(arg);
+	    }
+	    context.write = contextOptions.write || write;
+	    context.command = this;
+	    return context;
+	  }
+
+	  /**
+	   * Output help information for this command.
+	   *
+	   * Outputs built-in help, and custom text added using `.addHelpText()`.
+	   *
+	   * @param {{ error: boolean } | Function} [contextOptions] - pass {error:true} to write to stderr instead of stdout
+	   */
+
+	  outputHelp(contextOptions) {
+	    let deprecatedCallback;
+	    if (typeof contextOptions === 'function') {
+	      deprecatedCallback = contextOptions;
+	      contextOptions = undefined;
+	    }
+	    const context = this._getHelpContext(contextOptions);
+
+	    this._getCommandAndAncestors()
+	      .reverse()
+	      .forEach((command) => command.emit('beforeAllHelp', context));
+	    this.emit('beforeHelp', context);
+
+	    let helpInformation = this.helpInformation(context);
+	    if (deprecatedCallback) {
+	      helpInformation = deprecatedCallback(helpInformation);
+	      if (
+	        typeof helpInformation !== 'string' &&
+	        !Buffer.isBuffer(helpInformation)
+	      ) {
+	        throw new Error('outputHelp callback must return a string or a Buffer');
+	      }
+	    }
+	    context.write(helpInformation);
+
+	    if (this._getHelpOption()?.long) {
+	      this.emit(this._getHelpOption().long); // deprecated
+	    }
+	    this.emit('afterHelp', context);
+	    this._getCommandAndAncestors().forEach((command) =>
+	      command.emit('afterAllHelp', context),
+	    );
+	  }
+
+	  /**
+	   * You can pass in flags and a description to customise the built-in help option.
+	   * Pass in false to disable the built-in help option.
+	   *
+	   * @example
+	   * program.helpOption('-?, --help' 'show help'); // customise
+	   * program.helpOption(false); // disable
+	   *
+	   * @param {(string | boolean)} flags
+	   * @param {string} [description]
+	   * @return {Command} `this` command for chaining
+	   */
+
+	  helpOption(flags, description) {
+	    // Support disabling built-in help option.
+	    if (typeof flags === 'boolean') {
+	      if (flags) {
+	        this._helpOption = this._helpOption ?? undefined; // preserve existing option
+	      } else {
+	        this._helpOption = null; // disable
+	      }
+	      return this;
+	    }
+
+	    // Customise flags and description.
+	    flags = flags ?? '-h, --help';
+	    description = description ?? 'display help for command';
+	    this._helpOption = this.createOption(flags, description);
+
+	    return this;
+	  }
+
+	  /**
+	   * Lazy create help option.
+	   * Returns null if has been disabled with .helpOption(false).
+	   *
+	   * @returns {(Option | null)} the help option
+	   * @package
+	   */
+	  _getHelpOption() {
+	    // Lazy create help option on demand.
+	    if (this._helpOption === undefined) {
+	      this.helpOption(undefined, undefined);
+	    }
+	    return this._helpOption;
+	  }
+
+	  /**
+	   * Supply your own option to use for the built-in help option.
+	   * This is an alternative to using helpOption() to customise the flags and description etc.
+	   *
+	   * @param {Option} option
+	   * @return {Command} `this` command for chaining
+	   */
+	  addHelpOption(option) {
+	    this._helpOption = option;
+	    return this;
+	  }
+
+	  /**
+	   * Output help information and exit.
+	   *
+	   * Outputs built-in help, and custom text added using `.addHelpText()`.
+	   *
+	   * @param {{ error: boolean }} [contextOptions] - pass {error:true} to write to stderr instead of stdout
+	   */
+
+	  help(contextOptions) {
+	    this.outputHelp(contextOptions);
+	    let exitCode = process.exitCode || 0;
+	    if (
+	      exitCode === 0 &&
+	      contextOptions &&
+	      typeof contextOptions !== 'function' &&
+	      contextOptions.error
+	    ) {
+	      exitCode = 1;
+	    }
+	    // message: do not have all displayed text available so only passing placeholder.
+	    this._exit(exitCode, 'commander.help', '(outputHelp)');
+	  }
+
+	  /**
+	   * Add additional text to be displayed with the built-in help.
+	   *
+	   * Position is 'before' or 'after' to affect just this command,
+	   * and 'beforeAll' or 'afterAll' to affect this command and all its subcommands.
+	   *
+	   * @param {string} position - before or after built-in help
+	   * @param {(string | Function)} text - string to add, or a function returning a string
+	   * @return {Command} `this` command for chaining
+	   */
+	  addHelpText(position, text) {
+	    const allowedValues = ['beforeAll', 'before', 'after', 'afterAll'];
+	    if (!allowedValues.includes(position)) {
+	      throw new Error(`Unexpected value for position to addHelpText.
+Expecting one of '${allowedValues.join("', '")}'`);
+	    }
+	    const helpEvent = `${position}Help`;
+	    this.on(helpEvent, (context) => {
+	      let helpStr;
+	      if (typeof text === 'function') {
+	        helpStr = text({ error: context.error, command: context.command });
+	      } else {
+	        helpStr = text;
+	      }
+	      // Ignore falsy value when nothing to output.
+	      if (helpStr) {
+	        context.write(`${helpStr}\n`);
+	      }
+	    });
+	    return this;
+	  }
+
+	  /**
+	   * Output help information if help flags specified
+	   *
+	   * @param {Array} args - array of options to search for help flags
+	   * @private
+	   */
+
+	  _outputHelpIfRequested(args) {
+	    const helpOption = this._getHelpOption();
+	    const helpRequested = helpOption && args.find((arg) => helpOption.is(arg));
+	    if (helpRequested) {
+	      this.outputHelp();
+	      // (Do not have all displayed text available so only passing placeholder.)
+	      this._exit(0, 'commander.helpDisplayed', '(outputHelp)');
+	    }
+	  }
+	}
+
+	/**
+	 * Scan arguments and increment port number for inspect calls (to avoid conflicts when spawning new command).
+	 *
+	 * @param {string[]} args - array of arguments from node.execArgv
+	 * @returns {string[]}
+	 * @private
+	 */
+
+	function incrementNodeInspectorPort(args) {
+	  // Testing for these options:
+	  //  --inspect[=[host:]port]
+	  //  --inspect-brk[=[host:]port]
+	  //  --inspect-port=[host:]port
+	  return args.map((arg) => {
+	    if (!arg.startsWith('--inspect')) {
+	      return arg;
+	    }
+	    let debugOption;
+	    let debugHost = '127.0.0.1';
+	    let debugPort = '9229';
+	    let match;
+	    if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
+	      // e.g. --inspect
+	      debugOption = match[1];
+	    } else if (
+	      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null
+	    ) {
+	      debugOption = match[1];
+	      if (/^\d+$/.test(match[3])) {
+	        // e.g. --inspect=1234
+	        debugPort = match[3];
+	      } else {
+	        // e.g. --inspect=localhost
+	        debugHost = match[3];
+	      }
+	    } else if (
+	      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null
+	    ) {
+	      // e.g. --inspect=localhost:1234
+	      debugOption = match[1];
+	      debugHost = match[3];
+	      debugPort = match[4];
+	    }
+
+	    if (debugOption && debugPort !== '0') {
+	      return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
+	    }
+	    return arg;
+	  });
+	}
+
+	command$2.Command = Command;
+	return command$2;
+}
+
+var hasRequiredCommander;
+
+function requireCommander () {
+	if (hasRequiredCommander) return commander;
+	hasRequiredCommander = 1;
+	const { Argument } = requireArgument();
+	const { Command } = requireCommand$2();
+	const { CommanderError, InvalidArgumentError } = requireError();
+	const { Help } = requireHelp();
+	const { Option } = requireOption();
+
+	commander.program = new Command();
+
+	commander.createCommand = (name) => new Command(name);
+	commander.createOption = (flags, description) => new Option(flags, description);
+	commander.createArgument = (name, description) => new Argument(name, description);
+
+	/**
+	 * Expose classes
+	 */
+
+	commander.Command = Command;
+	commander.Option = Option;
+	commander.Argument = Argument;
+	commander.Help = Help;
+
+	commander.CommanderError = CommanderError;
+	commander.InvalidArgumentError = InvalidArgumentError;
+	commander.InvalidOptionArgumentError = InvalidArgumentError; // Deprecated
+	return commander;
+}
+
+var lib$6;
+var hasRequiredLib$7;
+
+function requireLib$7 () {
+	if (hasRequiredLib$7) return lib$6;
+	hasRequiredLib$7 = 1;
+	const { Command, Option } = requireCommander();
+	const { basicCommon } = requireLib$8();
+
+	class SingleCommandRegister {
+	    usage(program, content) {
+	        return program.usage(content);
+	    }
+
+	    version(program, version) {
+	        return program.version(version);
+	    }
+
+	    command(program, command) {
+	        return program.command(command);
+	    }
+
+	    description(program, description) {
+	        return program.description(description);
+	    }
+
+	    option(program, option) {
+	        option.forEach((item) => {
+	            const hideHelp = item.hideHelp;
+	            program = program.addOption(
+	                hideHelp
+	                    ? new Option(item.command, item.description).hideHelp()
+	                    : new Option(item.command, item.description),
+	            );
+	        });
+	        return program;
+	    }
+
+	    action(program, action) {
+	        return program.action((...rest) => {
+	            if (basicCommon.isType(action, "function")) {
+	                action(...rest);
+	            } else {
+	                action.start(...rest);
 	            }
 	        });
-	        this.save();
-	    }
-	    load() {
-	        basicCommon.writeNotExistsFile(
-	            this.#source,
-	            ini.stringify(this.#defaultContent).trim(),
-	        );
-	        this.#coverContent(
-	            ini.parse(basicCommon.readFileIsExists(this.#source).toString()),
-	        );
-	        this.#writeNotExistsDefaultData();
-	    }
-	    has(key) {
-	        return this.data.has(key);
-	    }
-
-	    get(key) {
-	        return this.data.get(key);
-	    }
-
-	    set(key, value) {
-	        if (!value) {
-	            return this.delete(key);
-	        } else {
-	            this.data.set(key, value);
-	        }
-	        this.save();
-	    }
-
-	    delete(key) {
-	        if (!this.has(key)) return;
-	        this.data.delete(key);
-	        this.save();
-	    }
-
-	    reset() {
-	        const sourceFileName = path.basename(this.#source);
-	        const CachePath = path.resolve(
-	            path.dirname(this.#source),
-	            `.Cache/Config/${sourceFileName}.${Date.now()}`,
-	        );
-	        basicCommon.writeNotExistsFile(
-	            CachePath,
-	            ini.stringify(this.#defaultContent).trim(),
-	        );
-	        this.#coverContent(this.#defaultContent);
-	    }
-
-	    save() {
-	        basicCommon.writeCoverFile(this.#source, this.stringify());
-	    }
-
-	    list() {
-	        return Object.fromEntries(this.data);
-	    }
-
-	    stringify() {
-	        return ini.stringify(this.list()).trim();
 	    }
 	}
 
-	Config_1 = Config;
-	return Config_1;
+	class RegisterCommand extends SingleCommandRegister {
+	    #commandOption;
+	    #singleRegister = new Map([
+	        [this.usage, "usage"],
+	        [this.version, "version"],
+	        [this.command, "command"],
+	        [this.description, "description"],
+	        [this.option, "option"],
+	        [this.action, "action"],
+	    ]);
+	    program;
+	    constructor(props) {
+	        if (!props.commandOption)
+	            throw new Error("missing register command for commandOption...");
+	        super();
+
+	        this.program = new Command();
+	        this.#commandOption = props.commandOption();
+	    }
+
+	    commandGlobalCatch(cb) {
+	        return this.program.action((...rest) => cb(...rest));
+	    }
+
+	    registerChildrenCommand(program, item) {
+	        const registerConfig = () => {
+	            let config = new Command(item.command);
+	            delete item.command;
+
+	            config = this.registerCommand(config, item);
+	            for (const child of item.children) {
+	                this.registerCommand(config, child);
+	            }
+
+	            return config;
+	        };
+	        program.addCommand(registerConfig());
+	    }
+
+	    registerCommand(program, item) {
+	        for (const [handler, option] of this.#singleRegister) {
+	            if (item[option]) {
+	                program = handler(program, item[option]);
+	            }
+	        }
+	        return program;
+	    }
+
+	    register() {
+	        if (!Array.isArray(this.#commandOption))
+	            throw new Error("register command option must to be type Array...");
+
+	        for (const item of this.#commandOption) {
+	            if (item.children) {
+	                this.registerChildrenCommand(this.program, item);
+	            } else {
+	                this.registerCommand(this.program, item);
+	            }
+	        }
+
+	        this.program.on("command:*", () => this.program.outputHelp());
+	        this.program.parse(process.argv);
+	    }
+	}
+
+	lib$6 = RegisterCommand;
+	return lib$6;
 }
 
 var cjs$d = {};
@@ -1784,7 +5253,7 @@ function requireHookEngine () {
 	hookEngine.withUpdates = withUpdates;
 	hookEngine.withPointer = withPointer;
 	hookEngine.handleChange = handleChange;
-	const node_async_hooks_1 = require$$0$5;
+	const node_async_hooks_1 = require$$0$6;
 	const errors_mjs_1 = /*@__PURE__*/ requireErrors();
 	const hookStorage = new node_async_hooks_1.AsyncLocalStorage();
 	function createStore(rl) {
@@ -1959,7 +5428,7 @@ var hasRequiredYoctocolorsCjs;
 function requireYoctocolorsCjs () {
 	if (hasRequiredYoctocolorsCjs) return yoctocolorsCjs;
 	hasRequiredYoctocolorsCjs = 1;
-	const tty = require$$0$6;
+	const tty = require$$0$7;
 
 	// eslint-disable-next-line no-warning-comments
 	// TODO: Use a better method when it's added to Node.js (https://github.com/nodejs/node/pull/40240)
@@ -2071,7 +5540,7 @@ function requireCjs$d () {
 		// process.env dot-notation access prints:
 		// Property 'TERM' comes from an index signature, so it must be accessed with ['TERM'].ts(4111)
 		/* eslint dot-notation: ["off"] */
-		const node_process_1 = __importDefault(require$$0$7);
+		const node_process_1 = __importDefault(require$$4$1);
 		// Ported from is-unicode-supported
 		function isUnicodeSupported() {
 		    if (node_process_1.default.platform !== 'win32') {
@@ -2461,7 +5930,7 @@ function requireUsePrefix () {
 	hasRequiredUsePrefix = 1;
 	Object.defineProperty(usePrefix, "__esModule", { value: true });
 	usePrefix.usePrefix = usePrefix$1;
-	const node_async_hooks_1 = require$$0$5;
+	const node_async_hooks_1 = require$$0$6;
 	const use_state_mjs_1 = /*@__PURE__*/ requireUseState();
 	const use_effect_mjs_1 = /*@__PURE__*/ requireUseEffect();
 	const make_theme_mjs_1 = /*@__PURE__*/ requireMakeTheme();
@@ -4561,12 +8030,12 @@ function requireUsePagination () {
 
 var createPrompt = {};
 
-var lib$1;
-var hasRequiredLib$2;
+var lib$5;
+var hasRequiredLib$6;
 
-function requireLib$2 () {
-	if (hasRequiredLib$2) return lib$1;
-	hasRequiredLib$2 = 1;
+function requireLib$6 () {
+	if (hasRequiredLib$6) return lib$5;
+	hasRequiredLib$6 = 1;
 	const Stream = require$$1$3;
 
 	class MuteStream extends Stream {
@@ -4708,8 +8177,8 @@ function requireLib$2 () {
 	  }
 	}
 
-	lib$1 = MuteStream;
-	return lib$1;
+	lib$5 = MuteStream;
+	return lib$5;
 }
 
 var cjs$9 = {};
@@ -5403,8 +8872,8 @@ function requireCreatePrompt () {
 	Object.defineProperty(createPrompt, "__esModule", { value: true });
 	createPrompt.createPrompt = createPrompt$1;
 	const readline = __importStar(require$$0$9);
-	const node_async_hooks_1 = require$$0$5;
-	const mute_stream_1 = __importDefault(requireLib$2());
+	const node_async_hooks_1 = require$$0$6;
+	const mute_stream_1 = __importDefault(requireLib$6());
 	const signal_exit_1 = requireCjs$c();
 	const screen_manager_mjs_1 = __importDefault(/*@__PURE__*/ requireScreenManager());
 	const promise_polyfill_mjs_1 = /*@__PURE__*/ requirePromisePolyfill();
@@ -7763,7 +11232,7 @@ function requireChardet () {
 	return chardet;
 }
 
-var lib = {exports: {}};
+var lib$4 = {exports: {}};
 
 /* eslint-disable node/no-deprecated-api */
 
@@ -14527,12 +17996,12 @@ var gbChars = [
 	39394,
 	189000
 ];
-var require$$4$1 = {
+var require$$4 = {
 	uChars: uChars,
 	gbChars: gbChars
 };
 
-var require$$5 = [
+var require$$5$1 = [
 	[
 		"0",
 		"\u0000",
@@ -18254,7 +21723,7 @@ function requireDbcsData () {
 	    'gb18030': {
 	        type: '_dbcs',
 	        table: function() { return require$$2.concat(require$$3) },
-	        gb18030: function() { return require$$4$1 },
+	        gb18030: function() { return require$$4 },
 	        encodeSkipVals: [0x80],
 	        encodeAdd: {'€': 0xA2E3},
 	    },
@@ -18269,7 +21738,7 @@ function requireDbcsData () {
 	    '949': 'cp949',
 	    'cp949': {
 	        type: '_dbcs',
-	        table: function() { return require$$5 },
+	        table: function() { return require$$5$1 },
 	    },
 
 	    'cseuckr': 'cp949',
@@ -18712,11 +22181,11 @@ function requireExtendNode () {
 	return extendNode;
 }
 
-var hasRequiredLib$1;
+var hasRequiredLib$5;
 
-function requireLib$1 () {
-	if (hasRequiredLib$1) return lib.exports;
-	hasRequiredLib$1 = 1;
+function requireLib$5 () {
+	if (hasRequiredLib$5) return lib$4.exports;
+	hasRequiredLib$5 = 1;
 	(function (module) {
 
 		// Some environments don't have global Buffer (e.g. React Native).
@@ -18866,8 +22335,8 @@ function requireLib$1 () {
 		    // Load Node primitive extensions.
 		    requireExtendNode()(iconv);
 		}
-	} (lib));
-	return lib.exports;
+	} (lib$4));
+	return lib$4.exports;
 }
 
 var tmp = {};
@@ -19731,7 +23200,7 @@ function requireMain () {
 	var chardet_1 = requireChardet();
 	var child_process_1 = require$$1$5;
 	var fs_1 = require$$0$4;
-	var iconv_lite_1 = requireLib$1();
+	var iconv_lite_1 = requireLib$5();
 	var tmp_1 = requireTmp();
 	var CreateFileError_1 = requireCreateFileError();
 	main.CreateFileError = CreateFileError_1.CreateFileError;
@@ -19931,7 +23400,7 @@ function requireCjs$9 () {
 	    });
 	};
 	Object.defineProperty(cjs$8, "__esModule", { value: true });
-	const node_async_hooks_1 = require$$0$5;
+	const node_async_hooks_1 = require$$0$6;
 	const external_editor_1 = requireMain();
 	const core_1 = /*@__PURE__*/ requireCjs$b();
 	cjs$8.default = (0, core_1.createPrompt)((config, done) => {
@@ -20976,14 +24445,14 @@ function requireCjs () {
 	return cjs$d;
 }
 
-var Inquirer_1;
-var hasRequiredInquirer;
+var lib$3;
+var hasRequiredLib$4;
 
-function requireInquirer () {
-	if (hasRequiredInquirer) return Inquirer_1;
-	hasRequiredInquirer = 1;
+function requireLib$4 () {
+	if (hasRequiredLib$4) return lib$3;
+	hasRequiredLib$4 = 1;
 	const inquirer = /*@__PURE__*/ requireCjs();
-	const { arrayExecSyncHandler, filterObject } = requireLib$3();
+	const { arrayExecSyncHandler, filterObject } = requireLib$8();
 
 	class Inquirer {
 	    constructor() {
@@ -21046,20 +24515,1070 @@ function requireInquirer () {
 	    }
 	}
 
-	Inquirer_1 = Inquirer;
-	return Inquirer_1;
+	lib$3 = Inquirer;
+	return lib$3;
 }
 
-var GitStorage_1;
-var hasRequiredGitStorage;
+var ini;
+var hasRequiredIni;
 
-function requireGitStorage () {
-	if (hasRequiredGitStorage) return GitStorage_1;
-	hasRequiredGitStorage = 1;
+function requireIni () {
+	if (hasRequiredIni) return ini;
+	hasRequiredIni = 1;
+	const { hasOwnProperty } = Object.prototype;
+
+	const encode = (obj, opt = {}) => {
+	  if (typeof opt === 'string') {
+	    opt = { section: opt };
+	  }
+	  opt.align = opt.align === true;
+	  opt.newline = opt.newline === true;
+	  opt.sort = opt.sort === true;
+	  opt.whitespace = opt.whitespace === true || opt.align === true;
+	  // The `typeof` check is required because accessing the `process` directly fails on browsers.
+	  /* istanbul ignore next */
+	  opt.platform = opt.platform || (typeof process !== 'undefined' && process.platform);
+	  opt.bracketedArray = opt.bracketedArray !== false;
+
+	  /* istanbul ignore next */
+	  const eol = opt.platform === 'win32' ? '\r\n' : '\n';
+	  const separator = opt.whitespace ? ' = ' : '=';
+	  const children = [];
+
+	  const keys = opt.sort ? Object.keys(obj).sort() : Object.keys(obj);
+
+	  let padToChars = 0;
+	  // If aligning on the separator, then padToChars is determined as follows:
+	  // 1. Get the keys
+	  // 2. Exclude keys pointing to objects unless the value is null or an array
+	  // 3. Add `[]` to array keys
+	  // 4. Ensure non empty set of keys
+	  // 5. Reduce the set to the longest `safe` key
+	  // 6. Get the `safe` length
+	  if (opt.align) {
+	    padToChars = safe(
+	      (
+	        keys
+	          .filter(k => obj[k] === null || Array.isArray(obj[k]) || typeof obj[k] !== 'object')
+	          .map(k => Array.isArray(obj[k]) ? `${k}[]` : k)
+	      )
+	        .concat([''])
+	        .reduce((a, b) => safe(a).length >= safe(b).length ? a : b)
+	    ).length;
+	  }
+
+	  let out = '';
+	  const arraySuffix = opt.bracketedArray ? '[]' : '';
+
+	  for (const k of keys) {
+	    const val = obj[k];
+	    if (val && Array.isArray(val)) {
+	      for (const item of val) {
+	        out += safe(`${k}${arraySuffix}`).padEnd(padToChars, ' ') + separator + safe(item) + eol;
+	      }
+	    } else if (val && typeof val === 'object') {
+	      children.push(k);
+	    } else {
+	      out += safe(k).padEnd(padToChars, ' ') + separator + safe(val) + eol;
+	    }
+	  }
+
+	  if (opt.section && out.length) {
+	    out = '[' + safe(opt.section) + ']' + (opt.newline ? eol + eol : eol) + out;
+	  }
+
+	  for (const k of children) {
+	    const nk = splitSections(k, '.').join('\\.');
+	    const section = (opt.section ? opt.section + '.' : '') + nk;
+	    const child = encode(obj[k], {
+	      ...opt,
+	      section,
+	    });
+	    if (out.length && child.length) {
+	      out += eol;
+	    }
+
+	    out += child;
+	  }
+
+	  return out
+	};
+
+	function splitSections (str, separator) {
+	  var lastMatchIndex = 0;
+	  var lastSeparatorIndex = 0;
+	  var nextIndex = 0;
+	  var sections = [];
+
+	  do {
+	    nextIndex = str.indexOf(separator, lastMatchIndex);
+
+	    if (nextIndex !== -1) {
+	      lastMatchIndex = nextIndex + separator.length;
+
+	      if (nextIndex > 0 && str[nextIndex - 1] === '\\') {
+	        continue
+	      }
+
+	      sections.push(str.slice(lastSeparatorIndex, nextIndex));
+	      lastSeparatorIndex = nextIndex + separator.length;
+	    }
+	  } while (nextIndex !== -1)
+
+	  sections.push(str.slice(lastSeparatorIndex));
+
+	  return sections
+	}
+
+	const decode = (str, opt = {}) => {
+	  opt.bracketedArray = opt.bracketedArray !== false;
+	  const out = Object.create(null);
+	  let p = out;
+	  let section = null;
+	  //          section          |key      = value
+	  const re = /^\[([^\]]*)\]\s*$|^([^=]+)(=(.*))?$/i;
+	  const lines = str.split(/[\r\n]+/g);
+	  const duplicates = {};
+
+	  for (const line of lines) {
+	    if (!line || line.match(/^\s*[;#]/) || line.match(/^\s*$/)) {
+	      continue
+	    }
+	    const match = line.match(re);
+	    if (!match) {
+	      continue
+	    }
+	    if (match[1] !== undefined) {
+	      section = unsafe(match[1]);
+	      if (section === '__proto__') {
+	        // not allowed
+	        // keep parsing the section, but don't attach it.
+	        p = Object.create(null);
+	        continue
+	      }
+	      p = out[section] = out[section] || Object.create(null);
+	      continue
+	    }
+	    const keyRaw = unsafe(match[2]);
+	    let isArray;
+	    if (opt.bracketedArray) {
+	      isArray = keyRaw.length > 2 && keyRaw.slice(-2) === '[]';
+	    } else {
+	      duplicates[keyRaw] = (duplicates?.[keyRaw] || 0) + 1;
+	      isArray = duplicates[keyRaw] > 1;
+	    }
+	    const key = isArray && keyRaw.endsWith('[]')
+	      ? keyRaw.slice(0, -2) : keyRaw;
+
+	    if (key === '__proto__') {
+	      continue
+	    }
+	    const valueRaw = match[3] ? unsafe(match[4]) : true;
+	    const value = valueRaw === 'true' ||
+	      valueRaw === 'false' ||
+	      valueRaw === 'null' ? JSON.parse(valueRaw)
+	      : valueRaw;
+
+	    // Convert keys with '[]' suffix to an array
+	    if (isArray) {
+	      if (!hasOwnProperty.call(p, key)) {
+	        p[key] = [];
+	      } else if (!Array.isArray(p[key])) {
+	        p[key] = [p[key]];
+	      }
+	    }
+
+	    // safeguard against resetting a previously defined
+	    // array by accidentally forgetting the brackets
+	    if (Array.isArray(p[key])) {
+	      p[key].push(value);
+	    } else {
+	      p[key] = value;
+	    }
+	  }
+
+	  // {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
+	  // use a filter to return the keys that have to be deleted.
+	  const remove = [];
+	  for (const k of Object.keys(out)) {
+	    if (!hasOwnProperty.call(out, k) ||
+	      typeof out[k] !== 'object' ||
+	      Array.isArray(out[k])) {
+	      continue
+	    }
+
+	    // see if the parent section is also an object.
+	    // if so, add it to that, and mark this one for deletion
+	    const parts = splitSections(k, '.');
+	    p = out;
+	    const l = parts.pop();
+	    const nl = l.replace(/\\\./g, '.');
+	    for (const part of parts) {
+	      if (part === '__proto__') {
+	        continue
+	      }
+	      if (!hasOwnProperty.call(p, part) || typeof p[part] !== 'object') {
+	        p[part] = Object.create(null);
+	      }
+	      p = p[part];
+	    }
+	    if (p === out && nl === l) {
+	      continue
+	    }
+
+	    p[nl] = out[k];
+	    remove.push(k);
+	  }
+	  for (const del of remove) {
+	    delete out[del];
+	  }
+
+	  return out
+	};
+
+	const isQuoted = val => {
+	  return (val.startsWith('"') && val.endsWith('"')) ||
+	    (val.startsWith("'") && val.endsWith("'"))
+	};
+
+	const safe = val => {
+	  if (
+	    typeof val !== 'string' ||
+	    val.match(/[=\r\n]/) ||
+	    val.match(/^\[/) ||
+	    (val.length > 1 && isQuoted(val)) ||
+	    val !== val.trim()
+	  ) {
+	    return JSON.stringify(val)
+	  }
+	  return val.split(';').join('\\;').split('#').join('\\#')
+	};
+
+	const unsafe = val => {
+	  val = (val || '').trim();
+	  if (isQuoted(val)) {
+	    // remove the single quotes before calling JSON.parse
+	    if (val.charAt(0) === "'") {
+	      val = val.slice(1, -1);
+	    }
+	    try {
+	      val = JSON.parse(val);
+	    } catch {
+	      // ignore errors
+	    }
+	  } else {
+	    // walk the val to find the first not-escaped ; character
+	    let esc = false;
+	    let unesc = '';
+	    for (let i = 0, l = val.length; i < l; i++) {
+	      const c = val.charAt(i);
+	      if (esc) {
+	        if ('\\;#'.indexOf(c) !== -1) {
+	          unesc += c;
+	        } else {
+	          unesc += '\\' + c;
+	        }
+
+	        esc = false;
+	      } else if (';#'.indexOf(c) !== -1) {
+	        break
+	      } else if (c === '\\') {
+	        esc = true;
+	      } else {
+	        unesc += c;
+	      }
+	    }
+	    if (esc) {
+	      unesc += '\\';
+	    }
+
+	    return unesc.trim()
+	  }
+	  return val
+	};
+
+	ini = {
+	  parse: decode,
+	  decode,
+	  stringify: encode,
+	  encode,
+	  safe,
+	  unsafe,
+	};
+	return ini;
+}
+
+var lib$2;
+var hasRequiredLib$3;
+
+function requireLib$3 () {
+	if (hasRequiredLib$3) return lib$2;
+	hasRequiredLib$3 = 1;
+	const ini = requireIni();
+	const path = require$$1$2;
+	const { basicCommon } = requireLib$8();
+
+	class Config {
+	    #source;
+	    #encoding = "utf8";
+	    #defaultContent = {};
+	    data = new Map();
+	    constructor({ source, encoding, defaultContent }) {
+	        this.#source = source;
+	        this.#encoding = encoding || this.#encoding;
+	        this.#defaultContent = defaultContent;
+
+	        this.load();
+	    }
+	    #coverContent(parseContent) {
+	        if (Object.keys(parseContent)?.length) {
+	            this.data.clear();
+	            Object.entries(parseContent).forEach(([key, value]) => {
+	                this.data.set(key, value);
+	            });
+	        }
+	        this.save();
+	    }
+	    #writeNotExistsDefaultData() {
+	        Object.keys(this.#defaultContent).forEach((key) => {
+	            if (!this.data.has(key)) {
+	                this.data.set(key, this.#defaultContent[key]);
+	            }
+	        });
+	        this.save();
+	    }
+	    load() {
+	        basicCommon.writeNotExistsFile(
+	            this.#source,
+	            ini.stringify(this.#defaultContent).trim(),
+	        );
+	        this.#coverContent(
+	            ini.parse(basicCommon.readFileIsExists(this.#source).toString()),
+	        );
+	        this.#writeNotExistsDefaultData();
+	    }
+	    has(key) {
+	        return this.data.has(key);
+	    }
+
+	    get(key) {
+	        return this.data.get(key);
+	    }
+
+	    set(key, value) {
+	        if (!value) {
+	            return this.delete(key);
+	        } else {
+	            this.data.set(key, value);
+	        }
+	        this.save();
+	    }
+
+	    delete(key) {
+	        if (!this.has(key)) return;
+	        this.data.delete(key);
+	        this.save();
+	    }
+
+	    reset() {
+	        const sourceFileName = path.basename(this.#source);
+	        const CachePath = path.resolve(
+	            path.dirname(this.#source),
+	            `.Cache/Config/${sourceFileName}.${Date.now()}`,
+	        );
+	        basicCommon.writeNotExistsFile(
+	            CachePath,
+	            ini.stringify(this.#defaultContent).trim(),
+	        );
+	        this.#coverContent(this.#defaultContent);
+	    }
+
+	    save() {
+	        basicCommon.writeCoverFile(this.#source, this.stringify());
+	    }
+
+	    list() {
+	        return Object.fromEntries(this.data);
+	    }
+
+	    stringify() {
+	        return ini.stringify(this.list()).trim();
+	    }
+	}
+
+	lib$2 = Config;
+	return lib$2;
+}
+
+const createProjectQuestion = [
+    {
+        name: "type",
+        type: "search",
+        required: true,
+        message: "请选择项目模板",
+        choices: [
+            {
+                name: "vue 项目",
+                value: "vue",
+            },
+            {
+                name: "react 项目",
+                value: "react",
+            },
+        ],
+    },
+    {
+        name: "buildTools",
+        type: "search",
+        required: true,
+        message: "请选择项目构建工具",
+        choices: [
+            {
+                name: "webpack",
+                value: "webpack",
+            },
+            {
+                name: "vite",
+                value: "vite",
+            },
+        ],
+    },
+    {
+        name: "language",
+        type: "search",
+        required: true,
+        message: "请选择使用的开发语言?",
+        choices: [
+            {
+                name: "TypeScript",
+                value: "typeScript",
+            },
+            {
+                name: "JavaScript",
+                value: "javaScript",
+            },
+        ],
+    },
+];
+
+const initNotExistsCustomerTemplate = (projectName, templateList) => {
+    return [
+        {
+            name: "template",
+            type: "search",
+            required: true,
+            message: `未找到 ${projectName} 名称的模板，可选择如下模板进行创建：`,
+            choices: templateList.map((item) => ({ name: item, value: item })),
+        },
+    ];
+};
+
+const initExistsCustomerTemplate = (projectName) => {
+    return [
+        {
+            name: "cover",
+            type: "confirm",
+            message: `当前目录下已存在名称为 ${projectName} 的项目，是否覆盖创建?`,
+        },
+    ];
+};
+
+const createExistProject = initExistsCustomerTemplate;
+
+const cloneStorageCheckoutBranch = (projectName, branch) => {
+    return {
+        name: "checkout",
+        type: "confirm",
+        message: `项目 ${projectName} 拉取成功, 当前所在分支为 ${branch} 是否需要切换分支?`,
+    };
+};
+
+const checkoutBranch = (branchList) => {
+    return {
+        name: "branch",
+        type: "search",
+        required: true,
+        message: "请选择如下分支",
+        default: false,
+        choices: branchList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const chooseTemplateList = (templateList) => {
+    return {
+        name: "chooseTemplateList",
+        type: "checkbox",
+        message: "请选择模板列表中选择后，进行操作：",
+        required: true,
+        choices: templateList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const inputTemplateUrl = () => {
+    return {
+        name: "templateUrl",
+        type: "input",
+        required: true,
+        message: "请输入模板的的Git仓库地址：",
+    };
+};
+
+const isMoveCreateTemplateForLocal = (projectName) => {
+    return {
+        name: "move",
+        type: "confirm",
+        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目？`,
+        default: false,
+    };
+};
+
+const dropCustomerTemplateAll = () => {
+    return {
+        name: "drop",
+        type: "confirm",
+        message: `确认要删除全部的自定义项目模板吗? 删除后，项目将不会进入回收站`,
+        default: false,
+    };
+};
+
+const deleteCustomerTemplateProject = (project) => {
+    return {
+        name: "delete",
+        type: "confirm",
+        message: `确认要删除 ${project} 项目模板吗?`,
+        default: false,
+    };
+};
+
+const chooseDropCustomerProject = (name, projectList) => {
+    return {
+        name: "projectList",
+        type: "checkbox",
+        message: `${name} 不存在自定义模板列表中，可选择以下模板进行删除`,
+        choices: projectList.map((item) => ({ name: item, value: item })),
+    };
+};
+
+const updateAllTemplate = () => {
+    return {
+        name: "update",
+        type: "confirm",
+        message: "确认要更新全部的项目模板吗?",
+    };
+};
+
+const updateCustomerTemplateProject = (project, branch) => {
+    return {
+        name: "delete",
+        type: "confirm",
+        message: `确认要更新 ${project} 项目模板吗?`,
+        default: false,
+    };
+};
+
+const updateCustomerProject = (name, projectList) => {
+    return {
+        name: "projectList",
+        type: "checkbox",
+        message: `${name} 不存在自定义模板列表中，可选择以下模板进行更新`,
+        choices: projectList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const chooseTemplateProject = (text, projectList) => {
+    return {
+        name: "project",
+        type: "search",
+        required: true,
+        message: text || `请选择以下模板进行创建`,
+        choices: projectList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const unExistsExecFile = (filename) => {
+    return {
+        name: "backupFile",
+        type: "confirm",
+        message: `未检测到需要执行的文件，是否执行 ${filename} 文件?`,
+    };
+};
+
+const resetConfigFile = () => {
+    return {
+        name: "resetConfigFile",
+        type: "confirm",
+        message: "确认要还原配置信息吗?, 还原后的配置将被重置为初始状态",
+    };
+};
+
+const commitType = (message, commitType, defaultValue) => {
+    return {
+        name: "type",
+        type: "search",
+        required: true,
+        default: defaultValue,
+        message: message || "请选择本次的代码提交类型:",
+        choices: commitType,
+    };
+};
+
+const commitBranch = (branchList, currentBranch) => {
+    return {
+        name: "commitBranch",
+        type: "search",
+        required: true,
+        message: "请选择需要提交的分支:",
+        default: currentBranch,
+        choices: branchList.map((item) => ({
+            name: item === currentBranch ? `${item}: 当前所在分支` : item,
+            value: item,
+        })),
+    };
+};
+
+const chooseCommitOrigin = (message, originList) => {
+    return {
+        name: "commitOrigin",
+        type: "search",
+        required: true,
+        message:
+            message || "检测项目中存在多个Git提交源，请选择本次提交源地址: ",
+        choices: originList,
+    };
+};
+
+const commitMessage = () => {
+    return {
+        name: "commitMessage",
+        type: "input",
+        message: "请输入本次提交备注信息: ",
+    };
+};
+
+const commitAction = ({ branch, type, file, origin, message }) => {
+    return {
+        name: "commitAction",
+        type: "confirm",
+        default: true,
+        message: `请确认以下提交信息无误:\n\n提交源名称: ${origin}\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交备注信息:\n ${message}\n\n确认提交本地?`,
+    };
+};
+
+const onlyPushLocalFile = () => {
+    return {
+        name: "onlyPushLocalFile",
+        type: "confirm",
+        default: false,
+        message: "确认直接推送提交本至本地的代码到远程吗？",
+    };
+};
+
+const pushOrigin = () => {
+    return {
+        name: "pushOrigin",
+        type: "confirm",
+        default: false,
+        message: "是否将本地代码推送至远程分支？",
+    };
+};
+
+const chooseCommitFile = (fileList) => {
+    return {
+        name: "projectList",
+        type: "checkbox",
+        message: `请在以下列表中选择本次需要提交的文件: (输入I/A可对文件进行全选或反选)\n`,
+        required: true,
+        choices: fileList.map((item) => ({ name: item, value: item })),
+    };
+};
+
+const chooseRunCommand = (command, scriptList) => {
+    return {
+        name: "command",
+        type: "search",
+        required: true,
+        message: `${command} 脚本命令不存在，是否需要执行以下的命令:`,
+        choices: scriptList,
+    };
+};
+
+const alreadyStatusFile = (fileList) => {
+    return {
+        name: "alreadyStatusFile",
+        type: "confirm",
+        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+    };
+};
+
+const alreadyCommitFile = (fileList) => {
+    return {
+        name: "alreadyCommitFile",
+        type: "confirm",
+        message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+    };
+};
+
+const alreadyStatusFileCheckout = (fileList) => {
+    return {
+        name: "alreadyStatusFileCheckout",
+        type: "confirm",
+        message: `当前分支的暂存区存在未提交的文件，是否提交推送后继续？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
+    };
+};
+
+const chooseOperateType = (commitTypeDict, exists = false) => {
+    return {
+        name: "chooseOperateType",
+        type: "search",
+        required: true,
+        message: exists
+            ? "输入的操作类型不合法，请重新在以下列表中选择："
+            : `未输入操作类型，请在以下列表中选择：`,
+        choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
+            name: `${key + ":" + value}`,
+            value: key,
+        })),
+    };
+};
+
+const inputCheckoutBranchName = (message) => {
+    return {
+        name: "checkoutBranchName",
+        type: "input",
+        message,
+        required: true,
+    };
+};
+
+const chooseTargetBranch = (branchList, nowBranchName) => {
+    return {
+        name: "chooseTargetBranch",
+        type: "search",
+        message: "请选择目标分支(基于哪个分支进行操作), 可输入选择：",
+        choices: branchList.map((item) => ({
+            name: item === nowBranchName ? `${item}(当前分支)` : item,
+            value: item,
+        })),
+        default: nowBranchName,
+    };
+};
+
+const inputGitUserName = () => {
+    return {
+        name: "inputGitUserName",
+        type: "input",
+        message: "当前项目未设置Git用户名，请输入你想使用的用户名称后继续：",
+    };
+};
+
+const delBranchConfirm = (message) => {
+    return {
+        name: "delBranchConfirm",
+        type: "confirm",
+        message,
+        default: true,
+    };
+};
+
+const chooseDelLocalBranch = (branchList) => {
+    return {
+        name: "chooseDelLocalBranch",
+        type: "checkbox",
+        message: `请在如下的分支列表中进行选择: (输入I/A可对文件进行全选或反选)\n`,
+        required: false,
+        choices: branchList.map((item) => ({ name: item, value: item })),
+    };
+};
+
+const syncDelRemoteBranch = () => {
+    return {
+        name: "syncDelRemoteBranch",
+        type: "confirm",
+        message: "是否同步删除远程分支",
+        default: false,
+    };
+};
+
+const notDelBranchConfirm = (branchList) => {
+    return {
+        name: "notDelBranchConfirm",
+        type: "confirm",
+        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
+        default: false,
+    };
+};
+
+const chooseCreateTemplateName = (templateList) => {
+    return {
+        name: "chooseCreateTemplateName",
+        type: "search",
+        message: "请在以下列表中选择需要创建项目的模板：",
+        choices: templateList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const inputProjectName = () => {
+    return {
+        name: "inputProjectName",
+        type: "input",
+        message: "请输入项目名称：",
+        require: true,
+    };
+};
+
+var question = /*#__PURE__*/Object.freeze({
+	__proto__: null,
+	alreadyCommitFile: alreadyCommitFile,
+	alreadyStatusFile: alreadyStatusFile,
+	alreadyStatusFileCheckout: alreadyStatusFileCheckout,
+	checkoutBranch: checkoutBranch,
+	chooseCommitFile: chooseCommitFile,
+	chooseCommitOrigin: chooseCommitOrigin,
+	chooseCreateTemplateName: chooseCreateTemplateName,
+	chooseDelLocalBranch: chooseDelLocalBranch,
+	chooseDropCustomerProject: chooseDropCustomerProject,
+	chooseOperateType: chooseOperateType,
+	chooseRunCommand: chooseRunCommand,
+	chooseTargetBranch: chooseTargetBranch,
+	chooseTemplateList: chooseTemplateList,
+	chooseTemplateProject: chooseTemplateProject,
+	cloneStorageCheckoutBranch: cloneStorageCheckoutBranch,
+	commitAction: commitAction,
+	commitBranch: commitBranch,
+	commitMessage: commitMessage,
+	commitType: commitType,
+	createExistProject: createExistProject,
+	createProjectQuestion: createProjectQuestion,
+	delBranchConfirm: delBranchConfirm,
+	deleteCustomerTemplateProject: deleteCustomerTemplateProject,
+	dropCustomerTemplateAll: dropCustomerTemplateAll,
+	initExistsCustomerTemplate: initExistsCustomerTemplate,
+	initNotExistsCustomerTemplate: initNotExistsCustomerTemplate,
+	inputCheckoutBranchName: inputCheckoutBranchName,
+	inputGitUserName: inputGitUserName,
+	inputProjectName: inputProjectName,
+	inputTemplateUrl: inputTemplateUrl,
+	isMoveCreateTemplateForLocal: isMoveCreateTemplateForLocal,
+	notDelBranchConfirm: notDelBranchConfirm,
+	onlyPushLocalFile: onlyPushLocalFile,
+	pushOrigin: pushOrigin,
+	resetConfigFile: resetConfigFile,
+	syncDelRemoteBranch: syncDelRemoteBranch,
+	unExistsExecFile: unExistsExecFile,
+	updateAllTemplate: updateAllTemplate,
+	updateCustomerProject: updateCustomerProject,
+	updateCustomerTemplateProject: updateCustomerTemplateProject
+});
+
+var require$$5 = /*@__PURE__*/getAugmentedNamespace(question);
+
+var config;
+var hasRequiredConfig;
+
+function requireConfig () {
+	if (hasRequiredConfig) return config;
+	hasRequiredConfig = 1;
+	const Inquirer = requireLib$4();
+	const ConfigModule = requireLib$3();
+	const { getProcessEnv } = requirePlatform();
+	const { resetConfigFile } = require$$5;
+	const { basicCommon, platform } = requireLib$8();
+
+	const defaultContent = {
+	    branch_secure: true,
+	    init_storage_pull: false,
+	    request_timeout: 3000,
+	    default_registry: "https://registry.npmmirror.com/",
+	    default_package_cli: "npm",
+	    default_commit_type: "fix",
+	    default_exec_file: "index.js",
+	};
+
+	class Config extends ConfigModule {
+	    #inquirer;
+	    constructor() {
+	        super({
+	            source: getProcessEnv("app_source_file_path"),
+	            encoding: "utf-8",
+	            defaultContent,
+	        });
+
+	        platform.setProcessEnv(
+	            Object.entries(Object.fromEntries(this.data)).map(
+	                ([key, value]) => ({
+	                    key,
+	                    value,
+	                }),
+	            ),
+	        );
+	        this.#inquirer = new Inquirer();
+	    }
+	    /**
+	     * 查看或获取当前脚手架的配置信息
+	     * **/
+	    start(type, ...rest) {
+	        const typeHandler = new Map([
+	            ["list", this.outputList],
+	            ["get", this.getConfig],
+	            ["set", this.setConfig],
+	            ["delete", this.deleteConfig],
+	        ]);
+	        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
+	    }
+	    invalidSetContent(key, value, cb) {
+	        if (Object.keys(defaultContent).includes(key) && !value) {
+	            return console.log("当前Key为系统固定预设值，必须设定一个值");
+	        }
+	        if (key === "default_registry") {
+	            if (!basicCommon.isValidUrl(value))
+	                return console.log("设置无效，必须是一个有效的http|https链接");
+	        } else if (key === "default_package_cli") {
+	            if (!basicCommon.invalidPackageCli(value))
+	                return console.log(
+	                    `设置无效，值必须为:${Object.keys(Object.fromEntries(basicCommon.packageMangerViewer)).join("|")}`,
+	                );
+	        } else if (key.includes("init_storage_pull")) {
+	            const valueList = ["true", "false"];
+	            if (!valueList.includes(value)) {
+	                return console.log(
+	                    `设置无效，值必须为: ${valueList.join("|")}`,
+	                );
+	            }
+	        }
+	        cb();
+	    }
+	    outputList() {
+	        return console.log(this.stringify());
+	    }
+	    getConfig(key) {
+	        if (!this.has(key)) return console.log(`${key} 不存在此配置`);
+	        const val = this.get(key);
+	        return val;
+	    }
+	    setConfig(key, value) {
+	        if (key.includes("=")) {
+	            [key, value] = key.split("=");
+	        }
+	        this.invalidSetContent(key, value, () => {
+	            this.set(key, value);
+	        });
+	    }
+	    deleteConfig(key) {
+	        if (Object.keys(defaultContent).includes(key)) {
+	            return console.log("当前Key为系统固定预设值，无法删除");
+	        }
+	        this.delete(key);
+	    }
+	    async resetConfig() {
+	        const resetConfig = await this.#inquirer.handler(resetConfigFile());
+	        if (!resetConfig) return;
+	        this.reset();
+	    }
+	}
+
+	config = new Config();
+	return config;
+}
+
+var exec;
+var hasRequiredExec;
+
+function requireExec () {
+	if (hasRequiredExec) return exec;
+	hasRequiredExec = 1;
+	const Inquirer = requireLib$4();
+	const { basicCommon, platform } = requireLib$8();
+
+	class Exec extends Inquirer {
+	    defaultFileName;
+
+	    constructor() {
+	        super();
+	        this.defaultFileName = platform.getProcessEnv("default_exec_file");
+	    }
+
+	    start(source, option) {
+	        if (option.dir === "ir")
+	            return console.log(`error: unknown option '-dir'`);
+
+	        if (option.file) {
+	            this.execFile(source, option);
+	        } else {
+	            this.execCommand(source, option);
+	        }
+	    }
+
+	    execCommand(source, option) {
+	        basicCommon.execCommandPro(source.join(" "), {
+	            stdio: "inherit",
+	            cwd: option.dir || process.cwd(),
+	        });
+	    }
+
+	    async execFile(source, option) {
+	        source = source.filter((item) => item.trim());
+	        if (!source.length) {
+	            source = [this.defaultFileName];
+	        }
+	        const invalidFile = [],
+	            execFile = [];
+	        for (const item of source) {
+	            const type =
+	                /\.(js|mjs)$/.test(item) && basicCommon.existsFileForCwd(item)
+	                    ? execFile
+	                    : invalidFile;
+	            type.push(item);
+	        }
+
+	        if (!execFile.length)
+	            return console.log(
+	                `文件执行失败, 请重试。以下文件不合法或不存在当前目录: \n${invalidFile.join("、")}`,
+	            );
+
+	        if (invalidFile.length) {
+	            console.log(
+	                `以下文件不合法或不存在当前目录，将跳过: \n${invalidFile.join("、")}\n`,
+	            );
+	        }
+	        for (const item of execFile) {
+	            basicCommon.execCommandPro(`node ${item}`, {
+	                stdio: "inherit",
+	                cwd: option.dir || process.cwd(),
+	            });
+	            console.log(`exec file ${item} is end...`);
+	        }
+	    }
+	}
+
+	exec = new Exec();
+	return exec;
+}
+
+var lib$1;
+var hasRequiredLib$2;
+
+function requireLib$2 () {
+	if (hasRequiredLib$2) return lib$1;
+	hasRequiredLib$2 = 1;
 	const fs = require$$0$4;
 	const path = require$$1$2;
 	const EventEmitter = require$$2$3;
-	const { basicCommon, platform } = requireLib$3();
+	const { basicCommon, platform } = requireLib$8();
 
 	class GitStorage extends EventEmitter {
 	    #config = {
@@ -21381,3867 +25900,455 @@ function requireGitStorage () {
 	    }
 	}
 
-	GitStorage_1 = GitStorage;
-	return GitStorage_1;
+	lib$1 = GitStorage;
+	return lib$1;
 }
 
-var commander = {};
+var init;
+var hasRequiredInit;
 
-var argument = {};
+function requireInit () {
+	if (hasRequiredInit) return init;
+	hasRequiredInit = 1;
+	const fs = require$$0$4;
+	const path = require$$1$2;
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { basicCommon, platform } = requireLib$8();
+	const {
+	    createProjectQuestion,
+	    inputProjectName,
+	} = require$$5;
+	const { INIT_PROJECT_VITE_REMOTE } = requireConstance();
 
-var error = {};
+	const questionDict = {
+	    webpack: {
+	        vue: {
+	            javaScript: "template-vue3",
+	            typeScript: "template-vue3-ts",
+	        },
+	        react: {
+	            javaScript: "template-react",
+	            typeScript: "template-react-ts",
+	        },
+	    },
+	    vite: {
+	        vue: {
+	            javaScript: "template-vue",
+	            typeScript: "template-vue-ts",
+	        },
+	        react: {
+	            javaScript: "template-react",
+	            typeScript: "template-react-ts",
+	        },
+	    },
+	};
 
-/**
- * CommanderError class
- */
-
-var hasRequiredError;
-
-function requireError () {
-	if (hasRequiredError) return error;
-	hasRequiredError = 1;
-	class CommanderError extends Error {
-	  /**
-	   * Constructs the CommanderError class
-	   * @param {number} exitCode suggested exit code which could be used with process.exit
-	   * @param {string} code an id string representing the error
-	   * @param {string} message human-readable description of the error
-	   */
-	  constructor(exitCode, code, message) {
-	    super(message);
-	    // properly capture stack trace in Node.js
-	    Error.captureStackTrace(this, this.constructor);
-	    this.name = this.constructor.name;
-	    this.code = code;
-	    this.exitCode = exitCode;
-	    this.nestedError = undefined;
-	  }
-	}
-
-	/**
-	 * InvalidArgumentError class
-	 */
-	class InvalidArgumentError extends CommanderError {
-	  /**
-	   * Constructs the InvalidArgumentError class
-	   * @param {string} [message] explanation of why argument is invalid
-	   */
-	  constructor(message) {
-	    super(1, 'commander.invalidArgument', message);
-	    // properly capture stack trace in Node.js
-	    Error.captureStackTrace(this, this.constructor);
-	    this.name = this.constructor.name;
-	  }
-	}
-
-	error.CommanderError = CommanderError;
-	error.InvalidArgumentError = InvalidArgumentError;
-	return error;
-}
-
-var hasRequiredArgument;
-
-function requireArgument () {
-	if (hasRequiredArgument) return argument;
-	hasRequiredArgument = 1;
-	const { InvalidArgumentError } = requireError();
-
-	class Argument {
-	  /**
-	   * Initialize a new command argument with the given name and description.
-	   * The default is that the argument is required, and you can explicitly
-	   * indicate this with <> around the name. Put [] around the name for an optional argument.
-	   *
-	   * @param {string} name
-	   * @param {string} [description]
-	   */
-
-	  constructor(name, description) {
-	    this.description = description || '';
-	    this.variadic = false;
-	    this.parseArg = undefined;
-	    this.defaultValue = undefined;
-	    this.defaultValueDescription = undefined;
-	    this.argChoices = undefined;
-
-	    switch (name[0]) {
-	      case '<': // e.g. <required>
-	        this.required = true;
-	        this._name = name.slice(1, -1);
-	        break;
-	      case '[': // e.g. [optional]
-	        this.required = false;
-	        this._name = name.slice(1, -1);
-	        break;
-	      default:
-	        this.required = true;
-	        this._name = name;
-	        break;
-	    }
-
-	    if (this._name.length > 3 && this._name.slice(-3) === '...') {
-	      this.variadic = true;
-	      this._name = this._name.slice(0, -3);
-	    }
-	  }
-
-	  /**
-	   * Return argument name.
-	   *
-	   * @return {string}
-	   */
-
-	  name() {
-	    return this._name;
-	  }
-
-	  /**
-	   * @package
-	   */
-
-	  _concatValue(value, previous) {
-	    if (previous === this.defaultValue || !Array.isArray(previous)) {
-	      return [value];
-	    }
-
-	    return previous.concat(value);
-	  }
-
-	  /**
-	   * Set the default value, and optionally supply the description to be displayed in the help.
-	   *
-	   * @param {*} value
-	   * @param {string} [description]
-	   * @return {Argument}
-	   */
-
-	  default(value, description) {
-	    this.defaultValue = value;
-	    this.defaultValueDescription = description;
-	    return this;
-	  }
-
-	  /**
-	   * Set the custom handler for processing CLI command arguments into argument values.
-	   *
-	   * @param {Function} [fn]
-	   * @return {Argument}
-	   */
-
-	  argParser(fn) {
-	    this.parseArg = fn;
-	    return this;
-	  }
-
-	  /**
-	   * Only allow argument value to be one of choices.
-	   *
-	   * @param {string[]} values
-	   * @return {Argument}
-	   */
-
-	  choices(values) {
-	    this.argChoices = values.slice();
-	    this.parseArg = (arg, previous) => {
-	      if (!this.argChoices.includes(arg)) {
-	        throw new InvalidArgumentError(
-	          `Allowed choices are ${this.argChoices.join(', ')}.`,
-	        );
-	      }
-	      if (this.variadic) {
-	        return this._concatValue(arg, previous);
-	      }
-	      return arg;
+	class Init extends Inquirer {
+	    #config = {
+	        projectName: "",
 	    };
-	    return this;
-	  }
-
-	  /**
-	   * Make argument required.
-	   *
-	   * @returns {Argument}
-	   */
-	  argRequired() {
-	    this.required = true;
-	    return this;
-	  }
-
-	  /**
-	   * Make argument optional.
-	   *
-	   * @returns {Argument}
-	   */
-	  argOptional() {
-	    this.required = false;
-	    return this;
-	  }
-	}
-
-	/**
-	 * Takes an argument and returns its human readable equivalent for help usage.
-	 *
-	 * @param {Argument} arg
-	 * @return {string}
-	 * @private
-	 */
-
-	function humanReadableArgName(arg) {
-	  const nameOutput = arg.name() + (arg.variadic === true ? '...' : '');
-
-	  return arg.required ? '<' + nameOutput + '>' : '[' + nameOutput + ']';
-	}
-
-	argument.Argument = Argument;
-	argument.humanReadableArgName = humanReadableArgName;
-	return argument;
-}
-
-var command$2 = {};
-
-var help = {};
-
-var hasRequiredHelp;
-
-function requireHelp () {
-	if (hasRequiredHelp) return help;
-	hasRequiredHelp = 1;
-	const { humanReadableArgName } = requireArgument();
-
-	/**
-	 * TypeScript import types for JSDoc, used by Visual Studio Code IntelliSense and `npm run typescript-checkJS`
-	 * https://www.typescriptlang.org/docs/handbook/jsdoc-supported-types.html#import-types
-	 * @typedef { import("./argument.js").Argument } Argument
-	 * @typedef { import("./command.js").Command } Command
-	 * @typedef { import("./option.js").Option } Option
-	 */
-
-	// Although this is a class, methods are static in style to allow override using subclass or just functions.
-	class Help {
-	  constructor() {
-	    this.helpWidth = undefined;
-	    this.sortSubcommands = false;
-	    this.sortOptions = false;
-	    this.showGlobalOptions = false;
-	  }
-
-	  /**
-	   * Get an array of the visible subcommands. Includes a placeholder for the implicit help command, if there is one.
-	   *
-	   * @param {Command} cmd
-	   * @returns {Command[]}
-	   */
-
-	  visibleCommands(cmd) {
-	    const visibleCommands = cmd.commands.filter((cmd) => !cmd._hidden);
-	    const helpCommand = cmd._getHelpCommand();
-	    if (helpCommand && !helpCommand._hidden) {
-	      visibleCommands.push(helpCommand);
+	    #gitStorage = null;
+	    async start() {
+	        this.loadStorage().then(() => this.generatorProjectName());
 	    }
-	    if (this.sortSubcommands) {
-	      visibleCommands.sort((a, b) => {
-	        // @ts-ignore: because overloaded return type
-	        return a.name().localeCompare(b.name());
-	      });
+	    aliveProject(projectName) {
+	        const projectPath = path.resolve(process.cwd(), projectName),
+	            existsProject = fs.existsSync(projectPath);
+	        return { projectPath, existsProject };
 	    }
-	    return visibleCommands;
-	  }
+	    createProject(originPath, projectPath) {
+	        basicCommon.copyDirectory(originPath, projectPath);
+	        this.handler({
+	            type: "confirm",
+	            message: "是否需要安装依赖?",
+	            default: true,
+	        }).then((res) => {
+	            const packageCli = platform.getPackageCli(projectPath);
+	            if (res) platform.installDependencies(null, projectPath);
 
-	  /**
-	   * Compare options for sort.
-	   *
-	   * @param {Option} a
-	   * @param {Option} b
-	   * @returns {number}
-	   */
-	  compareOptions(a, b) {
-	    const getSortKey = (option) => {
-	      // WYSIWYG for order displayed in help. Short used for comparison if present. No special handling for negated.
-	      return option.short
-	        ? option.short.replace(/^-/, '')
-	        : option.long.replace(/^--/, '');
-	    };
-	    return getSortKey(a).localeCompare(getSortKey(b));
-	  }
-
-	  /**
-	   * Get an array of the visible options. Includes a placeholder for the implicit help option, if there is one.
-	   *
-	   * @param {Command} cmd
-	   * @returns {Option[]}
-	   */
-
-	  visibleOptions(cmd) {
-	    const visibleOptions = cmd.options.filter((option) => !option.hidden);
-	    // Built-in help option.
-	    const helpOption = cmd._getHelpOption();
-	    if (helpOption && !helpOption.hidden) {
-	      // Automatically hide conflicting flags. Bit dubious but a historical behaviour that is convenient for single-command programs.
-	      const removeShort = helpOption.short && cmd._findOption(helpOption.short);
-	      const removeLong = helpOption.long && cmd._findOption(helpOption.long);
-	      if (!removeShort && !removeLong) {
-	        visibleOptions.push(helpOption); // no changes needed
-	      } else if (helpOption.long && !removeLong) {
-	        visibleOptions.push(
-	          cmd.createOption(helpOption.long, helpOption.description),
-	        );
-	      } else if (helpOption.short && !removeShort) {
-	        visibleOptions.push(
-	          cmd.createOption(helpOption.short, helpOption.description),
-	        );
-	      }
-	    }
-	    if (this.sortOptions) {
-	      visibleOptions.sort(this.compareOptions);
-	    }
-	    return visibleOptions;
-	  }
-
-	  /**
-	   * Get an array of the visible global options. (Not including help.)
-	   *
-	   * @param {Command} cmd
-	   * @returns {Option[]}
-	   */
-
-	  visibleGlobalOptions(cmd) {
-	    if (!this.showGlobalOptions) return [];
-
-	    const globalOptions = [];
-	    for (
-	      let ancestorCmd = cmd.parent;
-	      ancestorCmd;
-	      ancestorCmd = ancestorCmd.parent
-	    ) {
-	      const visibleOptions = ancestorCmd.options.filter(
-	        (option) => !option.hidden,
-	      );
-	      globalOptions.push(...visibleOptions);
-	    }
-	    if (this.sortOptions) {
-	      globalOptions.sort(this.compareOptions);
-	    }
-	    return globalOptions;
-	  }
-
-	  /**
-	   * Get an array of the arguments if any have a description.
-	   *
-	   * @param {Command} cmd
-	   * @returns {Argument[]}
-	   */
-
-	  visibleArguments(cmd) {
-	    // Side effect! Apply the legacy descriptions before the arguments are displayed.
-	    if (cmd._argsDescription) {
-	      cmd.registeredArguments.forEach((argument) => {
-	        argument.description =
-	          argument.description || cmd._argsDescription[argument.name()] || '';
-	      });
-	    }
-
-	    // If there are any arguments with a description then return all the arguments.
-	    if (cmd.registeredArguments.find((argument) => argument.description)) {
-	      return cmd.registeredArguments;
-	    }
-	    return [];
-	  }
-
-	  /**
-	   * Get the command term to show in the list of subcommands.
-	   *
-	   * @param {Command} cmd
-	   * @returns {string}
-	   */
-
-	  subcommandTerm(cmd) {
-	    // Legacy. Ignores custom usage string, and nested commands.
-	    const args = cmd.registeredArguments
-	      .map((arg) => humanReadableArgName(arg))
-	      .join(' ');
-	    return (
-	      cmd._name +
-	      (cmd._aliases[0] ? '|' + cmd._aliases[0] : '') +
-	      (cmd.options.length ? ' [options]' : '') + // simplistic check for non-help option
-	      (args ? ' ' + args : '')
-	    );
-	  }
-
-	  /**
-	   * Get the option term to show in the list of options.
-	   *
-	   * @param {Option} option
-	   * @returns {string}
-	   */
-
-	  optionTerm(option) {
-	    return option.flags;
-	  }
-
-	  /**
-	   * Get the argument term to show in the list of arguments.
-	   *
-	   * @param {Argument} argument
-	   * @returns {string}
-	   */
-
-	  argumentTerm(argument) {
-	    return argument.name();
-	  }
-
-	  /**
-	   * Get the longest command term length.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {number}
-	   */
-
-	  longestSubcommandTermLength(cmd, helper) {
-	    return helper.visibleCommands(cmd).reduce((max, command) => {
-	      return Math.max(max, helper.subcommandTerm(command).length);
-	    }, 0);
-	  }
-
-	  /**
-	   * Get the longest option term length.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {number}
-	   */
-
-	  longestOptionTermLength(cmd, helper) {
-	    return helper.visibleOptions(cmd).reduce((max, option) => {
-	      return Math.max(max, helper.optionTerm(option).length);
-	    }, 0);
-	  }
-
-	  /**
-	   * Get the longest global option term length.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {number}
-	   */
-
-	  longestGlobalOptionTermLength(cmd, helper) {
-	    return helper.visibleGlobalOptions(cmd).reduce((max, option) => {
-	      return Math.max(max, helper.optionTerm(option).length);
-	    }, 0);
-	  }
-
-	  /**
-	   * Get the longest argument term length.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {number}
-	   */
-
-	  longestArgumentTermLength(cmd, helper) {
-	    return helper.visibleArguments(cmd).reduce((max, argument) => {
-	      return Math.max(max, helper.argumentTerm(argument).length);
-	    }, 0);
-	  }
-
-	  /**
-	   * Get the command usage to be displayed at the top of the built-in help.
-	   *
-	   * @param {Command} cmd
-	   * @returns {string}
-	   */
-
-	  commandUsage(cmd) {
-	    // Usage
-	    let cmdName = cmd._name;
-	    if (cmd._aliases[0]) {
-	      cmdName = cmdName + '|' + cmd._aliases[0];
-	    }
-	    let ancestorCmdNames = '';
-	    for (
-	      let ancestorCmd = cmd.parent;
-	      ancestorCmd;
-	      ancestorCmd = ancestorCmd.parent
-	    ) {
-	      ancestorCmdNames = ancestorCmd.name() + ' ' + ancestorCmdNames;
-	    }
-	    return ancestorCmdNames + cmdName + ' ' + cmd.usage();
-	  }
-
-	  /**
-	   * Get the description for the command.
-	   *
-	   * @param {Command} cmd
-	   * @returns {string}
-	   */
-
-	  commandDescription(cmd) {
-	    // @ts-ignore: because overloaded return type
-	    return cmd.description();
-	  }
-
-	  /**
-	   * Get the subcommand summary to show in the list of subcommands.
-	   * (Fallback to description for backwards compatibility.)
-	   *
-	   * @param {Command} cmd
-	   * @returns {string}
-	   */
-
-	  subcommandDescription(cmd) {
-	    // @ts-ignore: because overloaded return type
-	    return cmd.summary() || cmd.description();
-	  }
-
-	  /**
-	   * Get the option description to show in the list of options.
-	   *
-	   * @param {Option} option
-	   * @return {string}
-	   */
-
-	  optionDescription(option) {
-	    const extraInfo = [];
-
-	    if (option.argChoices) {
-	      extraInfo.push(
-	        // use stringify to match the display of the default value
-	        `choices: ${option.argChoices.map((choice) => JSON.stringify(choice)).join(', ')}`,
-	      );
-	    }
-	    if (option.defaultValue !== undefined) {
-	      // default for boolean and negated more for programmer than end user,
-	      // but show true/false for boolean option as may be for hand-rolled env or config processing.
-	      const showDefault =
-	        option.required ||
-	        option.optional ||
-	        (option.isBoolean() && typeof option.defaultValue === 'boolean');
-	      if (showDefault) {
-	        extraInfo.push(
-	          `default: ${option.defaultValueDescription || JSON.stringify(option.defaultValue)}`,
-	        );
-	      }
-	    }
-	    // preset for boolean and negated are more for programmer than end user
-	    if (option.presetArg !== undefined && option.optional) {
-	      extraInfo.push(`preset: ${JSON.stringify(option.presetArg)}`);
-	    }
-	    if (option.envVar !== undefined) {
-	      extraInfo.push(`env: ${option.envVar}`);
-	    }
-	    if (extraInfo.length > 0) {
-	      return `${option.description} (${extraInfo.join(', ')})`;
-	    }
-
-	    return option.description;
-	  }
-
-	  /**
-	   * Get the argument description to show in the list of arguments.
-	   *
-	   * @param {Argument} argument
-	   * @return {string}
-	   */
-
-	  argumentDescription(argument) {
-	    const extraInfo = [];
-	    if (argument.argChoices) {
-	      extraInfo.push(
-	        // use stringify to match the display of the default value
-	        `choices: ${argument.argChoices.map((choice) => JSON.stringify(choice)).join(', ')}`,
-	      );
-	    }
-	    if (argument.defaultValue !== undefined) {
-	      extraInfo.push(
-	        `default: ${argument.defaultValueDescription || JSON.stringify(argument.defaultValue)}`,
-	      );
-	    }
-	    if (extraInfo.length > 0) {
-	      const extraDescripton = `(${extraInfo.join(', ')})`;
-	      if (argument.description) {
-	        return `${argument.description} ${extraDescripton}`;
-	      }
-	      return extraDescripton;
-	    }
-	    return argument.description;
-	  }
-
-	  /**
-	   * Generate the built-in help text.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {string}
-	   */
-
-	  formatHelp(cmd, helper) {
-	    const termWidth = helper.padWidth(cmd, helper);
-	    const helpWidth = helper.helpWidth || 80;
-	    const itemIndentWidth = 2;
-	    const itemSeparatorWidth = 2; // between term and description
-	    function formatItem(term, description) {
-	      if (description) {
-	        const fullText = `${term.padEnd(termWidth + itemSeparatorWidth)}${description}`;
-	        return helper.wrap(
-	          fullText,
-	          helpWidth - itemIndentWidth,
-	          termWidth + itemSeparatorWidth,
-	        );
-	      }
-	      return term;
-	    }
-	    function formatList(textArray) {
-	      return textArray.join('\n').replace(/^/gm, ' '.repeat(itemIndentWidth));
-	    }
-
-	    // Usage
-	    let output = [`Usage: ${helper.commandUsage(cmd)}`, ''];
-
-	    // Description
-	    const commandDescription = helper.commandDescription(cmd);
-	    if (commandDescription.length > 0) {
-	      output = output.concat([
-	        helper.wrap(commandDescription, helpWidth, 0),
-	        '',
-	      ]);
-	    }
-
-	    // Arguments
-	    const argumentList = helper.visibleArguments(cmd).map((argument) => {
-	      return formatItem(
-	        helper.argumentTerm(argument),
-	        helper.argumentDescription(argument),
-	      );
-	    });
-	    if (argumentList.length > 0) {
-	      output = output.concat(['Arguments:', formatList(argumentList), '']);
-	    }
-
-	    // Options
-	    const optionList = helper.visibleOptions(cmd).map((option) => {
-	      return formatItem(
-	        helper.optionTerm(option),
-	        helper.optionDescription(option),
-	      );
-	    });
-	    if (optionList.length > 0) {
-	      output = output.concat(['Options:', formatList(optionList), '']);
-	    }
-
-	    if (this.showGlobalOptions) {
-	      const globalOptionList = helper
-	        .visibleGlobalOptions(cmd)
-	        .map((option) => {
-	          return formatItem(
-	            helper.optionTerm(option),
-	            helper.optionDescription(option),
-	          );
+	            console.log("\n执行以下命令运行项目");
+	            console.log(`1. cd ${path.basename(projectPath)}`);
+	            if (res) {
+	                console.log(`2. ${packageCli} run dev`);
+	            } else {
+	                console.log(`2. ${packageCli} install`);
+	            }
 	        });
-	      if (globalOptionList.length > 0) {
-	        output = output.concat([
-	          'Global Options:',
-	          formatList(globalOptionList),
-	          '',
+	    }
+	    async createOfficialTemplate(projectPath, options) {
+	        const { buildTools, type, language } = options;
+	        const templateName = platform.dfsParser(questionDict, [
+	            buildTools,
+	            type,
+	            language,
 	        ]);
-	      }
-	    }
-
-	    // Commands
-	    const commandList = helper.visibleCommands(cmd).map((cmd) => {
-	      return formatItem(
-	        helper.subcommandTerm(cmd),
-	        helper.subcommandDescription(cmd),
-	      );
-	    });
-	    if (commandList.length > 0) {
-	      output = output.concat(['Commands:', formatList(commandList), '']);
-	    }
-
-	    return output.join('\n');
-	  }
-
-	  /**
-	   * Calculate the pad width from the maximum term length.
-	   *
-	   * @param {Command} cmd
-	   * @param {Help} helper
-	   * @returns {number}
-	   */
-
-	  padWidth(cmd, helper) {
-	    return Math.max(
-	      helper.longestOptionTermLength(cmd, helper),
-	      helper.longestGlobalOptionTermLength(cmd, helper),
-	      helper.longestSubcommandTermLength(cmd, helper),
-	      helper.longestArgumentTermLength(cmd, helper),
-	    );
-	  }
-
-	  /**
-	   * Wrap the given string to width characters per line, with lines after the first indented.
-	   * Do not wrap if insufficient room for wrapping (minColumnWidth), or string is manually formatted.
-	   *
-	   * @param {string} str
-	   * @param {number} width
-	   * @param {number} indent
-	   * @param {number} [minColumnWidth=40]
-	   * @return {string}
-	   *
-	   */
-
-	  wrap(str, width, indent, minColumnWidth = 40) {
-	    // Full \s characters, minus the linefeeds.
-	    const indents =
-	      ' \\f\\t\\v\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000\ufeff';
-	    // Detect manually wrapped and indented strings by searching for line break followed by spaces.
-	    const manualIndent = new RegExp(`[\\n][${indents}]+`);
-	    if (str.match(manualIndent)) return str;
-	    // Do not wrap if not enough room for a wrapped column of text (as could end up with a word per line).
-	    const columnWidth = width - indent;
-	    if (columnWidth < minColumnWidth) return str;
-
-	    const leadingStr = str.slice(0, indent);
-	    const columnText = str.slice(indent).replace('\r\n', '\n');
-	    const indentString = ' '.repeat(indent);
-	    const zeroWidthSpace = '\u200B';
-	    const breaks = `\\s${zeroWidthSpace}`;
-	    // Match line end (so empty lines don't collapse),
-	    // or as much text as will fit in column, or excess text up to first break.
-	    const regex = new RegExp(
-	      `\n|.{1,${columnWidth - 1}}([${breaks}]|$)|[^${breaks}]+?([${breaks}]|$)`,
-	      'g',
-	    );
-	    const lines = columnText.match(regex) || [];
-	    return (
-	      leadingStr +
-	      lines
-	        .map((line, i) => {
-	          if (line === '\n') return ''; // preserve empty lines
-	          return (i > 0 ? indentString : '') + line.trimEnd();
-	        })
-	        .join('\n')
-	    );
-	  }
-	}
-
-	help.Help = Help;
-	return help;
-}
-
-var option = {};
-
-var hasRequiredOption;
-
-function requireOption () {
-	if (hasRequiredOption) return option;
-	hasRequiredOption = 1;
-	const { InvalidArgumentError } = requireError();
-
-	class Option {
-	  /**
-	   * Initialize a new `Option` with the given `flags` and `description`.
-	   *
-	   * @param {string} flags
-	   * @param {string} [description]
-	   */
-
-	  constructor(flags, description) {
-	    this.flags = flags;
-	    this.description = description || '';
-
-	    this.required = flags.includes('<'); // A value must be supplied when the option is specified.
-	    this.optional = flags.includes('['); // A value is optional when the option is specified.
-	    // variadic test ignores <value,...> et al which might be used to describe custom splitting of single argument
-	    this.variadic = /\w\.\.\.[>\]]$/.test(flags); // The option can take multiple values.
-	    this.mandatory = false; // The option must have a value after parsing, which usually means it must be specified on command line.
-	    const optionFlags = splitOptionFlags(flags);
-	    this.short = optionFlags.shortFlag;
-	    this.long = optionFlags.longFlag;
-	    this.negate = false;
-	    if (this.long) {
-	      this.negate = this.long.startsWith('--no-');
-	    }
-	    this.defaultValue = undefined;
-	    this.defaultValueDescription = undefined;
-	    this.presetArg = undefined;
-	    this.envVar = undefined;
-	    this.parseArg = undefined;
-	    this.hidden = false;
-	    this.argChoices = undefined;
-	    this.conflictsWith = [];
-	    this.implied = undefined;
-	  }
-
-	  /**
-	   * Set the default value, and optionally supply the description to be displayed in the help.
-	   *
-	   * @param {*} value
-	   * @param {string} [description]
-	   * @return {Option}
-	   */
-
-	  default(value, description) {
-	    this.defaultValue = value;
-	    this.defaultValueDescription = description;
-	    return this;
-	  }
-
-	  /**
-	   * Preset to use when option used without option-argument, especially optional but also boolean and negated.
-	   * The custom processing (parseArg) is called.
-	   *
-	   * @example
-	   * new Option('--color').default('GREYSCALE').preset('RGB');
-	   * new Option('--donate [amount]').preset('20').argParser(parseFloat);
-	   *
-	   * @param {*} arg
-	   * @return {Option}
-	   */
-
-	  preset(arg) {
-	    this.presetArg = arg;
-	    return this;
-	  }
-
-	  /**
-	   * Add option name(s) that conflict with this option.
-	   * An error will be displayed if conflicting options are found during parsing.
-	   *
-	   * @example
-	   * new Option('--rgb').conflicts('cmyk');
-	   * new Option('--js').conflicts(['ts', 'jsx']);
-	   *
-	   * @param {(string | string[])} names
-	   * @return {Option}
-	   */
-
-	  conflicts(names) {
-	    this.conflictsWith = this.conflictsWith.concat(names);
-	    return this;
-	  }
-
-	  /**
-	   * Specify implied option values for when this option is set and the implied options are not.
-	   *
-	   * The custom processing (parseArg) is not called on the implied values.
-	   *
-	   * @example
-	   * program
-	   *   .addOption(new Option('--log', 'write logging information to file'))
-	   *   .addOption(new Option('--trace', 'log extra details').implies({ log: 'trace.txt' }));
-	   *
-	   * @param {object} impliedOptionValues
-	   * @return {Option}
-	   */
-	  implies(impliedOptionValues) {
-	    let newImplied = impliedOptionValues;
-	    if (typeof impliedOptionValues === 'string') {
-	      // string is not documented, but easy mistake and we can do what user probably intended.
-	      newImplied = { [impliedOptionValues]: true };
-	    }
-	    this.implied = Object.assign(this.implied || {}, newImplied);
-	    return this;
-	  }
-
-	  /**
-	   * Set environment variable to check for option value.
-	   *
-	   * An environment variable is only used if when processed the current option value is
-	   * undefined, or the source of the current value is 'default' or 'config' or 'env'.
-	   *
-	   * @param {string} name
-	   * @return {Option}
-	   */
-
-	  env(name) {
-	    this.envVar = name;
-	    return this;
-	  }
-
-	  /**
-	   * Set the custom handler for processing CLI option arguments into option values.
-	   *
-	   * @param {Function} [fn]
-	   * @return {Option}
-	   */
-
-	  argParser(fn) {
-	    this.parseArg = fn;
-	    return this;
-	  }
-
-	  /**
-	   * Whether the option is mandatory and must have a value after parsing.
-	   *
-	   * @param {boolean} [mandatory=true]
-	   * @return {Option}
-	   */
-
-	  makeOptionMandatory(mandatory = true) {
-	    this.mandatory = !!mandatory;
-	    return this;
-	  }
-
-	  /**
-	   * Hide option in help.
-	   *
-	   * @param {boolean} [hide=true]
-	   * @return {Option}
-	   */
-
-	  hideHelp(hide = true) {
-	    this.hidden = !!hide;
-	    return this;
-	  }
-
-	  /**
-	   * @package
-	   */
-
-	  _concatValue(value, previous) {
-	    if (previous === this.defaultValue || !Array.isArray(previous)) {
-	      return [value];
-	    }
-
-	    return previous.concat(value);
-	  }
-
-	  /**
-	   * Only allow option value to be one of choices.
-	   *
-	   * @param {string[]} values
-	   * @return {Option}
-	   */
-
-	  choices(values) {
-	    this.argChoices = values.slice();
-	    this.parseArg = (arg, previous) => {
-	      if (!this.argChoices.includes(arg)) {
-	        throw new InvalidArgumentError(
-	          `Allowed choices are ${this.argChoices.join(', ')}.`,
+	        if (!templateName) return console.log("当前配置暂未开放，敬请期待...");
+	        console.log(
+	            `正在生成中... 模板类型为：${type},  语言类型: ${language}，构建工具为: ${buildTools}`,
 	        );
-	      }
-	      if (this.variadic) {
-	        return this._concatValue(arg, previous);
-	      }
-	      return arg;
-	    };
-	    return this;
-	  }
 
-	  /**
-	   * Return option name.
-	   *
-	   * @return {string}
-	   */
-
-	  name() {
-	    if (this.long) {
-	      return this.long.replace(/^--/, '');
-	    }
-	    return this.short.replace(/^-/, '');
-	  }
-
-	  /**
-	   * Return option name, in a camelcase format that can be used
-	   * as a object attribute key.
-	   *
-	   * @return {string}
-	   */
-
-	  attributeName() {
-	    return camelcase(this.name().replace(/^no-/, ''));
-	  }
-
-	  /**
-	   * Check if `arg` matches the short or long flag.
-	   *
-	   * @param {string} arg
-	   * @return {boolean}
-	   * @package
-	   */
-
-	  is(arg) {
-	    return this.short === arg || this.long === arg;
-	  }
-
-	  /**
-	   * Return whether a boolean option.
-	   *
-	   * Options are one of boolean, negated, required argument, or optional argument.
-	   *
-	   * @return {boolean}
-	   * @package
-	   */
-
-	  isBoolean() {
-	    return !this.required && !this.optional && !this.negate;
-	  }
-	}
-
-	/**
-	 * This class is to make it easier to work with dual options, without changing the existing
-	 * implementation. We support separate dual options for separate positive and negative options,
-	 * like `--build` and `--no-build`, which share a single option value. This works nicely for some
-	 * use cases, but is tricky for others where we want separate behaviours despite
-	 * the single shared option value.
-	 */
-	class DualOptions {
-	  /**
-	   * @param {Option[]} options
-	   */
-	  constructor(options) {
-	    this.positiveOptions = new Map();
-	    this.negativeOptions = new Map();
-	    this.dualOptions = new Set();
-	    options.forEach((option) => {
-	      if (option.negate) {
-	        this.negativeOptions.set(option.attributeName(), option);
-	      } else {
-	        this.positiveOptions.set(option.attributeName(), option);
-	      }
-	    });
-	    this.negativeOptions.forEach((value, key) => {
-	      if (this.positiveOptions.has(key)) {
-	        this.dualOptions.add(key);
-	      }
-	    });
-	  }
-
-	  /**
-	   * Did the value come from the option, and not from possible matching dual option?
-	   *
-	   * @param {*} value
-	   * @param {Option} option
-	   * @returns {boolean}
-	   */
-	  valueFromOption(value, option) {
-	    const optionKey = option.attributeName();
-	    if (!this.dualOptions.has(optionKey)) return true;
-
-	    // Use the value to deduce if (probably) came from the option.
-	    const preset = this.negativeOptions.get(optionKey).presetArg;
-	    const negativeValue = preset !== undefined ? preset : false;
-	    return option.negate === (negativeValue === value);
-	  }
-	}
-
-	/**
-	 * Convert string from kebab-case to camelCase.
-	 *
-	 * @param {string} str
-	 * @return {string}
-	 * @private
-	 */
-
-	function camelcase(str) {
-	  return str.split('-').reduce((str, word) => {
-	    return str + word[0].toUpperCase() + word.slice(1);
-	  });
-	}
-
-	/**
-	 * Split the short and long flag out of something like '-m,--mixed <value>'
-	 *
-	 * @private
-	 */
-
-	function splitOptionFlags(flags) {
-	  let shortFlag;
-	  let longFlag;
-	  // Use original very loose parsing to maintain backwards compatibility for now,
-	  // which allowed for example unintended `-sw, --short-word` [sic].
-	  const flagParts = flags.split(/[ |,]+/);
-	  if (flagParts.length > 1 && !/^[[<]/.test(flagParts[1]))
-	    shortFlag = flagParts.shift();
-	  longFlag = flagParts.shift();
-	  // Add support for lone short flag without significantly changing parsing!
-	  if (!shortFlag && /^-[^-]$/.test(longFlag)) {
-	    shortFlag = longFlag;
-	    longFlag = undefined;
-	  }
-	  return { shortFlag, longFlag };
-	}
-
-	option.Option = Option;
-	option.DualOptions = DualOptions;
-	return option;
-}
-
-var suggestSimilar = {};
-
-var hasRequiredSuggestSimilar;
-
-function requireSuggestSimilar () {
-	if (hasRequiredSuggestSimilar) return suggestSimilar;
-	hasRequiredSuggestSimilar = 1;
-	const maxDistance = 3;
-
-	function editDistance(a, b) {
-	  // https://en.wikipedia.org/wiki/Damerau–Levenshtein_distance
-	  // Calculating optimal string alignment distance, no substring is edited more than once.
-	  // (Simple implementation.)
-
-	  // Quick early exit, return worst case.
-	  if (Math.abs(a.length - b.length) > maxDistance)
-	    return Math.max(a.length, b.length);
-
-	  // distance between prefix substrings of a and b
-	  const d = [];
-
-	  // pure deletions turn a into empty string
-	  for (let i = 0; i <= a.length; i++) {
-	    d[i] = [i];
-	  }
-	  // pure insertions turn empty string into b
-	  for (let j = 0; j <= b.length; j++) {
-	    d[0][j] = j;
-	  }
-
-	  // fill matrix
-	  for (let j = 1; j <= b.length; j++) {
-	    for (let i = 1; i <= a.length; i++) {
-	      let cost = 1;
-	      if (a[i - 1] === b[j - 1]) {
-	        cost = 0;
-	      } else {
-	        cost = 1;
-	      }
-	      d[i][j] = Math.min(
-	        d[i - 1][j] + 1, // deletion
-	        d[i][j - 1] + 1, // insertion
-	        d[i - 1][j - 1] + cost, // substitution
-	      );
-	      // transposition
-	      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
-	        d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
-	      }
-	    }
-	  }
-
-	  return d[a.length][b.length];
-	}
-
-	/**
-	 * Find close matches, restricted to same number of edits.
-	 *
-	 * @param {string} word
-	 * @param {string[]} candidates
-	 * @returns {string}
-	 */
-
-	function suggestSimilar$1(word, candidates) {
-	  if (!candidates || candidates.length === 0) return '';
-	  // remove possible duplicates
-	  candidates = Array.from(new Set(candidates));
-
-	  const searchingOptions = word.startsWith('--');
-	  if (searchingOptions) {
-	    word = word.slice(2);
-	    candidates = candidates.map((candidate) => candidate.slice(2));
-	  }
-
-	  let similar = [];
-	  let bestDistance = maxDistance;
-	  const minSimilarity = 0.4;
-	  candidates.forEach((candidate) => {
-	    if (candidate.length <= 1) return; // no one character guesses
-
-	    const distance = editDistance(word, candidate);
-	    const length = Math.max(word.length, candidate.length);
-	    const similarity = (length - distance) / length;
-	    if (similarity > minSimilarity) {
-	      if (distance < bestDistance) {
-	        // better edit distance, throw away previous worse matches
-	        bestDistance = distance;
-	        similar = [candidate];
-	      } else if (distance === bestDistance) {
-	        similar.push(candidate);
-	      }
-	    }
-	  });
-
-	  similar.sort((a, b) => a.localeCompare(b));
-	  if (searchingOptions) {
-	    similar = similar.map((candidate) => `--${candidate}`);
-	  }
-
-	  if (similar.length > 1) {
-	    return `\n(Did you mean one of ${similar.join(', ')}?)`;
-	  }
-	  if (similar.length === 1) {
-	    return `\n(Did you mean ${similar[0]}?)`;
-	  }
-	  return '';
-	}
-
-	suggestSimilar.suggestSimilar = suggestSimilar$1;
-	return suggestSimilar;
-}
-
-var hasRequiredCommand$2;
-
-function requireCommand$2 () {
-	if (hasRequiredCommand$2) return command$2;
-	hasRequiredCommand$2 = 1;
-	const EventEmitter = require$$0$c.EventEmitter;
-	const childProcess = require$$3$1;
-	const path = require$$1$1;
-	const fs = require$$0$3;
-	const process = require$$0$7;
-
-	const { Argument, humanReadableArgName } = requireArgument();
-	const { CommanderError } = requireError();
-	const { Help } = requireHelp();
-	const { Option, DualOptions } = requireOption();
-	const { suggestSimilar } = requireSuggestSimilar();
-
-	class Command extends EventEmitter {
-	  /**
-	   * Initialize a new `Command`.
-	   *
-	   * @param {string} [name]
-	   */
-
-	  constructor(name) {
-	    super();
-	    /** @type {Command[]} */
-	    this.commands = [];
-	    /** @type {Option[]} */
-	    this.options = [];
-	    this.parent = null;
-	    this._allowUnknownOption = false;
-	    this._allowExcessArguments = true;
-	    /** @type {Argument[]} */
-	    this.registeredArguments = [];
-	    this._args = this.registeredArguments; // deprecated old name
-	    /** @type {string[]} */
-	    this.args = []; // cli args with options removed
-	    this.rawArgs = [];
-	    this.processedArgs = []; // like .args but after custom processing and collecting variadic
-	    this._scriptPath = null;
-	    this._name = name || '';
-	    this._optionValues = {};
-	    this._optionValueSources = {}; // default, env, cli etc
-	    this._storeOptionsAsProperties = false;
-	    this._actionHandler = null;
-	    this._executableHandler = false;
-	    this._executableFile = null; // custom name for executable
-	    this._executableDir = null; // custom search directory for subcommands
-	    this._defaultCommandName = null;
-	    this._exitCallback = null;
-	    this._aliases = [];
-	    this._combineFlagAndOptionalValue = true;
-	    this._description = '';
-	    this._summary = '';
-	    this._argsDescription = undefined; // legacy
-	    this._enablePositionalOptions = false;
-	    this._passThroughOptions = false;
-	    this._lifeCycleHooks = {}; // a hash of arrays
-	    /** @type {(boolean | string)} */
-	    this._showHelpAfterError = false;
-	    this._showSuggestionAfterError = true;
-
-	    // see .configureOutput() for docs
-	    this._outputConfiguration = {
-	      writeOut: (str) => process.stdout.write(str),
-	      writeErr: (str) => process.stderr.write(str),
-	      getOutHelpWidth: () =>
-	        process.stdout.isTTY ? process.stdout.columns : undefined,
-	      getErrHelpWidth: () =>
-	        process.stderr.isTTY ? process.stderr.columns : undefined,
-	      outputError: (str, write) => write(str),
-	    };
-
-	    this._hidden = false;
-	    /** @type {(Option | null | undefined)} */
-	    this._helpOption = undefined; // Lazy created on demand. May be null if help option is disabled.
-	    this._addImplicitHelpCommand = undefined; // undecided whether true or false yet, not inherited
-	    /** @type {Command} */
-	    this._helpCommand = undefined; // lazy initialised, inherited
-	    this._helpConfiguration = {};
-	  }
-
-	  /**
-	   * Copy settings that are useful to have in common across root command and subcommands.
-	   *
-	   * (Used internally when adding a command using `.command()` so subcommands inherit parent settings.)
-	   *
-	   * @param {Command} sourceCommand
-	   * @return {Command} `this` command for chaining
-	   */
-	  copyInheritedSettings(sourceCommand) {
-	    this._outputConfiguration = sourceCommand._outputConfiguration;
-	    this._helpOption = sourceCommand._helpOption;
-	    this._helpCommand = sourceCommand._helpCommand;
-	    this._helpConfiguration = sourceCommand._helpConfiguration;
-	    this._exitCallback = sourceCommand._exitCallback;
-	    this._storeOptionsAsProperties = sourceCommand._storeOptionsAsProperties;
-	    this._combineFlagAndOptionalValue =
-	      sourceCommand._combineFlagAndOptionalValue;
-	    this._allowExcessArguments = sourceCommand._allowExcessArguments;
-	    this._enablePositionalOptions = sourceCommand._enablePositionalOptions;
-	    this._showHelpAfterError = sourceCommand._showHelpAfterError;
-	    this._showSuggestionAfterError = sourceCommand._showSuggestionAfterError;
-
-	    return this;
-	  }
-
-	  /**
-	   * @returns {Command[]}
-	   * @private
-	   */
-
-	  _getCommandAndAncestors() {
-	    const result = [];
-	    // eslint-disable-next-line @typescript-eslint/no-this-alias
-	    for (let command = this; command; command = command.parent) {
-	      result.push(command);
-	    }
-	    return result;
-	  }
-
-	  /**
-	   * Define a command.
-	   *
-	   * There are two styles of command: pay attention to where to put the description.
-	   *
-	   * @example
-	   * // Command implemented using action handler (description is supplied separately to `.command`)
-	   * program
-	   *   .command('clone <source> [destination]')
-	   *   .description('clone a repository into a newly created directory')
-	   *   .action((source, destination) => {
-	   *     console.log('clone command called');
-	   *   });
-	   *
-	   * // Command implemented using separate executable file (description is second parameter to `.command`)
-	   * program
-	   *   .command('start <service>', 'start named service')
-	   *   .command('stop [service]', 'stop named service, or all if no name supplied');
-	   *
-	   * @param {string} nameAndArgs - command name and arguments, args are `<required>` or `[optional]` and last may also be `variadic...`
-	   * @param {(object | string)} [actionOptsOrExecDesc] - configuration options (for action), or description (for executable)
-	   * @param {object} [execOpts] - configuration options (for executable)
-	   * @return {Command} returns new command for action handler, or `this` for executable command
-	   */
-
-	  command(nameAndArgs, actionOptsOrExecDesc, execOpts) {
-	    let desc = actionOptsOrExecDesc;
-	    let opts = execOpts;
-	    if (typeof desc === 'object' && desc !== null) {
-	      opts = desc;
-	      desc = null;
-	    }
-	    opts = opts || {};
-	    const [, name, args] = nameAndArgs.match(/([^ ]+) *(.*)/);
-
-	    const cmd = this.createCommand(name);
-	    if (desc) {
-	      cmd.description(desc);
-	      cmd._executableHandler = true;
-	    }
-	    if (opts.isDefault) this._defaultCommandName = cmd._name;
-	    cmd._hidden = !!(opts.noHelp || opts.hidden); // noHelp is deprecated old name for hidden
-	    cmd._executableFile = opts.executableFile || null; // Custom name for executable file, set missing to null to match constructor
-	    if (args) cmd.arguments(args);
-	    this._registerCommand(cmd);
-	    cmd.parent = this;
-	    cmd.copyInheritedSettings(this);
-
-	    if (desc) return this;
-	    return cmd;
-	  }
-
-	  /**
-	   * Factory routine to create a new unattached command.
-	   *
-	   * See .command() for creating an attached subcommand, which uses this routine to
-	   * create the command. You can override createCommand to customise subcommands.
-	   *
-	   * @param {string} [name]
-	   * @return {Command} new command
-	   */
-
-	  createCommand(name) {
-	    return new Command(name);
-	  }
-
-	  /**
-	   * You can customise the help with a subclass of Help by overriding createHelp,
-	   * or by overriding Help properties using configureHelp().
-	   *
-	   * @return {Help}
-	   */
-
-	  createHelp() {
-	    return Object.assign(new Help(), this.configureHelp());
-	  }
-
-	  /**
-	   * You can customise the help by overriding Help properties using configureHelp(),
-	   * or with a subclass of Help by overriding createHelp().
-	   *
-	   * @param {object} [configuration] - configuration options
-	   * @return {(Command | object)} `this` command for chaining, or stored configuration
-	   */
-
-	  configureHelp(configuration) {
-	    if (configuration === undefined) return this._helpConfiguration;
-
-	    this._helpConfiguration = configuration;
-	    return this;
-	  }
-
-	  /**
-	   * The default output goes to stdout and stderr. You can customise this for special
-	   * applications. You can also customise the display of errors by overriding outputError.
-	   *
-	   * The configuration properties are all functions:
-	   *
-	   *     // functions to change where being written, stdout and stderr
-	   *     writeOut(str)
-	   *     writeErr(str)
-	   *     // matching functions to specify width for wrapping help
-	   *     getOutHelpWidth()
-	   *     getErrHelpWidth()
-	   *     // functions based on what is being written out
-	   *     outputError(str, write) // used for displaying errors, and not used for displaying help
-	   *
-	   * @param {object} [configuration] - configuration options
-	   * @return {(Command | object)} `this` command for chaining, or stored configuration
-	   */
-
-	  configureOutput(configuration) {
-	    if (configuration === undefined) return this._outputConfiguration;
-
-	    Object.assign(this._outputConfiguration, configuration);
-	    return this;
-	  }
-
-	  /**
-	   * Display the help or a custom message after an error occurs.
-	   *
-	   * @param {(boolean|string)} [displayHelp]
-	   * @return {Command} `this` command for chaining
-	   */
-	  showHelpAfterError(displayHelp = true) {
-	    if (typeof displayHelp !== 'string') displayHelp = !!displayHelp;
-	    this._showHelpAfterError = displayHelp;
-	    return this;
-	  }
-
-	  /**
-	   * Display suggestion of similar commands for unknown commands, or options for unknown options.
-	   *
-	   * @param {boolean} [displaySuggestion]
-	   * @return {Command} `this` command for chaining
-	   */
-	  showSuggestionAfterError(displaySuggestion = true) {
-	    this._showSuggestionAfterError = !!displaySuggestion;
-	    return this;
-	  }
-
-	  /**
-	   * Add a prepared subcommand.
-	   *
-	   * See .command() for creating an attached subcommand which inherits settings from its parent.
-	   *
-	   * @param {Command} cmd - new subcommand
-	   * @param {object} [opts] - configuration options
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  addCommand(cmd, opts) {
-	    if (!cmd._name) {
-	      throw new Error(`Command passed to .addCommand() must have a name
-- specify the name in Command constructor or using .name()`);
-	    }
-
-	    opts = opts || {};
-	    if (opts.isDefault) this._defaultCommandName = cmd._name;
-	    if (opts.noHelp || opts.hidden) cmd._hidden = true; // modifying passed command due to existing implementation
-
-	    this._registerCommand(cmd);
-	    cmd.parent = this;
-	    cmd._checkForBrokenPassThrough();
-
-	    return this;
-	  }
-
-	  /**
-	   * Factory routine to create a new unattached argument.
-	   *
-	   * See .argument() for creating an attached argument, which uses this routine to
-	   * create the argument. You can override createArgument to return a custom argument.
-	   *
-	   * @param {string} name
-	   * @param {string} [description]
-	   * @return {Argument} new argument
-	   */
-
-	  createArgument(name, description) {
-	    return new Argument(name, description);
-	  }
-
-	  /**
-	   * Define argument syntax for command.
-	   *
-	   * The default is that the argument is required, and you can explicitly
-	   * indicate this with <> around the name. Put [] around the name for an optional argument.
-	   *
-	   * @example
-	   * program.argument('<input-file>');
-	   * program.argument('[output-file]');
-	   *
-	   * @param {string} name
-	   * @param {string} [description]
-	   * @param {(Function|*)} [fn] - custom argument processing function
-	   * @param {*} [defaultValue]
-	   * @return {Command} `this` command for chaining
-	   */
-	  argument(name, description, fn, defaultValue) {
-	    const argument = this.createArgument(name, description);
-	    if (typeof fn === 'function') {
-	      argument.default(defaultValue).argParser(fn);
-	    } else {
-	      argument.default(fn);
-	    }
-	    this.addArgument(argument);
-	    return this;
-	  }
-
-	  /**
-	   * Define argument syntax for command, adding multiple at once (without descriptions).
-	   *
-	   * See also .argument().
-	   *
-	   * @example
-	   * program.arguments('<cmd> [env]');
-	   *
-	   * @param {string} names
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  arguments(names) {
-	    names
-	      .trim()
-	      .split(/ +/)
-	      .forEach((detail) => {
-	        this.argument(detail);
-	      });
-	    return this;
-	  }
-
-	  /**
-	   * Define argument syntax for command, adding a prepared argument.
-	   *
-	   * @param {Argument} argument
-	   * @return {Command} `this` command for chaining
-	   */
-	  addArgument(argument) {
-	    const previousArgument = this.registeredArguments.slice(-1)[0];
-	    if (previousArgument && previousArgument.variadic) {
-	      throw new Error(
-	        `only the last argument can be variadic '${previousArgument.name()}'`,
-	      );
-	    }
-	    if (
-	      argument.required &&
-	      argument.defaultValue !== undefined &&
-	      argument.parseArg === undefined
-	    ) {
-	      throw new Error(
-	        `a default value for a required argument is never used: '${argument.name()}'`,
-	      );
-	    }
-	    this.registeredArguments.push(argument);
-	    return this;
-	  }
-
-	  /**
-	   * Customise or override default help command. By default a help command is automatically added if your command has subcommands.
-	   *
-	   * @example
-	   *    program.helpCommand('help [cmd]');
-	   *    program.helpCommand('help [cmd]', 'show help');
-	   *    program.helpCommand(false); // suppress default help command
-	   *    program.helpCommand(true); // add help command even if no subcommands
-	   *
-	   * @param {string|boolean} enableOrNameAndArgs - enable with custom name and/or arguments, or boolean to override whether added
-	   * @param {string} [description] - custom description
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  helpCommand(enableOrNameAndArgs, description) {
-	    if (typeof enableOrNameAndArgs === 'boolean') {
-	      this._addImplicitHelpCommand = enableOrNameAndArgs;
-	      return this;
-	    }
-
-	    enableOrNameAndArgs = enableOrNameAndArgs ?? 'help [command]';
-	    const [, helpName, helpArgs] = enableOrNameAndArgs.match(/([^ ]+) *(.*)/);
-	    const helpDescription = description ?? 'display help for command';
-
-	    const helpCommand = this.createCommand(helpName);
-	    helpCommand.helpOption(false);
-	    if (helpArgs) helpCommand.arguments(helpArgs);
-	    if (helpDescription) helpCommand.description(helpDescription);
-
-	    this._addImplicitHelpCommand = true;
-	    this._helpCommand = helpCommand;
-
-	    return this;
-	  }
-
-	  /**
-	   * Add prepared custom help command.
-	   *
-	   * @param {(Command|string|boolean)} helpCommand - custom help command, or deprecated enableOrNameAndArgs as for `.helpCommand()`
-	   * @param {string} [deprecatedDescription] - deprecated custom description used with custom name only
-	   * @return {Command} `this` command for chaining
-	   */
-	  addHelpCommand(helpCommand, deprecatedDescription) {
-	    // If not passed an object, call through to helpCommand for backwards compatibility,
-	    // as addHelpCommand was originally used like helpCommand is now.
-	    if (typeof helpCommand !== 'object') {
-	      this.helpCommand(helpCommand, deprecatedDescription);
-	      return this;
-	    }
-
-	    this._addImplicitHelpCommand = true;
-	    this._helpCommand = helpCommand;
-	    return this;
-	  }
-
-	  /**
-	   * Lazy create help command.
-	   *
-	   * @return {(Command|null)}
-	   * @package
-	   */
-	  _getHelpCommand() {
-	    const hasImplicitHelpCommand =
-	      this._addImplicitHelpCommand ??
-	      (this.commands.length &&
-	        !this._actionHandler &&
-	        !this._findCommand('help'));
-
-	    if (hasImplicitHelpCommand) {
-	      if (this._helpCommand === undefined) {
-	        this.helpCommand(undefined, undefined); // use default name and description
-	      }
-	      return this._helpCommand;
-	    }
-	    return null;
-	  }
-
-	  /**
-	   * Add hook for life cycle event.
-	   *
-	   * @param {string} event
-	   * @param {Function} listener
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  hook(event, listener) {
-	    const allowedValues = ['preSubcommand', 'preAction', 'postAction'];
-	    if (!allowedValues.includes(event)) {
-	      throw new Error(`Unexpected value for event passed to hook : '${event}'.
-Expecting one of '${allowedValues.join("', '")}'`);
-	    }
-	    if (this._lifeCycleHooks[event]) {
-	      this._lifeCycleHooks[event].push(listener);
-	    } else {
-	      this._lifeCycleHooks[event] = [listener];
-	    }
-	    return this;
-	  }
-
-	  /**
-	   * Register callback to use as replacement for calling process.exit.
-	   *
-	   * @param {Function} [fn] optional callback which will be passed a CommanderError, defaults to throwing
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  exitOverride(fn) {
-	    if (fn) {
-	      this._exitCallback = fn;
-	    } else {
-	      this._exitCallback = (err) => {
-	        if (err.code !== 'commander.executeSubCommandAsync') {
-	          throw err;
-	        }
-	      };
-	    }
-	    return this;
-	  }
-
-	  /**
-	   * Call process.exit, and _exitCallback if defined.
-	   *
-	   * @param {number} exitCode exit code for using with process.exit
-	   * @param {string} code an id string representing the error
-	   * @param {string} message human-readable description of the error
-	   * @return never
-	   * @private
-	   */
-
-	  _exit(exitCode, code, message) {
-	    if (this._exitCallback) {
-	      this._exitCallback(new CommanderError(exitCode, code, message));
-	      // Expecting this line is not reached.
-	    }
-	    process.exit(exitCode);
-	  }
-
-	  /**
-	   * Register callback `fn` for the command.
-	   *
-	   * @example
-	   * program
-	   *   .command('serve')
-	   *   .description('start service')
-	   *   .action(function() {
-	   *      // do work here
-	   *   });
-	   *
-	   * @param {Function} fn
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  action(fn) {
-	    const listener = (args) => {
-	      // The .action callback takes an extra parameter which is the command or options.
-	      const expectedArgsCount = this.registeredArguments.length;
-	      const actionArgs = args.slice(0, expectedArgsCount);
-	      if (this._storeOptionsAsProperties) {
-	        actionArgs[expectedArgsCount] = this; // backwards compatible "options"
-	      } else {
-	        actionArgs[expectedArgsCount] = this.opts();
-	      }
-	      actionArgs.push(this);
-
-	      return fn.apply(this, actionArgs);
-	    };
-	    this._actionHandler = listener;
-	    return this;
-	  }
-
-	  /**
-	   * Factory routine to create a new unattached option.
-	   *
-	   * See .option() for creating an attached option, which uses this routine to
-	   * create the option. You can override createOption to return a custom option.
-	   *
-	   * @param {string} flags
-	   * @param {string} [description]
-	   * @return {Option} new option
-	   */
-
-	  createOption(flags, description) {
-	    return new Option(flags, description);
-	  }
-
-	  /**
-	   * Wrap parseArgs to catch 'commander.invalidArgument'.
-	   *
-	   * @param {(Option | Argument)} target
-	   * @param {string} value
-	   * @param {*} previous
-	   * @param {string} invalidArgumentMessage
-	   * @private
-	   */
-
-	  _callParseArg(target, value, previous, invalidArgumentMessage) {
-	    try {
-	      return target.parseArg(value, previous);
-	    } catch (err) {
-	      if (err.code === 'commander.invalidArgument') {
-	        const message = `${invalidArgumentMessage} ${err.message}`;
-	        this.error(message, { exitCode: err.exitCode, code: err.code });
-	      }
-	      throw err;
-	    }
-	  }
-
-	  /**
-	   * Check for option flag conflicts.
-	   * Register option if no conflicts found, or throw on conflict.
-	   *
-	   * @param {Option} option
-	   * @private
-	   */
-
-	  _registerOption(option) {
-	    const matchingOption =
-	      (option.short && this._findOption(option.short)) ||
-	      (option.long && this._findOption(option.long));
-	    if (matchingOption) {
-	      const matchingFlag =
-	        option.long && this._findOption(option.long)
-	          ? option.long
-	          : option.short;
-	      throw new Error(`Cannot add option '${option.flags}'${this._name && ` to command '${this._name}'`} due to conflicting flag '${matchingFlag}'
--  already used by option '${matchingOption.flags}'`);
-	    }
-
-	    this.options.push(option);
-	  }
-
-	  /**
-	   * Check for command name and alias conflicts with existing commands.
-	   * Register command if no conflicts found, or throw on conflict.
-	   *
-	   * @param {Command} command
-	   * @private
-	   */
-
-	  _registerCommand(command) {
-	    const knownBy = (cmd) => {
-	      return [cmd.name()].concat(cmd.aliases());
-	    };
-
-	    const alreadyUsed = knownBy(command).find((name) =>
-	      this._findCommand(name),
-	    );
-	    if (alreadyUsed) {
-	      const existingCmd = knownBy(this._findCommand(alreadyUsed)).join('|');
-	      const newCmd = knownBy(command).join('|');
-	      throw new Error(
-	        `cannot add command '${newCmd}' as already have command '${existingCmd}'`,
-	      );
-	    }
-
-	    this.commands.push(command);
-	  }
-
-	  /**
-	   * Add an option.
-	   *
-	   * @param {Option} option
-	   * @return {Command} `this` command for chaining
-	   */
-	  addOption(option) {
-	    this._registerOption(option);
-
-	    const oname = option.name();
-	    const name = option.attributeName();
-
-	    // store default value
-	    if (option.negate) {
-	      // --no-foo is special and defaults foo to true, unless a --foo option is already defined
-	      const positiveLongFlag = option.long.replace(/^--no-/, '--');
-	      if (!this._findOption(positiveLongFlag)) {
-	        this.setOptionValueWithSource(
-	          name,
-	          option.defaultValue === undefined ? true : option.defaultValue,
-	          'default',
-	        );
-	      }
-	    } else if (option.defaultValue !== undefined) {
-	      this.setOptionValueWithSource(name, option.defaultValue, 'default');
-	    }
-
-	    // handler for cli and env supplied values
-	    const handleOptionValue = (val, invalidValueMessage, valueSource) => {
-	      // val is null for optional option used without an optional-argument.
-	      // val is undefined for boolean and negated option.
-	      if (val == null && option.presetArg !== undefined) {
-	        val = option.presetArg;
-	      }
-
-	      // custom processing
-	      const oldValue = this.getOptionValue(name);
-	      if (val !== null && option.parseArg) {
-	        val = this._callParseArg(option, val, oldValue, invalidValueMessage);
-	      } else if (val !== null && option.variadic) {
-	        val = option._concatValue(val, oldValue);
-	      }
-
-	      // Fill-in appropriate missing values. Long winded but easy to follow.
-	      if (val == null) {
-	        if (option.negate) {
-	          val = false;
-	        } else if (option.isBoolean() || option.optional) {
-	          val = true;
-	        } else {
-	          val = ''; // not normal, parseArg might have failed or be a mock function for testing
-	        }
-	      }
-	      this.setOptionValueWithSource(name, val, valueSource);
-	    };
-
-	    this.on('option:' + oname, (val) => {
-	      const invalidValueMessage = `error: option '${option.flags}' argument '${val}' is invalid.`;
-	      handleOptionValue(val, invalidValueMessage, 'cli');
-	    });
-
-	    if (option.envVar) {
-	      this.on('optionEnv:' + oname, (val) => {
-	        const invalidValueMessage = `error: option '${option.flags}' value '${val}' from env '${option.envVar}' is invalid.`;
-	        handleOptionValue(val, invalidValueMessage, 'env');
-	      });
-	    }
-
-	    return this;
-	  }
-
-	  /**
-	   * Internal implementation shared by .option() and .requiredOption()
-	   *
-	   * @return {Command} `this` command for chaining
-	   * @private
-	   */
-	  _optionEx(config, flags, description, fn, defaultValue) {
-	    if (typeof flags === 'object' && flags instanceof Option) {
-	      throw new Error(
-	        'To add an Option object use addOption() instead of option() or requiredOption()',
-	      );
-	    }
-	    const option = this.createOption(flags, description);
-	    option.makeOptionMandatory(!!config.mandatory);
-	    if (typeof fn === 'function') {
-	      option.default(defaultValue).argParser(fn);
-	    } else if (fn instanceof RegExp) {
-	      // deprecated
-	      const regex = fn;
-	      fn = (val, def) => {
-	        const m = regex.exec(val);
-	        return m ? m[0] : def;
-	      };
-	      option.default(defaultValue).argParser(fn);
-	    } else {
-	      option.default(fn);
-	    }
-
-	    return this.addOption(option);
-	  }
-
-	  /**
-	   * Define option with `flags`, `description`, and optional argument parsing function or `defaultValue` or both.
-	   *
-	   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space. A required
-	   * option-argument is indicated by `<>` and an optional option-argument by `[]`.
-	   *
-	   * See the README for more details, and see also addOption() and requiredOption().
-	   *
-	   * @example
-	   * program
-	   *     .option('-p, --pepper', 'add pepper')
-	   *     .option('-p, --pizza-type <TYPE>', 'type of pizza') // required option-argument
-	   *     .option('-c, --cheese [CHEESE]', 'add extra cheese', 'mozzarella') // optional option-argument with default
-	   *     .option('-t, --tip <VALUE>', 'add tip to purchase cost', parseFloat) // custom parse function
-	   *
-	   * @param {string} flags
-	   * @param {string} [description]
-	   * @param {(Function|*)} [parseArg] - custom option processing function or default value
-	   * @param {*} [defaultValue]
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  option(flags, description, parseArg, defaultValue) {
-	    return this._optionEx({}, flags, description, parseArg, defaultValue);
-	  }
-
-	  /**
-	   * Add a required option which must have a value after parsing. This usually means
-	   * the option must be specified on the command line. (Otherwise the same as .option().)
-	   *
-	   * The `flags` string contains the short and/or long flags, separated by comma, a pipe or space.
-	   *
-	   * @param {string} flags
-	   * @param {string} [description]
-	   * @param {(Function|*)} [parseArg] - custom option processing function or default value
-	   * @param {*} [defaultValue]
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  requiredOption(flags, description, parseArg, defaultValue) {
-	    return this._optionEx(
-	      { mandatory: true },
-	      flags,
-	      description,
-	      parseArg,
-	      defaultValue,
-	    );
-	  }
-
-	  /**
-	   * Alter parsing of short flags with optional values.
-	   *
-	   * @example
-	   * // for `.option('-f,--flag [value]'):
-	   * program.combineFlagAndOptionalValue(true);  // `-f80` is treated like `--flag=80`, this is the default behaviour
-	   * program.combineFlagAndOptionalValue(false) // `-fb` is treated like `-f -b`
-	   *
-	   * @param {boolean} [combine] - if `true` or omitted, an optional value can be specified directly after the flag.
-	   * @return {Command} `this` command for chaining
-	   */
-	  combineFlagAndOptionalValue(combine = true) {
-	    this._combineFlagAndOptionalValue = !!combine;
-	    return this;
-	  }
-
-	  /**
-	   * Allow unknown options on the command line.
-	   *
-	   * @param {boolean} [allowUnknown] - if `true` or omitted, no error will be thrown for unknown options.
-	   * @return {Command} `this` command for chaining
-	   */
-	  allowUnknownOption(allowUnknown = true) {
-	    this._allowUnknownOption = !!allowUnknown;
-	    return this;
-	  }
-
-	  /**
-	   * Allow excess command-arguments on the command line. Pass false to make excess arguments an error.
-	   *
-	   * @param {boolean} [allowExcess] - if `true` or omitted, no error will be thrown for excess arguments.
-	   * @return {Command} `this` command for chaining
-	   */
-	  allowExcessArguments(allowExcess = true) {
-	    this._allowExcessArguments = !!allowExcess;
-	    return this;
-	  }
-
-	  /**
-	   * Enable positional options. Positional means global options are specified before subcommands which lets
-	   * subcommands reuse the same option names, and also enables subcommands to turn on passThroughOptions.
-	   * The default behaviour is non-positional and global options may appear anywhere on the command line.
-	   *
-	   * @param {boolean} [positional]
-	   * @return {Command} `this` command for chaining
-	   */
-	  enablePositionalOptions(positional = true) {
-	    this._enablePositionalOptions = !!positional;
-	    return this;
-	  }
-
-	  /**
-	   * Pass through options that come after command-arguments rather than treat them as command-options,
-	   * so actual command-options come before command-arguments. Turning this on for a subcommand requires
-	   * positional options to have been enabled on the program (parent commands).
-	   * The default behaviour is non-positional and options may appear before or after command-arguments.
-	   *
-	   * @param {boolean} [passThrough] for unknown options.
-	   * @return {Command} `this` command for chaining
-	   */
-	  passThroughOptions(passThrough = true) {
-	    this._passThroughOptions = !!passThrough;
-	    this._checkForBrokenPassThrough();
-	    return this;
-	  }
-
-	  /**
-	   * @private
-	   */
-
-	  _checkForBrokenPassThrough() {
-	    if (
-	      this.parent &&
-	      this._passThroughOptions &&
-	      !this.parent._enablePositionalOptions
-	    ) {
-	      throw new Error(
-	        `passThroughOptions cannot be used for '${this._name}' without turning on enablePositionalOptions for parent command(s)`,
-	      );
-	    }
-	  }
-
-	  /**
-	   * Whether to store option values as properties on command object,
-	   * or store separately (specify false). In both cases the option values can be accessed using .opts().
-	   *
-	   * @param {boolean} [storeAsProperties=true]
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  storeOptionsAsProperties(storeAsProperties = true) {
-	    if (this.options.length) {
-	      throw new Error('call .storeOptionsAsProperties() before adding options');
-	    }
-	    if (Object.keys(this._optionValues).length) {
-	      throw new Error(
-	        'call .storeOptionsAsProperties() before setting option values',
-	      );
-	    }
-	    this._storeOptionsAsProperties = !!storeAsProperties;
-	    return this;
-	  }
-
-	  /**
-	   * Retrieve option value.
-	   *
-	   * @param {string} key
-	   * @return {object} value
-	   */
-
-	  getOptionValue(key) {
-	    if (this._storeOptionsAsProperties) {
-	      return this[key];
-	    }
-	    return this._optionValues[key];
-	  }
-
-	  /**
-	   * Store option value.
-	   *
-	   * @param {string} key
-	   * @param {object} value
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  setOptionValue(key, value) {
-	    return this.setOptionValueWithSource(key, value, undefined);
-	  }
-
-	  /**
-	   * Store option value and where the value came from.
-	   *
-	   * @param {string} key
-	   * @param {object} value
-	   * @param {string} source - expected values are default/config/env/cli/implied
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  setOptionValueWithSource(key, value, source) {
-	    if (this._storeOptionsAsProperties) {
-	      this[key] = value;
-	    } else {
-	      this._optionValues[key] = value;
-	    }
-	    this._optionValueSources[key] = source;
-	    return this;
-	  }
-
-	  /**
-	   * Get source of option value.
-	   * Expected values are default | config | env | cli | implied
-	   *
-	   * @param {string} key
-	   * @return {string}
-	   */
-
-	  getOptionValueSource(key) {
-	    return this._optionValueSources[key];
-	  }
-
-	  /**
-	   * Get source of option value. See also .optsWithGlobals().
-	   * Expected values are default | config | env | cli | implied
-	   *
-	   * @param {string} key
-	   * @return {string}
-	   */
-
-	  getOptionValueSourceWithGlobals(key) {
-	    // global overwrites local, like optsWithGlobals
-	    let source;
-	    this._getCommandAndAncestors().forEach((cmd) => {
-	      if (cmd.getOptionValueSource(key) !== undefined) {
-	        source = cmd.getOptionValueSource(key);
-	      }
-	    });
-	    return source;
-	  }
-
-	  /**
-	   * Get user arguments from implied or explicit arguments.
-	   * Side-effects: set _scriptPath if args included script. Used for default program name, and subcommand searches.
-	   *
-	   * @private
-	   */
-
-	  _prepareUserArgs(argv, parseOptions) {
-	    if (argv !== undefined && !Array.isArray(argv)) {
-	      throw new Error('first parameter to parse must be array or undefined');
-	    }
-	    parseOptions = parseOptions || {};
-
-	    // auto-detect argument conventions if nothing supplied
-	    if (argv === undefined && parseOptions.from === undefined) {
-	      if (process.versions?.electron) {
-	        parseOptions.from = 'electron';
-	      }
-	      // check node specific options for scenarios where user CLI args follow executable without scriptname
-	      const execArgv = process.execArgv ?? [];
-	      if (
-	        execArgv.includes('-e') ||
-	        execArgv.includes('--eval') ||
-	        execArgv.includes('-p') ||
-	        execArgv.includes('--print')
-	      ) {
-	        parseOptions.from = 'eval'; // internal usage, not documented
-	      }
-	    }
-
-	    // default to using process.argv
-	    if (argv === undefined) {
-	      argv = process.argv;
-	    }
-	    this.rawArgs = argv.slice();
-
-	    // extract the user args and scriptPath
-	    let userArgs;
-	    switch (parseOptions.from) {
-	      case undefined:
-	      case 'node':
-	        this._scriptPath = argv[1];
-	        userArgs = argv.slice(2);
-	        break;
-	      case 'electron':
-	        // @ts-ignore: because defaultApp is an unknown property
-	        if (process.defaultApp) {
-	          this._scriptPath = argv[1];
-	          userArgs = argv.slice(2);
-	        } else {
-	          userArgs = argv.slice(1);
-	        }
-	        break;
-	      case 'user':
-	        userArgs = argv.slice(0);
-	        break;
-	      case 'eval':
-	        userArgs = argv.slice(1);
-	        break;
-	      default:
-	        throw new Error(
-	          `unexpected parse option { from: '${parseOptions.from}' }`,
+	        this.createProject(
+	            path.resolve(
+	                path.resolve(this.#gitStorage.storagePath, buildTools),
+	                templateName,
+	            ),
+	            projectPath,
 	        );
 	    }
+	    async generatorProjectName() {
+	        const projectName = await this.handler(inputProjectName());
 
-	    // Find default name for program from arguments.
-	    if (!this._name && this._scriptPath)
-	      this.nameFromFilename(this._scriptPath);
-	    this._name = this._name || 'program';
-
-	    return userArgs;
-	  }
-
-	  /**
-	   * Parse `argv`, setting options and invoking commands when defined.
-	   *
-	   * Use parseAsync instead of parse if any of your action handlers are async.
-	   *
-	   * Call with no parameters to parse `process.argv`. Detects Electron and special node options like `node --eval`. Easy mode!
-	   *
-	   * Or call with an array of strings to parse, and optionally where the user arguments start by specifying where the arguments are `from`:
-	   * - `'node'`: default, `argv[0]` is the application and `argv[1]` is the script being run, with user arguments after that
-	   * - `'electron'`: `argv[0]` is the application and `argv[1]` varies depending on whether the electron application is packaged
-	   * - `'user'`: just user arguments
-	   *
-	   * @example
-	   * program.parse(); // parse process.argv and auto-detect electron and special node flags
-	   * program.parse(process.argv); // assume argv[0] is app and argv[1] is script
-	   * program.parse(my-args, { from: 'user' }); // just user supplied arguments, nothing special about argv[0]
-	   *
-	   * @param {string[]} [argv] - optional, defaults to process.argv
-	   * @param {object} [parseOptions] - optionally specify style of options with from: node/user/electron
-	   * @param {string} [parseOptions.from] - where the args are from: 'node', 'user', 'electron'
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  parse(argv, parseOptions) {
-	    const userArgs = this._prepareUserArgs(argv, parseOptions);
-	    this._parseCommand([], userArgs);
-
-	    return this;
-	  }
-
-	  /**
-	   * Parse `argv`, setting options and invoking commands when defined.
-	   *
-	   * Call with no parameters to parse `process.argv`. Detects Electron and special node options like `node --eval`. Easy mode!
-	   *
-	   * Or call with an array of strings to parse, and optionally where the user arguments start by specifying where the arguments are `from`:
-	   * - `'node'`: default, `argv[0]` is the application and `argv[1]` is the script being run, with user arguments after that
-	   * - `'electron'`: `argv[0]` is the application and `argv[1]` varies depending on whether the electron application is packaged
-	   * - `'user'`: just user arguments
-	   *
-	   * @example
-	   * await program.parseAsync(); // parse process.argv and auto-detect electron and special node flags
-	   * await program.parseAsync(process.argv); // assume argv[0] is app and argv[1] is script
-	   * await program.parseAsync(my-args, { from: 'user' }); // just user supplied arguments, nothing special about argv[0]
-	   *
-	   * @param {string[]} [argv]
-	   * @param {object} [parseOptions]
-	   * @param {string} parseOptions.from - where the args are from: 'node', 'user', 'electron'
-	   * @return {Promise}
-	   */
-
-	  async parseAsync(argv, parseOptions) {
-	    const userArgs = this._prepareUserArgs(argv, parseOptions);
-	    await this._parseCommand([], userArgs);
-
-	    return this;
-	  }
-
-	  /**
-	   * Execute a sub-command executable.
-	   *
-	   * @private
-	   */
-
-	  _executeSubCommand(subcommand, args) {
-	    args = args.slice();
-	    let launchWithNode = false; // Use node for source targets so do not need to get permissions correct, and on Windows.
-	    const sourceExt = ['.js', '.ts', '.tsx', '.mjs', '.cjs'];
-
-	    function findFile(baseDir, baseName) {
-	      // Look for specified file
-	      const localBin = path.resolve(baseDir, baseName);
-	      if (fs.existsSync(localBin)) return localBin;
-
-	      // Stop looking if candidate already has an expected extension.
-	      if (sourceExt.includes(path.extname(baseName))) return undefined;
-
-	      // Try all the extensions.
-	      const foundExt = sourceExt.find((ext) =>
-	        fs.existsSync(`${localBin}${ext}`),
-	      );
-	      if (foundExt) return `${localBin}${foundExt}`;
-
-	      return undefined;
-	    }
-
-	    // Not checking for help first. Unlikely to have mandatory and executable, and can't robustly test for help flags in external command.
-	    this._checkForMissingMandatoryOptions();
-	    this._checkForConflictingOptions();
-
-	    // executableFile and executableDir might be full path, or just a name
-	    let executableFile =
-	      subcommand._executableFile || `${this._name}-${subcommand._name}`;
-	    let executableDir = this._executableDir || '';
-	    if (this._scriptPath) {
-	      let resolvedScriptPath; // resolve possible symlink for installed npm binary
-	      try {
-	        resolvedScriptPath = fs.realpathSync(this._scriptPath);
-	      } catch (err) {
-	        resolvedScriptPath = this._scriptPath;
-	      }
-	      executableDir = path.resolve(
-	        path.dirname(resolvedScriptPath),
-	        executableDir,
-	      );
-	    }
-
-	    // Look for a local file in preference to a command in PATH.
-	    if (executableDir) {
-	      let localFile = findFile(executableDir, executableFile);
-
-	      // Legacy search using prefix of script name instead of command name
-	      if (!localFile && !subcommand._executableFile && this._scriptPath) {
-	        const legacyName = path.basename(
-	          this._scriptPath,
-	          path.extname(this._scriptPath),
-	        );
-	        if (legacyName !== this._name) {
-	          localFile = findFile(
-	            executableDir,
-	            `${legacyName}-${subcommand._name}`,
-	          );
+	        const { existsProject, projectPath } = this.aliveProject(projectName);
+	        if (existsProject) {
+	            console.log("需要创建的项目已存在，请重新输入项目名称");
+	            return this.generatorProjectName();
 	        }
-	      }
-	      executableFile = localFile || executableFile;
-	    }
-
-	    launchWithNode = sourceExt.includes(path.extname(executableFile));
-
-	    let proc;
-	    if (process.platform !== 'win32') {
-	      if (launchWithNode) {
-	        args.unshift(executableFile);
-	        // add executable arguments to spawn
-	        args = incrementNodeInspectorPort(process.execArgv).concat(args);
-
-	        proc = childProcess.spawn(process.argv[0], args, { stdio: 'inherit' });
-	      } else {
-	        proc = childProcess.spawn(executableFile, args, { stdio: 'inherit' });
-	      }
-	    } else {
-	      args.unshift(executableFile);
-	      // add executable arguments to spawn
-	      args = incrementNodeInspectorPort(process.execArgv).concat(args);
-	      proc = childProcess.spawn(process.execPath, args, { stdio: 'inherit' });
-	    }
-
-	    if (!proc.killed) {
-	      // testing mainly to avoid leak warnings during unit tests with mocked spawn
-	      const signals = ['SIGUSR1', 'SIGUSR2', 'SIGTERM', 'SIGINT', 'SIGHUP'];
-	      signals.forEach((signal) => {
-	        process.on(signal, () => {
-	          if (proc.killed === false && proc.exitCode === null) {
-	            // @ts-ignore because signals not typed to known strings
-	            proc.kill(signal);
-	          }
+	        this.handler(createProjectQuestion).then((res) => {
+	            this.#config.projectName = projectName;
+	            return this.createOfficialTemplate(projectPath, res);
 	        });
-	      });
 	    }
-
-	    // By default terminate process when spawned process terminates.
-	    const exitCallback = this._exitCallback;
-	    proc.on('close', (code) => {
-	      code = code ?? 1; // code is null if spawned process terminated due to a signal
-	      if (!exitCallback) {
-	        process.exit(code);
-	      } else {
-	        exitCallback(
-	          new CommanderError(
-	            code,
-	            'commander.executeSubCommandAsync',
-	            '(close)',
-	          ),
-	        );
-	      }
-	    });
-	    proc.on('error', (err) => {
-	      // @ts-ignore: because err.code is an unknown property
-	      if (err.code === 'ENOENT') {
-	        const executableDirMessage = executableDir
-	          ? `searched for local subcommand relative to directory '${executableDir}'`
-	          : 'no directory for search for local subcommand, use .executableDir() to supply a custom directory';
-	        const executableMissing = `'${executableFile}' does not exist
- - if '${subcommand._name}' is not meant to be an executable command, remove description parameter from '.command()' and use '.description()' instead
- - if the default executable name is not suitable, use the executableFile option to supply a custom name or path
- - ${executableDirMessage}`;
-	        throw new Error(executableMissing);
-	        // @ts-ignore: because err.code is an unknown property
-	      } else if (err.code === 'EACCES') {
-	        throw new Error(`'${executableFile}' not executable`);
-	      }
-	      if (!exitCallback) {
-	        process.exit(1);
-	      } else {
-	        const wrappedError = new CommanderError(
-	          1,
-	          'commander.executeSubCommandAsync',
-	          '(error)',
-	        );
-	        wrappedError.nestedError = err;
-	        exitCallback(wrappedError);
-	      }
-	    });
-
-	    // Store the reference to the child process
-	    this.runningCommand = proc;
-	  }
-
-	  /**
-	   * @private
-	   */
-
-	  _dispatchSubcommand(commandName, operands, unknown) {
-	    const subCommand = this._findCommand(commandName);
-	    if (!subCommand) this.help({ error: true });
-
-	    let promiseChain;
-	    promiseChain = this._chainOrCallSubCommandHook(
-	      promiseChain,
-	      subCommand,
-	      'preSubcommand',
-	    );
-	    promiseChain = this._chainOrCall(promiseChain, () => {
-	      if (subCommand._executableHandler) {
-	        this._executeSubCommand(subCommand, operands.concat(unknown));
-	      } else {
-	        return subCommand._parseCommand(operands, unknown);
-	      }
-	    });
-	    return promiseChain;
-	  }
-
-	  /**
-	   * Invoke help directly if possible, or dispatch if necessary.
-	   * e.g. help foo
-	   *
-	   * @private
-	   */
-
-	  _dispatchHelpCommand(subcommandName) {
-	    if (!subcommandName) {
-	      this.help();
-	    }
-	    const subCommand = this._findCommand(subcommandName);
-	    if (subCommand && !subCommand._executableHandler) {
-	      subCommand.help();
-	    }
-
-	    // Fallback to parsing the help flag to invoke the help.
-	    return this._dispatchSubcommand(
-	      subcommandName,
-	      [],
-	      [this._getHelpOption()?.long ?? this._getHelpOption()?.short ?? '--help'],
-	    );
-	  }
-
-	  /**
-	   * Check this.args against expected this.registeredArguments.
-	   *
-	   * @private
-	   */
-
-	  _checkNumberOfArguments() {
-	    // too few
-	    this.registeredArguments.forEach((arg, i) => {
-	      if (arg.required && this.args[i] == null) {
-	        this.missingArgument(arg.name());
-	      }
-	    });
-	    // too many
-	    if (
-	      this.registeredArguments.length > 0 &&
-	      this.registeredArguments[this.registeredArguments.length - 1].variadic
-	    ) {
-	      return;
-	    }
-	    if (this.args.length > this.registeredArguments.length) {
-	      this._excessArguments(this.args);
-	    }
-	  }
-
-	  /**
-	   * Process this.args using this.registeredArguments and save as this.processedArgs!
-	   *
-	   * @private
-	   */
-
-	  _processArguments() {
-	    const myParseArg = (argument, value, previous) => {
-	      // Extra processing for nice error message on parsing failure.
-	      let parsedValue = value;
-	      if (value !== null && argument.parseArg) {
-	        const invalidValueMessage = `error: command-argument value '${value}' is invalid for argument '${argument.name()}'.`;
-	        parsedValue = this._callParseArg(
-	          argument,
-	          value,
-	          previous,
-	          invalidValueMessage,
-	        );
-	      }
-	      return parsedValue;
-	    };
-
-	    this._checkNumberOfArguments();
-
-	    const processedArgs = [];
-	    this.registeredArguments.forEach((declaredArg, index) => {
-	      let value = declaredArg.defaultValue;
-	      if (declaredArg.variadic) {
-	        // Collect together remaining arguments for passing together as an array.
-	        if (index < this.args.length) {
-	          value = this.args.slice(index);
-	          if (declaredArg.parseArg) {
-	            value = value.reduce((processed, v) => {
-	              return myParseArg(declaredArg, v, processed);
-	            }, declaredArg.defaultValue);
-	          }
-	        } else if (value === undefined) {
-	          value = [];
-	        }
-	      } else if (index < this.args.length) {
-	        value = this.args[index];
-	        if (declaredArg.parseArg) {
-	          value = myParseArg(declaredArg, value, declaredArg.defaultValue);
-	        }
-	      }
-	      processedArgs[index] = value;
-	    });
-	    this.processedArgs = processedArgs;
-	  }
-
-	  /**
-	   * Once we have a promise we chain, but call synchronously until then.
-	   *
-	   * @param {(Promise|undefined)} promise
-	   * @param {Function} fn
-	   * @return {(Promise|undefined)}
-	   * @private
-	   */
-
-	  _chainOrCall(promise, fn) {
-	    // thenable
-	    if (promise && promise.then && typeof promise.then === 'function') {
-	      // already have a promise, chain callback
-	      return promise.then(() => fn());
-	    }
-	    // callback might return a promise
-	    return fn();
-	  }
-
-	  /**
-	   *
-	   * @param {(Promise|undefined)} promise
-	   * @param {string} event
-	   * @return {(Promise|undefined)}
-	   * @private
-	   */
-
-	  _chainOrCallHooks(promise, event) {
-	    let result = promise;
-	    const hooks = [];
-	    this._getCommandAndAncestors()
-	      .reverse()
-	      .filter((cmd) => cmd._lifeCycleHooks[event] !== undefined)
-	      .forEach((hookedCommand) => {
-	        hookedCommand._lifeCycleHooks[event].forEach((callback) => {
-	          hooks.push({ hookedCommand, callback });
-	        });
-	      });
-	    if (event === 'postAction') {
-	      hooks.reverse();
-	    }
-
-	    hooks.forEach((hookDetail) => {
-	      result = this._chainOrCall(result, () => {
-	        return hookDetail.callback(hookDetail.hookedCommand, this);
-	      });
-	    });
-	    return result;
-	  }
-
-	  /**
-	   *
-	   * @param {(Promise|undefined)} promise
-	   * @param {Command} subCommand
-	   * @param {string} event
-	   * @return {(Promise|undefined)}
-	   * @private
-	   */
-
-	  _chainOrCallSubCommandHook(promise, subCommand, event) {
-	    let result = promise;
-	    if (this._lifeCycleHooks[event] !== undefined) {
-	      this._lifeCycleHooks[event].forEach((hook) => {
-	        result = this._chainOrCall(result, () => {
-	          return hook(this, subCommand);
-	        });
-	      });
-	    }
-	    return result;
-	  }
-
-	  /**
-	   * Process arguments in context of this command.
-	   * Returns action result, in case it is a promise.
-	   *
-	   * @private
-	   */
-
-	  _parseCommand(operands, unknown) {
-	    const parsed = this.parseOptions(unknown);
-	    this._parseOptionsEnv(); // after cli, so parseArg not called on both cli and env
-	    this._parseOptionsImplied();
-	    operands = operands.concat(parsed.operands);
-	    unknown = parsed.unknown;
-	    this.args = operands.concat(unknown);
-
-	    if (operands && this._findCommand(operands[0])) {
-	      return this._dispatchSubcommand(operands[0], operands.slice(1), unknown);
-	    }
-	    if (
-	      this._getHelpCommand() &&
-	      operands[0] === this._getHelpCommand().name()
-	    ) {
-	      return this._dispatchHelpCommand(operands[1]);
-	    }
-	    if (this._defaultCommandName) {
-	      this._outputHelpIfRequested(unknown); // Run the help for default command from parent rather than passing to default command
-	      return this._dispatchSubcommand(
-	        this._defaultCommandName,
-	        operands,
-	        unknown,
-	      );
-	    }
-	    if (
-	      this.commands.length &&
-	      this.args.length === 0 &&
-	      !this._actionHandler &&
-	      !this._defaultCommandName
-	    ) {
-	      // probably missing subcommand and no handler, user needs help (and exit)
-	      this.help({ error: true });
-	    }
-
-	    this._outputHelpIfRequested(parsed.unknown);
-	    this._checkForMissingMandatoryOptions();
-	    this._checkForConflictingOptions();
-
-	    // We do not always call this check to avoid masking a "better" error, like unknown command.
-	    const checkForUnknownOptions = () => {
-	      if (parsed.unknown.length > 0) {
-	        this.unknownOption(parsed.unknown[0]);
-	      }
-	    };
-
-	    const commandEvent = `command:${this.name()}`;
-	    if (this._actionHandler) {
-	      checkForUnknownOptions();
-	      this._processArguments();
-
-	      let promiseChain;
-	      promiseChain = this._chainOrCallHooks(promiseChain, 'preAction');
-	      promiseChain = this._chainOrCall(promiseChain, () =>
-	        this._actionHandler(this.processedArgs),
-	      );
-	      if (this.parent) {
-	        promiseChain = this._chainOrCall(promiseChain, () => {
-	          this.parent.emit(commandEvent, operands, unknown); // legacy
-	        });
-	      }
-	      promiseChain = this._chainOrCallHooks(promiseChain, 'postAction');
-	      return promiseChain;
-	    }
-	    if (this.parent && this.parent.listenerCount(commandEvent)) {
-	      checkForUnknownOptions();
-	      this._processArguments();
-	      this.parent.emit(commandEvent, operands, unknown); // legacy
-	    } else if (operands.length) {
-	      if (this._findCommand('*')) {
-	        // legacy default command
-	        return this._dispatchSubcommand('*', operands, unknown);
-	      }
-	      if (this.listenerCount('command:*')) {
-	        // skip option check, emit event for possible misspelling suggestion
-	        this.emit('command:*', operands, unknown);
-	      } else if (this.commands.length) {
-	        this.unknownCommand();
-	      } else {
-	        checkForUnknownOptions();
-	        this._processArguments();
-	      }
-	    } else if (this.commands.length) {
-	      checkForUnknownOptions();
-	      // This command has subcommands and nothing hooked up at this level, so display help (and exit).
-	      this.help({ error: true });
-	    } else {
-	      checkForUnknownOptions();
-	      this._processArguments();
-	      // fall through for caller to handle after calling .parse()
-	    }
-	  }
-
-	  /**
-	   * Find matching command.
-	   *
-	   * @private
-	   * @return {Command | undefined}
-	   */
-	  _findCommand(name) {
-	    if (!name) return undefined;
-	    return this.commands.find(
-	      (cmd) => cmd._name === name || cmd._aliases.includes(name),
-	    );
-	  }
-
-	  /**
-	   * Return an option matching `arg` if any.
-	   *
-	   * @param {string} arg
-	   * @return {Option}
-	   * @package
-	   */
-
-	  _findOption(arg) {
-	    return this.options.find((option) => option.is(arg));
-	  }
-
-	  /**
-	   * Display an error message if a mandatory option does not have a value.
-	   * Called after checking for help flags in leaf subcommand.
-	   *
-	   * @private
-	   */
-
-	  _checkForMissingMandatoryOptions() {
-	    // Walk up hierarchy so can call in subcommand after checking for displaying help.
-	    this._getCommandAndAncestors().forEach((cmd) => {
-	      cmd.options.forEach((anOption) => {
-	        if (
-	          anOption.mandatory &&
-	          cmd.getOptionValue(anOption.attributeName()) === undefined
-	        ) {
-	          cmd.missingMandatoryOptionValue(anOption);
-	        }
-	      });
-	    });
-	  }
-
-	  /**
-	   * Display an error message if conflicting options are used together in this.
-	   *
-	   * @private
-	   */
-	  _checkForConflictingLocalOptions() {
-	    const definedNonDefaultOptions = this.options.filter((option) => {
-	      const optionKey = option.attributeName();
-	      if (this.getOptionValue(optionKey) === undefined) {
-	        return false;
-	      }
-	      return this.getOptionValueSource(optionKey) !== 'default';
-	    });
-
-	    const optionsWithConflicting = definedNonDefaultOptions.filter(
-	      (option) => option.conflictsWith.length > 0,
-	    );
-
-	    optionsWithConflicting.forEach((option) => {
-	      const conflictingAndDefined = definedNonDefaultOptions.find((defined) =>
-	        option.conflictsWith.includes(defined.attributeName()),
-	      );
-	      if (conflictingAndDefined) {
-	        this._conflictingOption(option, conflictingAndDefined);
-	      }
-	    });
-	  }
-
-	  /**
-	   * Display an error message if conflicting options are used together.
-	   * Called after checking for help flags in leaf subcommand.
-	   *
-	   * @private
-	   */
-	  _checkForConflictingOptions() {
-	    // Walk up hierarchy so can call in subcommand after checking for displaying help.
-	    this._getCommandAndAncestors().forEach((cmd) => {
-	      cmd._checkForConflictingLocalOptions();
-	    });
-	  }
-
-	  /**
-	   * Parse options from `argv` removing known options,
-	   * and return argv split into operands and unknown arguments.
-	   *
-	   * Examples:
-	   *
-	   *     argv => operands, unknown
-	   *     --known kkk op => [op], []
-	   *     op --known kkk => [op], []
-	   *     sub --unknown uuu op => [sub], [--unknown uuu op]
-	   *     sub -- --unknown uuu op => [sub --unknown uuu op], []
-	   *
-	   * @param {string[]} argv
-	   * @return {{operands: string[], unknown: string[]}}
-	   */
-
-	  parseOptions(argv) {
-	    const operands = []; // operands, not options or values
-	    const unknown = []; // first unknown option and remaining unknown args
-	    let dest = operands;
-	    const args = argv.slice();
-
-	    function maybeOption(arg) {
-	      return arg.length > 1 && arg[0] === '-';
-	    }
-
-	    // parse options
-	    let activeVariadicOption = null;
-	    while (args.length) {
-	      const arg = args.shift();
-
-	      // literal
-	      if (arg === '--') {
-	        if (dest === unknown) dest.push(arg);
-	        dest.push(...args);
-	        break;
-	      }
-
-	      if (activeVariadicOption && !maybeOption(arg)) {
-	        this.emit(`option:${activeVariadicOption.name()}`, arg);
-	        continue;
-	      }
-	      activeVariadicOption = null;
-
-	      if (maybeOption(arg)) {
-	        const option = this._findOption(arg);
-	        // recognised option, call listener to assign value with possible custom processing
-	        if (option) {
-	          if (option.required) {
-	            const value = args.shift();
-	            if (value === undefined) this.optionMissingArgument(option);
-	            this.emit(`option:${option.name()}`, value);
-	          } else if (option.optional) {
-	            let value = null;
-	            // historical behaviour is optional value is following arg unless an option
-	            if (args.length > 0 && !maybeOption(args[0])) {
-	              value = args.shift();
-	            }
-	            this.emit(`option:${option.name()}`, value);
-	          } else {
-	            // boolean flag
-	            this.emit(`option:${option.name()}`);
-	          }
-	          activeVariadicOption = option.variadic ? option : null;
-	          continue;
-	        }
-	      }
-
-	      // Look for combo options following single dash, eat first one if known.
-	      if (arg.length > 2 && arg[0] === '-' && arg[1] !== '-') {
-	        const option = this._findOption(`-${arg[1]}`);
-	        if (option) {
-	          if (
-	            option.required ||
-	            (option.optional && this._combineFlagAndOptionalValue)
-	          ) {
-	            // option with value following in same argument
-	            this.emit(`option:${option.name()}`, arg.slice(2));
-	          } else {
-	            // boolean option, emit and put back remainder of arg for further processing
-	            this.emit(`option:${option.name()}`);
-	            args.unshift(`-${arg.slice(2)}`);
-	          }
-	          continue;
-	        }
-	      }
-
-	      // Look for known long flag with value, like --foo=bar
-	      if (/^--[^=]+=/.test(arg)) {
-	        const index = arg.indexOf('=');
-	        const option = this._findOption(arg.slice(0, index));
-	        if (option && (option.required || option.optional)) {
-	          this.emit(`option:${option.name()}`, arg.slice(index + 1));
-	          continue;
-	        }
-	      }
-
-	      // Not a recognised option by this command.
-	      // Might be a command-argument, or subcommand option, or unknown option, or help command or option.
-
-	      // An unknown option means further arguments also classified as unknown so can be reprocessed by subcommands.
-	      if (maybeOption(arg)) {
-	        dest = unknown;
-	      }
-
-	      // If using positionalOptions, stop processing our options at subcommand.
-	      if (
-	        (this._enablePositionalOptions || this._passThroughOptions) &&
-	        operands.length === 0 &&
-	        unknown.length === 0
-	      ) {
-	        if (this._findCommand(arg)) {
-	          operands.push(arg);
-	          if (args.length > 0) unknown.push(...args);
-	          break;
-	        } else if (
-	          this._getHelpCommand() &&
-	          arg === this._getHelpCommand().name()
-	        ) {
-	          operands.push(arg);
-	          if (args.length > 0) operands.push(...args);
-	          break;
-	        } else if (this._defaultCommandName) {
-	          unknown.push(arg);
-	          if (args.length > 0) unknown.push(...args);
-	          break;
-	        }
-	      }
-
-	      // If using passThroughOptions, stop processing options at first command-argument.
-	      if (this._passThroughOptions) {
-	        dest.push(arg);
-	        if (args.length > 0) dest.push(...args);
-	        break;
-	      }
-
-	      // add arg
-	      dest.push(arg);
-	    }
-
-	    return { operands, unknown };
-	  }
-
-	  /**
-	   * Return an object containing local option values as key-value pairs.
-	   *
-	   * @return {object}
-	   */
-	  opts() {
-	    if (this._storeOptionsAsProperties) {
-	      // Preserve original behaviour so backwards compatible when still using properties
-	      const result = {};
-	      const len = this.options.length;
-
-	      for (let i = 0; i < len; i++) {
-	        const key = this.options[i].attributeName();
-	        result[key] =
-	          key === this._versionOptionName ? this._version : this[key];
-	      }
-	      return result;
-	    }
-
-	    return this._optionValues;
-	  }
-
-	  /**
-	   * Return an object containing merged local and global option values as key-value pairs.
-	   *
-	   * @return {object}
-	   */
-	  optsWithGlobals() {
-	    // globals overwrite locals
-	    return this._getCommandAndAncestors().reduce(
-	      (combinedOptions, cmd) => Object.assign(combinedOptions, cmd.opts()),
-	      {},
-	    );
-	  }
-
-	  /**
-	   * Display error message and exit (or call exitOverride).
-	   *
-	   * @param {string} message
-	   * @param {object} [errorOptions]
-	   * @param {string} [errorOptions.code] - an id string representing the error
-	   * @param {number} [errorOptions.exitCode] - used with process.exit
-	   */
-	  error(message, errorOptions) {
-	    // output handling
-	    this._outputConfiguration.outputError(
-	      `${message}\n`,
-	      this._outputConfiguration.writeErr,
-	    );
-	    if (typeof this._showHelpAfterError === 'string') {
-	      this._outputConfiguration.writeErr(`${this._showHelpAfterError}\n`);
-	    } else if (this._showHelpAfterError) {
-	      this._outputConfiguration.writeErr('\n');
-	      this.outputHelp({ error: true });
-	    }
-
-	    // exit handling
-	    const config = errorOptions || {};
-	    const exitCode = config.exitCode || 1;
-	    const code = config.code || 'commander.error';
-	    this._exit(exitCode, code, message);
-	  }
-
-	  /**
-	   * Apply any option related environment variables, if option does
-	   * not have a value from cli or client code.
-	   *
-	   * @private
-	   */
-	  _parseOptionsEnv() {
-	    this.options.forEach((option) => {
-	      if (option.envVar && option.envVar in process.env) {
-	        const optionKey = option.attributeName();
-	        // Priority check. Do not overwrite cli or options from unknown source (client-code).
-	        if (
-	          this.getOptionValue(optionKey) === undefined ||
-	          ['default', 'config', 'env'].includes(
-	            this.getOptionValueSource(optionKey),
-	          )
-	        ) {
-	          if (option.required || option.optional) {
-	            // option can take a value
-	            // keep very simple, optional always takes value
-	            this.emit(`optionEnv:${option.name()}`, process.env[option.envVar]);
-	          } else {
-	            // boolean
-	            // keep very simple, only care that envVar defined and not the value
-	            this.emit(`optionEnv:${option.name()}`);
-	          }
-	        }
-	      }
-	    });
-	  }
-
-	  /**
-	   * Apply any implied option values, if option is undefined or default value.
-	   *
-	   * @private
-	   */
-	  _parseOptionsImplied() {
-	    const dualHelper = new DualOptions(this.options);
-	    const hasCustomOptionValue = (optionKey) => {
-	      return (
-	        this.getOptionValue(optionKey) !== undefined &&
-	        !['default', 'implied'].includes(this.getOptionValueSource(optionKey))
-	      );
-	    };
-	    this.options
-	      .filter(
-	        (option) =>
-	          option.implied !== undefined &&
-	          hasCustomOptionValue(option.attributeName()) &&
-	          dualHelper.valueFromOption(
-	            this.getOptionValue(option.attributeName()),
-	            option,
-	          ),
-	      )
-	      .forEach((option) => {
-	        Object.keys(option.implied)
-	          .filter((impliedKey) => !hasCustomOptionValue(impliedKey))
-	          .forEach((impliedKey) => {
-	            this.setOptionValueWithSource(
-	              impliedKey,
-	              option.implied[impliedKey],
-	              'implied',
+	    async loadStorage() {
+	        return new Promise((resolve) => {
+	            const appCacheTemplatePath = path.resolve(
+	                platform.getProcessEnv("app_cache_template_path"),
 	            );
-	          });
-	      });
-	  }
 
-	  /**
-	   * Argument `name` is missing.
-	   *
-	   * @param {string} name
-	   * @private
-	   */
-
-	  missingArgument(name) {
-	    const message = `error: missing required argument '${name}'`;
-	    this.error(message, { code: 'commander.missingArgument' });
-	  }
-
-	  /**
-	   * `Option` is missing an argument.
-	   *
-	   * @param {Option} option
-	   * @private
-	   */
-
-	  optionMissingArgument(option) {
-	    const message = `error: option '${option.flags}' argument missing`;
-	    this.error(message, { code: 'commander.optionMissingArgument' });
-	  }
-
-	  /**
-	   * `Option` does not have a value, and is a mandatory option.
-	   *
-	   * @param {Option} option
-	   * @private
-	   */
-
-	  missingMandatoryOptionValue(option) {
-	    const message = `error: required option '${option.flags}' not specified`;
-	    this.error(message, { code: 'commander.missingMandatoryOptionValue' });
-	  }
-
-	  /**
-	   * `Option` conflicts with another option.
-	   *
-	   * @param {Option} option
-	   * @param {Option} conflictingOption
-	   * @private
-	   */
-	  _conflictingOption(option, conflictingOption) {
-	    // The calling code does not know whether a negated option is the source of the
-	    // value, so do some work to take an educated guess.
-	    const findBestOptionFromValue = (option) => {
-	      const optionKey = option.attributeName();
-	      const optionValue = this.getOptionValue(optionKey);
-	      const negativeOption = this.options.find(
-	        (target) => target.negate && optionKey === target.attributeName(),
-	      );
-	      const positiveOption = this.options.find(
-	        (target) => !target.negate && optionKey === target.attributeName(),
-	      );
-	      if (
-	        negativeOption &&
-	        ((negativeOption.presetArg === undefined && optionValue === false) ||
-	          (negativeOption.presetArg !== undefined &&
-	            optionValue === negativeOption.presetArg))
-	      ) {
-	        return negativeOption;
-	      }
-	      return positiveOption || option;
-	    };
-
-	    const getErrorMessage = (option) => {
-	      const bestOption = findBestOptionFromValue(option);
-	      const optionKey = bestOption.attributeName();
-	      const source = this.getOptionValueSource(optionKey);
-	      if (source === 'env') {
-	        return `environment variable '${bestOption.envVar}'`;
-	      }
-	      return `option '${bestOption.flags}'`;
-	    };
-
-	    const message = `error: ${getErrorMessage(option)} cannot be used with ${getErrorMessage(conflictingOption)}`;
-	    this.error(message, { code: 'commander.conflictingOption' });
-	  }
-
-	  /**
-	   * Unknown option `flag`.
-	   *
-	   * @param {string} flag
-	   * @private
-	   */
-
-	  unknownOption(flag) {
-	    if (this._allowUnknownOption) return;
-	    let suggestion = '';
-
-	    if (flag.startsWith('--') && this._showSuggestionAfterError) {
-	      // Looping to pick up the global options too
-	      let candidateFlags = [];
-	      // eslint-disable-next-line @typescript-eslint/no-this-alias
-	      let command = this;
-	      do {
-	        const moreFlags = command
-	          .createHelp()
-	          .visibleOptions(command)
-	          .filter((option) => option.long)
-	          .map((option) => option.long);
-	        candidateFlags = candidateFlags.concat(moreFlags);
-	        command = command.parent;
-	      } while (command && !command._enablePositionalOptions);
-	      suggestion = suggestSimilar(flag, candidateFlags);
-	    }
-
-	    const message = `error: unknown option '${flag}'${suggestion}`;
-	    this.error(message, { code: 'commander.unknownOption' });
-	  }
-
-	  /**
-	   * Excess arguments, more than expected.
-	   *
-	   * @param {string[]} receivedArgs
-	   * @private
-	   */
-
-	  _excessArguments(receivedArgs) {
-	    if (this._allowExcessArguments) return;
-
-	    const expected = this.registeredArguments.length;
-	    const s = expected === 1 ? '' : 's';
-	    const forSubcommand = this.parent ? ` for '${this.name()}'` : '';
-	    const message = `error: too many arguments${forSubcommand}. Expected ${expected} argument${s} but got ${receivedArgs.length}.`;
-	    this.error(message, { code: 'commander.excessArguments' });
-	  }
-
-	  /**
-	   * Unknown command.
-	   *
-	   * @private
-	   */
-
-	  unknownCommand() {
-	    const unknownName = this.args[0];
-	    let suggestion = '';
-
-	    if (this._showSuggestionAfterError) {
-	      const candidateNames = [];
-	      this.createHelp()
-	        .visibleCommands(this)
-	        .forEach((command) => {
-	          candidateNames.push(command.name());
-	          // just visible alias
-	          if (command.alias()) candidateNames.push(command.alias());
+	            this.#gitStorage = new GitStorage({
+	                source: INIT_PROJECT_VITE_REMOTE,
+	                local: appCacheTemplatePath,
+	                isInitPull: requireConfig().get("init_storage_pull"),
+	            });
+	            this.#gitStorage.once("load:end", () => resolve(true));
 	        });
-	      suggestion = suggestSimilar(unknownName, candidateNames);
 	    }
-
-	    const message = `error: unknown command '${unknownName}'${suggestion}`;
-	    this.error(message, { code: 'commander.unknownCommand' });
-	  }
-
-	  /**
-	   * Get or set the program version.
-	   *
-	   * This method auto-registers the "-V, --version" option which will print the version number.
-	   *
-	   * You can optionally supply the flags and description to override the defaults.
-	   *
-	   * @param {string} [str]
-	   * @param {string} [flags]
-	   * @param {string} [description]
-	   * @return {(this | string | undefined)} `this` command for chaining, or version string if no arguments
-	   */
-
-	  version(str, flags, description) {
-	    if (str === undefined) return this._version;
-	    this._version = str;
-	    flags = flags || '-V, --version';
-	    description = description || 'output the version number';
-	    const versionOption = this.createOption(flags, description);
-	    this._versionOptionName = versionOption.attributeName();
-	    this._registerOption(versionOption);
-
-	    this.on('option:' + versionOption.name(), () => {
-	      this._outputConfiguration.writeOut(`${str}\n`);
-	      this._exit(0, 'commander.version', str);
-	    });
-	    return this;
-	  }
-
-	  /**
-	   * Set the description.
-	   *
-	   * @param {string} [str]
-	   * @param {object} [argsDescription]
-	   * @return {(string|Command)}
-	   */
-	  description(str, argsDescription) {
-	    if (str === undefined && argsDescription === undefined)
-	      return this._description;
-	    this._description = str;
-	    if (argsDescription) {
-	      this._argsDescription = argsDescription;
-	    }
-	    return this;
-	  }
-
-	  /**
-	   * Set the summary. Used when listed as subcommand of parent.
-	   *
-	   * @param {string} [str]
-	   * @return {(string|Command)}
-	   */
-	  summary(str) {
-	    if (str === undefined) return this._summary;
-	    this._summary = str;
-	    return this;
-	  }
-
-	  /**
-	   * Set an alias for the command.
-	   *
-	   * You may call more than once to add multiple aliases. Only the first alias is shown in the auto-generated help.
-	   *
-	   * @param {string} [alias]
-	   * @return {(string|Command)}
-	   */
-
-	  alias(alias) {
-	    if (alias === undefined) return this._aliases[0]; // just return first, for backwards compatibility
-
-	    /** @type {Command} */
-	    // eslint-disable-next-line @typescript-eslint/no-this-alias
-	    let command = this;
-	    if (
-	      this.commands.length !== 0 &&
-	      this.commands[this.commands.length - 1]._executableHandler
-	    ) {
-	      // assume adding alias for last added executable subcommand, rather than this
-	      command = this.commands[this.commands.length - 1];
-	    }
-
-	    if (alias === command._name)
-	      throw new Error("Command alias can't be the same as its name");
-	    const matchingCommand = this.parent?._findCommand(alias);
-	    if (matchingCommand) {
-	      // c.f. _registerCommand
-	      const existingCmd = [matchingCommand.name()]
-	        .concat(matchingCommand.aliases())
-	        .join('|');
-	      throw new Error(
-	        `cannot add alias '${alias}' to command '${this.name()}' as already have command '${existingCmd}'`,
-	      );
-	    }
-
-	    command._aliases.push(alias);
-	    return this;
-	  }
-
-	  /**
-	   * Set aliases for the command.
-	   *
-	   * Only the first alias is shown in the auto-generated help.
-	   *
-	   * @param {string[]} [aliases]
-	   * @return {(string[]|Command)}
-	   */
-
-	  aliases(aliases) {
-	    // Getter for the array of aliases is the main reason for having aliases() in addition to alias().
-	    if (aliases === undefined) return this._aliases;
-
-	    aliases.forEach((alias) => this.alias(alias));
-	    return this;
-	  }
-
-	  /**
-	   * Set / get the command usage `str`.
-	   *
-	   * @param {string} [str]
-	   * @return {(string|Command)}
-	   */
-
-	  usage(str) {
-	    if (str === undefined) {
-	      if (this._usage) return this._usage;
-
-	      const args = this.registeredArguments.map((arg) => {
-	        return humanReadableArgName(arg);
-	      });
-	      return []
-	        .concat(
-	          this.options.length || this._helpOption !== null ? '[options]' : [],
-	          this.commands.length ? '[command]' : [],
-	          this.registeredArguments.length ? args : [],
-	        )
-	        .join(' ');
-	    }
-
-	    this._usage = str;
-	    return this;
-	  }
-
-	  /**
-	   * Get or set the name of the command.
-	   *
-	   * @param {string} [str]
-	   * @return {(string|Command)}
-	   */
-
-	  name(str) {
-	    if (str === undefined) return this._name;
-	    this._name = str;
-	    return this;
-	  }
-
-	  /**
-	   * Set the name of the command from script filename, such as process.argv[1],
-	   * or require.main.filename, or __filename.
-	   *
-	   * (Used internally and public although not documented in README.)
-	   *
-	   * @example
-	   * program.nameFromFilename(require.main.filename);
-	   *
-	   * @param {string} filename
-	   * @return {Command}
-	   */
-
-	  nameFromFilename(filename) {
-	    this._name = path.basename(filename, path.extname(filename));
-
-	    return this;
-	  }
-
-	  /**
-	   * Get or set the directory for searching for executable subcommands of this command.
-	   *
-	   * @example
-	   * program.executableDir(__dirname);
-	   * // or
-	   * program.executableDir('subcommands');
-	   *
-	   * @param {string} [path]
-	   * @return {(string|null|Command)}
-	   */
-
-	  executableDir(path) {
-	    if (path === undefined) return this._executableDir;
-	    this._executableDir = path;
-	    return this;
-	  }
-
-	  /**
-	   * Return program help documentation.
-	   *
-	   * @param {{ error: boolean }} [contextOptions] - pass {error:true} to wrap for stderr instead of stdout
-	   * @return {string}
-	   */
-
-	  helpInformation(contextOptions) {
-	    const helper = this.createHelp();
-	    if (helper.helpWidth === undefined) {
-	      helper.helpWidth =
-	        contextOptions && contextOptions.error
-	          ? this._outputConfiguration.getErrHelpWidth()
-	          : this._outputConfiguration.getOutHelpWidth();
-	    }
-	    return helper.formatHelp(this, helper);
-	  }
-
-	  /**
-	   * @private
-	   */
-
-	  _getHelpContext(contextOptions) {
-	    contextOptions = contextOptions || {};
-	    const context = { error: !!contextOptions.error };
-	    let write;
-	    if (context.error) {
-	      write = (arg) => this._outputConfiguration.writeErr(arg);
-	    } else {
-	      write = (arg) => this._outputConfiguration.writeOut(arg);
-	    }
-	    context.write = contextOptions.write || write;
-	    context.command = this;
-	    return context;
-	  }
-
-	  /**
-	   * Output help information for this command.
-	   *
-	   * Outputs built-in help, and custom text added using `.addHelpText()`.
-	   *
-	   * @param {{ error: boolean } | Function} [contextOptions] - pass {error:true} to write to stderr instead of stdout
-	   */
-
-	  outputHelp(contextOptions) {
-	    let deprecatedCallback;
-	    if (typeof contextOptions === 'function') {
-	      deprecatedCallback = contextOptions;
-	      contextOptions = undefined;
-	    }
-	    const context = this._getHelpContext(contextOptions);
-
-	    this._getCommandAndAncestors()
-	      .reverse()
-	      .forEach((command) => command.emit('beforeAllHelp', context));
-	    this.emit('beforeHelp', context);
-
-	    let helpInformation = this.helpInformation(context);
-	    if (deprecatedCallback) {
-	      helpInformation = deprecatedCallback(helpInformation);
-	      if (
-	        typeof helpInformation !== 'string' &&
-	        !Buffer.isBuffer(helpInformation)
-	      ) {
-	        throw new Error('outputHelp callback must return a string or a Buffer');
-	      }
-	    }
-	    context.write(helpInformation);
-
-	    if (this._getHelpOption()?.long) {
-	      this.emit(this._getHelpOption().long); // deprecated
-	    }
-	    this.emit('afterHelp', context);
-	    this._getCommandAndAncestors().forEach((command) =>
-	      command.emit('afterAllHelp', context),
-	    );
-	  }
-
-	  /**
-	   * You can pass in flags and a description to customise the built-in help option.
-	   * Pass in false to disable the built-in help option.
-	   *
-	   * @example
-	   * program.helpOption('-?, --help' 'show help'); // customise
-	   * program.helpOption(false); // disable
-	   *
-	   * @param {(string | boolean)} flags
-	   * @param {string} [description]
-	   * @return {Command} `this` command for chaining
-	   */
-
-	  helpOption(flags, description) {
-	    // Support disabling built-in help option.
-	    if (typeof flags === 'boolean') {
-	      if (flags) {
-	        this._helpOption = this._helpOption ?? undefined; // preserve existing option
-	      } else {
-	        this._helpOption = null; // disable
-	      }
-	      return this;
-	    }
-
-	    // Customise flags and description.
-	    flags = flags ?? '-h, --help';
-	    description = description ?? 'display help for command';
-	    this._helpOption = this.createOption(flags, description);
-
-	    return this;
-	  }
-
-	  /**
-	   * Lazy create help option.
-	   * Returns null if has been disabled with .helpOption(false).
-	   *
-	   * @returns {(Option | null)} the help option
-	   * @package
-	   */
-	  _getHelpOption() {
-	    // Lazy create help option on demand.
-	    if (this._helpOption === undefined) {
-	      this.helpOption(undefined, undefined);
-	    }
-	    return this._helpOption;
-	  }
-
-	  /**
-	   * Supply your own option to use for the built-in help option.
-	   * This is an alternative to using helpOption() to customise the flags and description etc.
-	   *
-	   * @param {Option} option
-	   * @return {Command} `this` command for chaining
-	   */
-	  addHelpOption(option) {
-	    this._helpOption = option;
-	    return this;
-	  }
-
-	  /**
-	   * Output help information and exit.
-	   *
-	   * Outputs built-in help, and custom text added using `.addHelpText()`.
-	   *
-	   * @param {{ error: boolean }} [contextOptions] - pass {error:true} to write to stderr instead of stdout
-	   */
-
-	  help(contextOptions) {
-	    this.outputHelp(contextOptions);
-	    let exitCode = process.exitCode || 0;
-	    if (
-	      exitCode === 0 &&
-	      contextOptions &&
-	      typeof contextOptions !== 'function' &&
-	      contextOptions.error
-	    ) {
-	      exitCode = 1;
-	    }
-	    // message: do not have all displayed text available so only passing placeholder.
-	    this._exit(exitCode, 'commander.help', '(outputHelp)');
-	  }
-
-	  /**
-	   * Add additional text to be displayed with the built-in help.
-	   *
-	   * Position is 'before' or 'after' to affect just this command,
-	   * and 'beforeAll' or 'afterAll' to affect this command and all its subcommands.
-	   *
-	   * @param {string} position - before or after built-in help
-	   * @param {(string | Function)} text - string to add, or a function returning a string
-	   * @return {Command} `this` command for chaining
-	   */
-	  addHelpText(position, text) {
-	    const allowedValues = ['beforeAll', 'before', 'after', 'afterAll'];
-	    if (!allowedValues.includes(position)) {
-	      throw new Error(`Unexpected value for position to addHelpText.
-Expecting one of '${allowedValues.join("', '")}'`);
-	    }
-	    const helpEvent = `${position}Help`;
-	    this.on(helpEvent, (context) => {
-	      let helpStr;
-	      if (typeof text === 'function') {
-	        helpStr = text({ error: context.error, command: context.command });
-	      } else {
-	        helpStr = text;
-	      }
-	      // Ignore falsy value when nothing to output.
-	      if (helpStr) {
-	        context.write(`${helpStr}\n`);
-	      }
-	    });
-	    return this;
-	  }
-
-	  /**
-	   * Output help information if help flags specified
-	   *
-	   * @param {Array} args - array of options to search for help flags
-	   * @private
-	   */
-
-	  _outputHelpIfRequested(args) {
-	    const helpOption = this._getHelpOption();
-	    const helpRequested = helpOption && args.find((arg) => helpOption.is(arg));
-	    if (helpRequested) {
-	      this.outputHelp();
-	      // (Do not have all displayed text available so only passing placeholder.)
-	      this._exit(0, 'commander.helpDisplayed', '(outputHelp)');
-	    }
-	  }
 	}
 
-	/**
-	 * Scan arguments and increment port number for inspect calls (to avoid conflicts when spawning new command).
-	 *
-	 * @param {string[]} args - array of arguments from node.execArgv
-	 * @returns {string[]}
-	 * @private
-	 */
-
-	function incrementNodeInspectorPort(args) {
-	  // Testing for these options:
-	  //  --inspect[=[host:]port]
-	  //  --inspect-brk[=[host:]port]
-	  //  --inspect-port=[host:]port
-	  return args.map((arg) => {
-	    if (!arg.startsWith('--inspect')) {
-	      return arg;
-	    }
-	    let debugOption;
-	    let debugHost = '127.0.0.1';
-	    let debugPort = '9229';
-	    let match;
-	    if ((match = arg.match(/^(--inspect(-brk)?)$/)) !== null) {
-	      // e.g. --inspect
-	      debugOption = match[1];
-	    } else if (
-	      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+)$/)) !== null
-	    ) {
-	      debugOption = match[1];
-	      if (/^\d+$/.test(match[3])) {
-	        // e.g. --inspect=1234
-	        debugPort = match[3];
-	      } else {
-	        // e.g. --inspect=localhost
-	        debugHost = match[3];
-	      }
-	    } else if (
-	      (match = arg.match(/^(--inspect(-brk|-port)?)=([^:]+):(\d+)$/)) !== null
-	    ) {
-	      // e.g. --inspect=localhost:1234
-	      debugOption = match[1];
-	      debugHost = match[3];
-	      debugPort = match[4];
-	    }
-
-	    if (debugOption && debugPort !== '0') {
-	      return `${debugOption}=${debugHost}:${parseInt(debugPort) + 1}`;
-	    }
-	    return arg;
-	  });
-	}
-
-	command$2.Command = Command;
-	return command$2;
+	init = new Init();
+	return init;
 }
 
-var hasRequiredCommander;
+var template;
+var hasRequiredTemplate;
 
-function requireCommander () {
-	if (hasRequiredCommander) return commander;
-	hasRequiredCommander = 1;
-	const { Argument } = requireArgument();
-	const { Command } = requireCommand$2();
-	const { CommanderError, InvalidArgumentError } = requireError();
-	const { Help } = requireHelp();
-	const { Option } = requireOption();
+function requireTemplate () {
+	if (hasRequiredTemplate) return template;
+	hasRequiredTemplate = 1;
+	const path = require$$1$2;
+	const { platform, basicCommon } = requireLib$8();
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
+	const {
+	    checkoutBranch,
+	    dropCustomerTemplateAll,
+	    deleteCustomerTemplateProject,
+	    cloneStorageCheckoutBranch,
+	    isMoveCreateTemplateForLocal,
+	    chooseDropCustomerProject,
+	    updateCustomerTemplateProject,
+	    updateAllTemplate,
+	    updateCustomerProject,
+	    inputTemplateUrl,
+	    chooseTemplateList,
+	} = require$$5;
 
-	commander.program = new Command();
+	class Template extends Inquirer {
+	    #gitStorage;
+	    #templateDir;
 
-	commander.createCommand = (name) => new Command(name);
-	commander.createOption = (flags, description) => new Option(flags, description);
-	commander.createArgument = (name, description) => new Argument(name, description);
-
-	/**
-	 * Expose classes
-	 */
-
-	commander.Command = Command;
-	commander.Option = Option;
-	commander.Argument = Argument;
-	commander.Help = Help;
-
-	commander.CommanderError = CommanderError;
-	commander.InvalidArgumentError = InvalidArgumentError;
-	commander.InvalidOptionArgumentError = InvalidArgumentError; // Deprecated
-	return commander;
-}
-
-var RegisterCommand_1;
-var hasRequiredRegisterCommand;
-
-function requireRegisterCommand () {
-	if (hasRequiredRegisterCommand) return RegisterCommand_1;
-	hasRequiredRegisterCommand = 1;
-	const { Command, Option } = requireCommander();
-	const { basicCommon } = requireLib$3();
-
-	class SingleCommandRegister {
-	    usage(program, content) {
-	        return program.usage(content);
-	    }
-
-	    version(program, version) {
-	        return program.version(version);
-	    }
-
-	    command(program, command) {
-	        return program.command(command);
-	    }
-
-	    description(program, description) {
-	        return program.description(description);
-	    }
-
-	    option(program, option) {
-	        option.forEach((item) => {
-	            const hideHelp = item.hideHelp;
-	            program = program.addOption(
-	                hideHelp
-	                    ? new Option(item.command, item.description).hideHelp()
-	                    : new Option(item.command, item.description),
-	            );
-	        });
-	        return program;
-	    }
-
-	    action(program, action) {
-	        return program.action((...rest) => {
-	            if (basicCommon.isType(action, "function")) {
-	                action(...rest);
-	            } else {
-	                action.start(...rest);
-	            }
-	        });
-	    }
-	}
-
-	class RegisterCommand extends SingleCommandRegister {
-	    #commandOption;
-	    #singleRegister = new Map([
-	        [this.usage, "usage"],
-	        [this.version, "version"],
-	        [this.command, "command"],
-	        [this.description, "description"],
-	        [this.option, "option"],
-	        [this.action, "action"],
-	    ]);
-	    program;
-	    constructor(props) {
-	        if (!props.commandOption)
-	            throw new Error("missing register command for commandOption...");
+	    constructor() {
 	        super();
-
-	        this.program = new Command();
-	        this.#commandOption = props.commandOption();
+	        this.#templateDir = path.resolve(
+	            platform.getProcessEnv("app_cache_template_path"),
+	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
+	        );
 	    }
 
-	    commandGlobalCatch(cb) {
-	        return this.program.action((...rest) => cb(...rest));
+	    start(type, ...rest) {
+	        const typeHandler = new Map([
+	            ["list", this.list],
+	            ["add", this.add],
+	            ["update", this.update],
+	            ["delete", this.delete],
+	        ]);
+
+	        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
 	    }
-
-	    registerChildrenCommand(program, item) {
-	        const registerConfig = () => {
-	            let config = new Command(item.command);
-	            delete item.command;
-
-	            config = this.registerCommand(config, item);
-	            for (const child of item.children) {
-	                this.registerCommand(config, child);
-	            }
-
-	            return config;
-	        };
-	        program.addCommand(registerConfig());
-	    }
-
-	    registerCommand(program, item) {
-	        for (const [handler, option] of this.#singleRegister) {
-	            if (item[option]) {
-	                program = handler(program, item[option]);
-	            }
+	    list() {
+	        const templateList = this.getTemplateList();
+	        if (templateList.length) {
+	            templateList.forEach((item) =>
+	                console.log(
+	                    `\n名称：${item}     路径：${path.resolve(this.#templateDir, item)}`,
+	                ),
+	            );
+	        } else {
+	            console.log(
+	                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
+	            );
 	        }
-	        return program;
 	    }
-
-	    register() {
-	        if (!Array.isArray(this.#commandOption))
-	            throw new Error("register command option must to be type Array...");
-
-	        for (const item of this.#commandOption) {
-	            if (item.children) {
-	                this.registerChildrenCommand(this.program, item);
-	            } else {
-	                this.registerCommand(this.program, item);
-	            }
+	    async add(gitLink) {
+	        if (!gitLink) {
+	            gitLink = await this.handler(inputTemplateUrl());
 	        }
 
-	        this.program.on("command:*", () => this.program.outputHelp());
-	        this.program.parse(process.argv);
+	        this.#gitStorage = new GitStorage({
+	            source: gitLink,
+	            local: this.#templateDir,
+	            branch: -1,
+	            isInitPull: true, // 新增仓库时，强制拉取一次仓库, 避免重复仓库
+	        });
+
+	        this.listenerGitAction();
+	    }
+	    async delete(name, source) {
+	        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
+	            deleteTemplateList = [];
+	        if (!templateList.length) return this.list();
+	        if (source.all) {
+	            const drop = await this.handler(dropCustomerTemplateAll());
+	            if (!drop) return;
+	            basicCommon.deleteFolder(this.#templateDir);
+	            deleteTemplateList = templateList;
+	        } else {
+	            name = name.filter((item) => item.trim());
+	            if (!name.length) {
+	                name = await this.handler(chooseTemplateList(templateList));
+	            }
+	            const projectDict = { exists: [], unExists: [] };
+	            name.forEach((item) => {
+	                if (templateList.includes(item)) projectDict.exists.push(item);
+	                else projectDict.unExists.push(item);
+	            });
+	            if (projectDict.exists.length) {
+	                const result = await this.handler(
+	                    deleteCustomerTemplateProject(projectDict.exists),
+	                );
+	                if (!result) return;
+
+	                this.deleteMoreProject(projectDict.exists);
+	                templateList = basicCommon.readDirPathTypeFile(
+	                    this.#templateDir,
+	                );
+	                deleteTemplateList.push(...projectDict.exists);
+	            }
+	            if (projectDict.unExists.length && templateList.length) {
+	                const delProject = await this.handler(
+	                    chooseDropCustomerProject(
+	                        projectDict.unExists.join("、"),
+	                        templateList,
+	                    ),
+	                );
+	                this.deleteMoreProject(delProject);
+	                deleteTemplateList.push(...delProject);
+	            }
+	        }
+	        console.log(
+	            `${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!\n`,
+	        );
+	        this.list();
+	    }
+	    async update(name, source) {
+	        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
+	            updateList = [];
+
+	        if (!templateList.length) return this.list();
+	        if (source.all) {
+	            const result = await this.handler(updateAllTemplate());
+	            if (!result) return;
+	            await this.updateMoreProject(templateList);
+	            updateList = templateList;
+	        } else {
+	            name = name.filter((item) => item.trim());
+	            if (!name.length) {
+	                name = await this.handler(chooseTemplateList(templateList));
+	            }
+
+	            const projectDict = { exists: [], unExists: [] };
+	            name.forEach((item) => {
+	                if (templateList.includes(item)) projectDict.exists.push(item);
+	                else projectDict.unExists.push(item);
+	            });
+
+	            if (projectDict.exists.length) {
+	                const result = await this.handler(
+	                    updateCustomerTemplateProject(projectDict.exists),
+	                );
+	                if (!result) return;
+
+	                await this.updateMoreProject(projectDict.exists);
+	                updateList.push(projectDict.exists);
+	                templateList = templateList.filter((item) => {
+	                    return !projectDict.exists.includes(item);
+	                });
+	            }
+
+	            if (projectDict.unExists.length && templateList.length) {
+	                const result = await this.handler(
+	                    updateCustomerProject(
+	                        projectDict.unExists.join("、"),
+	                        templateList,
+	                    ),
+	                );
+	                await this.updateMoreProject(result);
+	                updateList.push(result);
+	            }
+	        }
+	        console.log(
+	            `${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
+	        );
+	    }
+	    deleteMoreProject(list) {
+	        list.forEach((item) => {
+	            basicCommon.deleteFolder(path.resolve(this.#templateDir, item));
+	        });
+	    }
+	    async updateMoreProject(list) {
+	        for (const item of list) {
+	            const itemPath = path.resolve(this.#templateDir, item);
+	            console.log(`正在更新${item}项目`);
+	            await basicCommon.execCommandPro("git pull", {
+	                stdio: "inherit",
+	                cwd: itemPath,
+	            });
+	            console.log(`项目${item}更新成功！`);
+	        }
+	    }
+	    listenerGitAction() {
+	        this.#gitStorage.once("load:end", async () => {
+	            const branchList = await this.#gitStorage.getBranchRemote();
+	            let currentBranch = await this.#gitStorage.getCurrentBranch();
+
+	            if (!branchList.length || !currentBranch)
+	                return console.log(
+	                    "Git 本地分支出现异常，操作失败，请检查网络连接后重试！",
+	                );
+
+	            const hasOnlyBranchCurrent =
+	                branchList.length === 1 && branchList.includes(currentBranch);
+	            if (!hasOnlyBranchCurrent) {
+	                const needCheckBranch = await this.handler(
+	                    cloneStorageCheckoutBranch(
+	                        this.#gitStorage.storageName,
+	                        currentBranch,
+	                    ),
+	                );
+	                if (needCheckBranch) {
+	                    currentBranch = await this.handler(
+	                        checkoutBranch(branchList),
+	                    );
+	                    await this.#gitStorage.checkout(currentBranch, true);
+	                }
+	            }
+	            const createLocalProject = await this.handler(
+	                isMoveCreateTemplateForLocal(this.#gitStorage.storageName),
+	            );
+	            if (createLocalProject) {
+	                const { storagePath, storageName } = this.#gitStorage;
+	                const localPath = path.resolve(process.cwd(), storageName);
+	                requireInit().createProject(storagePath, localPath);
+	            }
+	        });
+	    }
+	    getTemplateList() {
+	        return basicCommon.readDirPathTypeFile(this.#templateDir);
 	    }
 	}
 
-	RegisterCommand_1 = RegisterCommand;
-	return RegisterCommand_1;
+	template = new Template();
+	return template;
+}
+
+var create;
+var hasRequiredCreate;
+
+function requireCreate () {
+	if (hasRequiredCreate) return create;
+	hasRequiredCreate = 1;
+	const fs = require$$0$4;
+	const path = require$$1$2;
+	const Inquirer = requireLib$4();
+	const { basicCommon, platform } = requireLib$8();
+
+	const {
+	    createExistProject,
+	    chooseTemplateProject,
+	    chooseCreateTemplateName,
+	    inputProjectName,
+	} = require$$5;
+	const Template = requireTemplate();
+	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
+
+	class Create extends Inquirer {
+	    #templateDir;
+	    #projectName;
+	    #templateList;
+	    constructor() {
+	        super();
+	        this.#templateDir = path.resolve(
+	            platform.getProcessEnv("app_cache_template_path"),
+	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
+	        );
+	    }
+
+	    async start(name, option) {
+	        if (option.template === "emplate")
+	            return console.log(`error: unknown option '-template'`);
+
+	        this.#projectName = name;
+	        this.#templateList = Template.getTemplateList();
+	        if (!this.#templateList.length)
+	            return console.log(
+	                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
+	            );
+	        this.selectCustomerProject(option.template);
+	    }
+	    async createFolder() {
+	        const basicPath = process.cwd();
+	        if (!this.#projectName) {
+	            this.#projectName = await this.handler(inputProjectName());
+	        }
+
+	        const projectPath = path.resolve(basicPath, this.#projectName);
+	        if (fs.existsSync(projectPath)) {
+	            const { cover } = await this.handler(
+	                createExistProject(this.#projectName),
+	            );
+	            if (!cover) return;
+	        }
+	        basicCommon.createCoverDir(projectPath);
+	        return projectPath;
+	    }
+	    async selectCustomerProject(template = false) {
+	        if (!template) {
+	            template = await this.handler(
+	                chooseCreateTemplateName(this.#templateList),
+	            );
+	        }
+	        if (!this.#templateList.includes(template))
+	            template = await this.handler(
+	                chooseTemplateProject(
+	                    template &&
+	                        `${template} 不存在当前的系统的项目模板中，可选择以下项目模板`,
+	                    this.#templateList,
+	                ),
+	            );
+	        this.createCustomerProject(template);
+	    }
+	    async createCustomerProject(template) {
+	        const projectPath = await this.createFolder();
+	        requireInit().createProject(
+	            path.resolve(this.#templateDir, template),
+	            projectPath,
+	        );
+	    }
+	}
+
+	create = new Create();
+	return create;
 }
 
 var delayed_stream;
@@ -36992,7 +38099,7 @@ function requireForm_data () {
 	var path = require$$1$2;
 	var http = require$$3$2;
 	var https = require$$4$2;
-	var parseUrl = require$$0$d.parse;
+	var parseUrl = require$$0$c.parse;
 	var fs = require$$0$4;
 	var Stream = require$$1$3.Stream;
 	var mime = requireMimeTypes();
@@ -37499,7 +38606,7 @@ function requireProxyFromEnv () {
 	if (hasRequiredProxyFromEnv) return proxyFromEnv;
 	hasRequiredProxyFromEnv = 1;
 
-	var parseUrl = require$$0$d.parse;
+	var parseUrl = require$$0$c.parse;
 
 	var DEFAULT_PORTS = {
 	  ftp: 21,
@@ -37639,7 +38746,7 @@ var hasRequiredFollowRedirects;
 function requireFollowRedirects () {
 	if (hasRequiredFollowRedirects) return followRedirects.exports;
 	hasRequiredFollowRedirects = 1;
-	var url = require$$0$d;
+	var url = require$$0$c;
 	var URL = url.URL;
 	var http = require$$3$2;
 	var https = require$$4$2;
@@ -38336,7 +39443,7 @@ function requireAxios () {
 	hasRequiredAxios = 1;
 
 	const FormData$1 = requireForm_data();
-	const url = require$$0$d;
+	const url = require$$0$c;
 	const proxyFromEnv = requireProxyFromEnv();
 	const http = require$$3$2;
 	const https = require$$4$2;
@@ -43117,14 +44224,14 @@ function requireAxios () {
 	return axios_1;
 }
 
-var Package_1;
-var hasRequiredPackage;
+var lib;
+var hasRequiredLib$1;
 
-function requirePackage () {
-	if (hasRequiredPackage) return Package_1;
-	hasRequiredPackage = 1;
+function requireLib$1 () {
+	if (hasRequiredLib$1) return lib;
+	hasRequiredLib$1 = 1;
 	const axios = /*@__PURE__*/ requireAxios();
-	const { basicCommon, platform } = requireLib$3();
+	const { basicCommon, platform } = requireLib$8();
 
 	class Package {
 	    execCwd = process.cwd();
@@ -43228,1123 +44335,8 @@ function requirePackage () {
 	    }
 	}
 
-	Package_1 = Package;
-	return Package_1;
-}
-
-var modules;
-var hasRequiredModules;
-
-function requireModules () {
-	if (hasRequiredModules) return modules;
-	hasRequiredModules = 1;
-	const Config = requireConfig$1();
-	const Inquirer = requireInquirer();
-	const GitStorage = requireGitStorage();
-	const RegisterCommand = requireRegisterCommand();
-	const Package = requirePackage();
-
-	modules = {
-	    Config,
-	    Inquirer,
-	    GitStorage,
-	    RegisterCommand,
-	    Package,
-	};
-	return modules;
-}
-
-const createProjectQuestion = [
-    {
-        name: "type",
-        type: "search",
-        required: true,
-        message: "请选择项目模板",
-        choices: [
-            {
-                name: "vue 项目",
-                value: "vue",
-            },
-            {
-                name: "react 项目",
-                value: "react",
-            },
-        ],
-    },
-    {
-        name: "buildTools",
-        type: "search",
-        required: true,
-        message: "请选择项目构建工具",
-        choices: [
-            {
-                name: "webpack",
-                value: "webpack",
-            },
-            {
-                name: "vite",
-                value: "vite",
-            },
-        ],
-    },
-    {
-        name: "language",
-        type: "search",
-        required: true,
-        message: "请选择使用的开发语言?",
-        choices: [
-            {
-                name: "TypeScript",
-                value: "typeScript",
-            },
-            {
-                name: "JavaScript",
-                value: "javaScript",
-            },
-        ],
-    },
-];
-
-const initNotExistsCustomerTemplate = (projectName, templateList) => {
-    return [
-        {
-            name: "template",
-            type: "search",
-            required: true,
-            message: `未找到 ${projectName} 名称的模板，可选择如下模板进行创建：`,
-            choices: templateList.map((item) => ({ name: item, value: item })),
-        },
-    ];
-};
-
-const initExistsCustomerTemplate = (projectName) => {
-    return [
-        {
-            name: "cover",
-            type: "confirm",
-            message: `当前目录下已存在名称为 ${projectName} 的项目，是否覆盖创建?`,
-        },
-    ];
-};
-
-const createExistProject = initExistsCustomerTemplate;
-
-const cloneStorageCheckoutBranch = (projectName, branch) => {
-    return {
-        name: "checkout",
-        type: "confirm",
-        message: `项目 ${projectName} 拉取成功, 当前所在分支为 ${branch} 是否需要切换分支?`,
-    };
-};
-
-const checkoutBranch = (branchList) => {
-    return {
-        name: "branch",
-        type: "search",
-        required: true,
-        message: "请选择如下分支",
-        default: false,
-        choices: branchList.map((item) => ({
-            name: item,
-            value: item,
-        })),
-    };
-};
-
-const chooseTemplateList = (templateList) => {
-    return {
-        name: "chooseTemplateList",
-        type: "checkbox",
-        message: "请选择模板列表中选择后，进行操作：",
-        required: true,
-        choices: templateList.map((item) => ({
-            name: item,
-            value: item,
-        })),
-    };
-};
-
-const inputTemplateUrl = () => {
-    return {
-        name: "templateUrl",
-        type: "input",
-        required: true,
-        message: "请输入模板的的Git仓库地址：",
-    };
-};
-
-const isMoveCreateTemplateForLocal = (projectName) => {
-    return {
-        name: "move",
-        type: "confirm",
-        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目？`,
-        default: false,
-    };
-};
-
-const dropCustomerTemplateAll = () => {
-    return {
-        name: "drop",
-        type: "confirm",
-        message: `确认要删除全部的自定义项目模板吗? 删除后，项目将不会进入回收站`,
-        default: false,
-    };
-};
-
-const deleteCustomerTemplateProject = (project) => {
-    return {
-        name: "delete",
-        type: "confirm",
-        message: `确认要删除 ${project} 项目模板吗?`,
-        default: false,
-    };
-};
-
-const chooseDropCustomerProject = (name, projectList) => {
-    return {
-        name: "projectList",
-        type: "checkbox",
-        message: `${name} 不存在自定义模板列表中，可选择以下模板进行删除`,
-        choices: projectList.map((item) => ({ name: item, value: item })),
-    };
-};
-
-const updateAllTemplate = () => {
-    return {
-        name: "update",
-        type: "confirm",
-        message: "确认要更新全部的项目模板吗?",
-    };
-};
-
-const updateCustomerTemplateProject = (project, branch) => {
-    return {
-        name: "delete",
-        type: "confirm",
-        message: `确认要更新 ${project} 项目模板吗?`,
-        default: false,
-    };
-};
-
-const updateCustomerProject = (name, projectList) => {
-    return {
-        name: "projectList",
-        type: "checkbox",
-        message: `${name} 不存在自定义模板列表中，可选择以下模板进行更新`,
-        choices: projectList.map((item) => ({
-            name: item,
-            value: item,
-        })),
-    };
-};
-
-const chooseTemplateProject = (text, projectList) => {
-    return {
-        name: "project",
-        type: "search",
-        required: true,
-        message: text || `请选择以下模板进行创建`,
-        choices: projectList.map((item) => ({
-            name: item,
-            value: item,
-        })),
-    };
-};
-
-const unExistsExecFile = (filename) => {
-    return {
-        name: "backupFile",
-        type: "confirm",
-        message: `未检测到需要执行的文件，是否执行 ${filename} 文件?`,
-    };
-};
-
-const resetConfigFile = () => {
-    return {
-        name: "resetConfigFile",
-        type: "confirm",
-        message: "确认要还原配置信息吗?, 还原后的配置将被重置为初始状态",
-    };
-};
-
-const commitType = (message, commitType, defaultValue) => {
-    return {
-        name: "type",
-        type: "search",
-        required: true,
-        default: defaultValue,
-        message: message || "请选择本次的代码提交类型:",
-        choices: commitType,
-    };
-};
-
-const commitBranch = (branchList, currentBranch) => {
-    return {
-        name: "commitBranch",
-        type: "search",
-        required: true,
-        message: "请选择需要提交的分支:",
-        default: currentBranch,
-        choices: branchList.map((item) => ({
-            name: item === currentBranch ? `${item}: 当前所在分支` : item,
-            value: item,
-        })),
-    };
-};
-
-const chooseCommitOrigin = (message, originList) => {
-    return {
-        name: "commitOrigin",
-        type: "search",
-        required: true,
-        message:
-            message || "检测项目中存在多个Git提交源，请选择本次提交源地址: ",
-        choices: originList,
-    };
-};
-
-const commitMessage = () => {
-    return {
-        name: "commitMessage",
-        type: "input",
-        message: "请输入本次提交备注信息: ",
-    };
-};
-
-const commitAction = ({ branch, type, file, origin, message }) => {
-    return {
-        name: "commitAction",
-        type: "confirm",
-        default: true,
-        message: `请确认以下提交信息无误:\n\n提交源名称: ${origin}\n提交分支: ${branch}\n修改类型: ${type}\n提交文件: ${file === "." ? "全部追踪的文件" : file}\n提交备注信息:\n ${message}\n\n确认提交本地?`,
-    };
-};
-
-const pushOrigin = () => {
-    return {
-        name: "pushOrigin",
-        type: "confirm",
-        default: false,
-        message: "是否将本地代码推送至远程分支？",
-    };
-};
-
-const chooseCommitFile = (fileList) => {
-    return {
-        name: "projectList",
-        type: "checkbox",
-        message: `请在以下列表中选择本次需要提交的文件: (输入I/A可对文件进行全选或反选)\n`,
-        required: true,
-        choices: fileList.map((item) => ({ name: item, value: item })),
-    };
-};
-
-const chooseRunCommand = (command, scriptList) => {
-    return {
-        name: "command",
-        type: "search",
-        required: true,
-        message: `${command} 脚本命令不存在，是否需要执行以下的命令:`,
-        choices: scriptList,
-    };
-};
-
-const alreadyStatusFile = (fileList) => {
-    return {
-        name: "alreadyStatusFile",
-        type: "confirm",
-        message: `当前暂无变更的文件，但暂存区已存在文件，是否继续提交推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
-    };
-};
-
-const alreadyCommitFile = (fileList) => {
-    return {
-        name: "alreadyCommitFile",
-        type: "confirm",
-        message: `当前暂存区未存在文件，但已本地提交以下文件，是否直接推送？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
-    };
-};
-
-const alreadyStatusFileCheckout = (fileList) => {
-    return {
-        name: "alreadyStatusFileCheckout",
-        type: "confirm",
-        message: `当前分支的暂存区存在未提交的文件，是否提交推送后继续？\n${fileList.map((item, index) => `  ${index + 1}. ${item}`).join("\n")}`,
-    };
-};
-
-const chooseOperateType = (commitTypeDict, exists = false) => {
-    return {
-        name: "chooseOperateType",
-        type: "search",
-        required: true,
-        message: exists
-            ? "输入的操作类型不合法，请重新在以下列表中选择："
-            : `未输入操作类型，请在以下列表中选择：`,
-        choices: Object.entries(commitTypeDict).map(([key, value], index) => ({
-            name: `${key + ":" + value}`,
-            value: key,
-        })),
-    };
-};
-
-const inputCheckoutBranchName = (message) => {
-    return {
-        name: "checkoutBranchName",
-        type: "input",
-        message,
-        required: true,
-    };
-};
-
-const chooseTargetBranch = (branchList, nowBranchName) => {
-    return {
-        name: "chooseTargetBranch",
-        type: "search",
-        message: "请选择目标分支(基于哪个分支进行操作), 可输入选择：",
-        choices: branchList.map((item) => ({
-            name: item === nowBranchName ? `${item}(当前分支)` : item,
-            value: item,
-        })),
-        default: nowBranchName,
-    };
-};
-
-const inputGitUserName = () => {
-    return {
-        name: "inputGitUserName",
-        type: "input",
-        message: "当前项目未设置Git用户名，请输入你想使用的用户名称后继续：",
-    };
-};
-
-const delBranchConfirm = (message) => {
-    return {
-        name: "delBranchConfirm",
-        type: "confirm",
-        message,
-        default: true,
-    };
-};
-
-const chooseDelLocalBranch = (branchList) => {
-    return {
-        name: "chooseDelLocalBranch",
-        type: "checkbox",
-        message: `请在如下的分支列表中进行选择: (输入I/A可对文件进行全选或反选)\n`,
-        required: false,
-        choices: branchList.map((item) => ({ name: item, value: item })),
-    };
-};
-
-const syncDelRemoteBranch = () => {
-    return {
-        name: "syncDelRemoteBranch",
-        type: "confirm",
-        message: "是否同步删除远程分支",
-        default: false,
-    };
-};
-
-const notDelBranchConfirm = (branchList) => {
-    return {
-        name: "notDelBranchConfirm",
-        type: "confirm",
-        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
-        default: false,
-    };
-};
-
-const chooseCreateTemplateName = (templateList) => {
-    return {
-        name: "chooseCreateTemplateName",
-        type: "search",
-        message: "请在以下列表中选择需要创建项目的模板：",
-        choices: templateList.map((item) => ({
-            name: item,
-            value: item,
-        })),
-    };
-};
-
-const inputProjectName = () => {
-    return {
-        name: "inputProjectName",
-        type: "input",
-        message: "请输入项目名称：",
-        require: true,
-    };
-};
-
-var question = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	alreadyCommitFile: alreadyCommitFile,
-	alreadyStatusFile: alreadyStatusFile,
-	alreadyStatusFileCheckout: alreadyStatusFileCheckout,
-	checkoutBranch: checkoutBranch,
-	chooseCommitFile: chooseCommitFile,
-	chooseCommitOrigin: chooseCommitOrigin,
-	chooseCreateTemplateName: chooseCreateTemplateName,
-	chooseDelLocalBranch: chooseDelLocalBranch,
-	chooseDropCustomerProject: chooseDropCustomerProject,
-	chooseOperateType: chooseOperateType,
-	chooseRunCommand: chooseRunCommand,
-	chooseTargetBranch: chooseTargetBranch,
-	chooseTemplateList: chooseTemplateList,
-	chooseTemplateProject: chooseTemplateProject,
-	cloneStorageCheckoutBranch: cloneStorageCheckoutBranch,
-	commitAction: commitAction,
-	commitBranch: commitBranch,
-	commitMessage: commitMessage,
-	commitType: commitType,
-	createExistProject: createExistProject,
-	createProjectQuestion: createProjectQuestion,
-	delBranchConfirm: delBranchConfirm,
-	deleteCustomerTemplateProject: deleteCustomerTemplateProject,
-	dropCustomerTemplateAll: dropCustomerTemplateAll,
-	initExistsCustomerTemplate: initExistsCustomerTemplate,
-	initNotExistsCustomerTemplate: initNotExistsCustomerTemplate,
-	inputCheckoutBranchName: inputCheckoutBranchName,
-	inputGitUserName: inputGitUserName,
-	inputProjectName: inputProjectName,
-	inputTemplateUrl: inputTemplateUrl,
-	isMoveCreateTemplateForLocal: isMoveCreateTemplateForLocal,
-	notDelBranchConfirm: notDelBranchConfirm,
-	pushOrigin: pushOrigin,
-	resetConfigFile: resetConfigFile,
-	syncDelRemoteBranch: syncDelRemoteBranch,
-	unExistsExecFile: unExistsExecFile,
-	updateAllTemplate: updateAllTemplate,
-	updateCustomerProject: updateCustomerProject,
-	updateCustomerTemplateProject: updateCustomerTemplateProject
-});
-
-var require$$4 = /*@__PURE__*/getAugmentedNamespace(question);
-
-var config;
-var hasRequiredConfig;
-
-function requireConfig () {
-	if (hasRequiredConfig) return config;
-	hasRequiredConfig = 1;
-	const { Config: ConfigModule, Inquirer } = requireModules();
-	const { getProcessEnv } = requirePlatform();
-	const { resetConfigFile } = require$$4;
-	const { basicCommon, platform } = requireLib$3();
-
-	const defaultContent = {
-	    branch_secure: true,
-	    init_storage_pull: false,
-	    request_timeout: 3000,
-	    default_registry: "https://registry.npmmirror.com/",
-	    default_package_cli: "npm",
-	    default_commit_type: "fix",
-	    default_exec_file: "index.js",
-	};
-
-	class Config extends ConfigModule {
-	    #inquirer;
-	    constructor() {
-	        super({
-	            source: getProcessEnv("app_source_file_path"),
-	            encoding: "utf-8",
-	            defaultContent,
-	        });
-
-	        platform.setProcessEnv(
-	            Object.entries(Object.fromEntries(this.data)).map(
-	                ([key, value]) => ({
-	                    key,
-	                    value,
-	                }),
-	            ),
-	        );
-	        this.#inquirer = new Inquirer();
-	    }
-	    /**
-	     * 查看或获取当前脚手架的配置信息
-	     * **/
-	    start(type, ...rest) {
-	        const typeHandler = new Map([
-	            ["list", this.outputList],
-	            ["get", this.getConfig],
-	            ["set", this.setConfig],
-	            ["delete", this.deleteConfig],
-	        ]);
-	        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
-	    }
-	    invalidSetContent(key, value, cb) {
-	        if (Object.keys(defaultContent).includes(key) && !value) {
-	            return console.log("当前Key为系统固定预设值，必须设定一个值");
-	        }
-	        if (key === "default_registry") {
-	            if (!basicCommon.isValidUrl(value))
-	                return console.log("设置无效，必须是一个有效的http|https链接");
-	        } else if (key === "default_package_cli") {
-	            if (!basicCommon.invalidPackageCli(value))
-	                return console.log(
-	                    `设置无效，值必须为:${Object.keys(Object.fromEntries(basicCommon.packageMangerViewer)).join("|")}`,
-	                );
-	        } else if (key.includes("init_storage_pull")) {
-	            const valueList = ["true", "false"];
-	            if (!valueList.includes(value)) {
-	                return console.log(
-	                    `设置无效，值必须为: ${valueList.join("|")}`,
-	                );
-	            }
-	        }
-	        cb();
-	    }
-	    outputList() {
-	        return console.log(this.stringify());
-	    }
-	    getConfig(key) {
-	        if (!this.has(key)) return console.log(`${key} 不存在此配置`);
-	        const val = this.get(key);
-	        return val;
-	    }
-	    setConfig(key, value) {
-	        if (key.includes("=")) {
-	            [key, value] = key.split("=");
-	        }
-	        this.invalidSetContent(key, value, () => {
-	            this.set(key, value);
-	        });
-	    }
-	    deleteConfig(key) {
-	        if (Object.keys(defaultContent).includes(key)) {
-	            return console.log("当前Key为系统固定预设值，无法删除");
-	        }
-	        this.delete(key);
-	    }
-	    async resetConfig() {
-	        const resetConfig = await this.#inquirer.handler(resetConfigFile());
-	        if (!resetConfig) return;
-	        this.reset();
-	    }
-	}
-
-	config = new Config();
-	return config;
-}
-
-var exec;
-var hasRequiredExec;
-
-function requireExec () {
-	if (hasRequiredExec) return exec;
-	hasRequiredExec = 1;
-	const { Inquirer } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
-
-	class Exec extends Inquirer {
-	    defaultFileName;
-
-	    constructor() {
-	        super();
-	        this.defaultFileName = platform.getProcessEnv("default_exec_file");
-	    }
-
-	    start(source, option) {
-	        if (option.dir === "ir")
-	            return console.log(`error: unknown option '-dir'`);
-
-	        if (option.file) {
-	            this.execFile(source, option);
-	        } else {
-	            this.execCommand(source, option);
-	        }
-	    }
-
-	    execCommand(source, option) {
-	        basicCommon.execCommandPro(source.join(" "), {
-	            stdio: "inherit",
-	            cwd: option.dir || process.cwd(),
-	        });
-	    }
-
-	    async execFile(source, option) {
-	        source = source.filter((item) => item.trim());
-	        if (!source.length) {
-	            source = [this.defaultFileName];
-	        }
-	        const invalidFile = [],
-	            execFile = [];
-	        for (const item of source) {
-	            const type =
-	                /\.(js|mjs)$/.test(item) && basicCommon.existsFileForCwd(item)
-	                    ? execFile
-	                    : invalidFile;
-	            type.push(item);
-	        }
-
-	        if (!execFile.length)
-	            return console.log(
-	                `文件执行失败, 请重试。以下文件不合法或不存在当前目录: \n${invalidFile.join("、")}`,
-	            );
-
-	        if (invalidFile.length) {
-	            console.log(
-	                `以下文件不合法或不存在当前目录，将跳过: \n${invalidFile.join("、")}\n`,
-	            );
-	        }
-	        for (const item of execFile) {
-	            basicCommon.execCommandPro(`node ${item}`, {
-	                stdio: "inherit",
-	                cwd: option.dir || process.cwd(),
-	            });
-	            console.log(`exec file ${item} is end...`);
-	        }
-	    }
-	}
-
-	exec = new Exec();
-	return exec;
-}
-
-var init;
-var hasRequiredInit;
-
-function requireInit () {
-	if (hasRequiredInit) return init;
-	hasRequiredInit = 1;
-	const fs = require$$0$4;
-	const path = require$$1$2;
-	const { Inquirer, GitStorage } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
-	const {
-	    createProjectQuestion,
-	    inputProjectName,
-	} = require$$4;
-	const { INIT_PROJECT_VITE_REMOTE } = requireConstance();
-
-	const questionDict = {
-	    webpack: {
-	        vue: {
-	            javaScript: "template-vue3",
-	            typeScript: "template-vue3-ts",
-	        },
-	        react: {
-	            javaScript: "template-react",
-	            typeScript: "template-react-ts",
-	        },
-	    },
-	    vite: {
-	        vue: {
-	            javaScript: "template-vue",
-	            typeScript: "template-vue-ts",
-	        },
-	        react: {
-	            javaScript: "template-react",
-	            typeScript: "template-react-ts",
-	        },
-	    },
-	};
-
-	class Init extends Inquirer {
-	    #config = {
-	        projectName: "",
-	    };
-	    #gitStorage = null;
-	    async start() {
-	        this.loadStorage().then(() => this.generatorProjectName());
-	    }
-	    aliveProject(projectName) {
-	        const projectPath = path.resolve(process.cwd(), projectName),
-	            existsProject = fs.existsSync(projectPath);
-	        return { projectPath, existsProject };
-	    }
-	    createProject(originPath, projectPath) {
-	        basicCommon.copyDirectory(originPath, projectPath);
-	        this.handler({
-	            type: "confirm",
-	            message: "是否需要安装依赖?",
-	            default: true,
-	        }).then((res) => {
-	            const packageCli = platform.getPackageCli(projectPath);
-	            if (res) platform.installDependencies(null, projectPath);
-
-	            console.log("\n执行以下命令运行项目");
-	            console.log(`1. cd ${path.basename(projectPath)}`);
-	            if (res) {
-	                console.log(`2. ${packageCli} run dev`);
-	            } else {
-	                console.log(`2. ${packageCli} install`);
-	            }
-	        });
-	    }
-	    async createOfficialTemplate(projectPath, options) {
-	        const { buildTools, type, language } = options;
-	        const templateName = platform.dfsParser(questionDict, [
-	            buildTools,
-	            type,
-	            language,
-	        ]);
-	        if (!templateName) return console.log("当前配置暂未开放，敬请期待...");
-	        console.log(
-	            `正在生成中... 模板类型为：${type},  语言类型: ${language}，构建工具为: ${buildTools}`,
-	        );
-
-	        this.createProject(
-	            path.resolve(
-	                path.resolve(this.#gitStorage.storagePath, buildTools),
-	                templateName,
-	            ),
-	            projectPath,
-	        );
-	    }
-	    async generatorProjectName() {
-	        const projectName = await this.handler(inputProjectName());
-
-	        const { existsProject, projectPath } = this.aliveProject(projectName);
-	        if (existsProject) {
-	            console.log("需要创建的项目已存在，请重新输入项目名称");
-	            return this.generatorProjectName();
-	        }
-	        this.handler(createProjectQuestion).then((res) => {
-	            this.#config.projectName = projectName;
-	            return this.createOfficialTemplate(projectPath, res);
-	        });
-	    }
-	    async loadStorage() {
-	        return new Promise((resolve) => {
-	            const appCacheTemplatePath = path.resolve(
-	                platform.getProcessEnv("app_cache_template_path"),
-	            );
-
-	            this.#gitStorage = new GitStorage({
-	                source: INIT_PROJECT_VITE_REMOTE,
-	                local: appCacheTemplatePath,
-	                isInitPull: requireConfig().get("init_storage_pull"),
-	            });
-	            this.#gitStorage.once("load:end", () => resolve(true));
-	        });
-	    }
-	}
-
-	init = new Init();
-	return init;
-}
-
-var template;
-var hasRequiredTemplate;
-
-function requireTemplate () {
-	if (hasRequiredTemplate) return template;
-	hasRequiredTemplate = 1;
-	const path = require$$1$2;
-	const { platform, basicCommon } = requireLib$3();
-	const { Inquirer, GitStorage } = requireModules();
-	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
-	const {
-	    checkoutBranch,
-	    dropCustomerTemplateAll,
-	    deleteCustomerTemplateProject,
-	    cloneStorageCheckoutBranch,
-	    isMoveCreateTemplateForLocal,
-	    chooseDropCustomerProject,
-	    updateCustomerTemplateProject,
-	    updateAllTemplate,
-	    updateCustomerProject,
-	    inputTemplateUrl,
-	    chooseTemplateList,
-	} = require$$4;
-
-	class Template extends Inquirer {
-	    #gitStorage;
-	    #templateDir;
-
-	    constructor() {
-	        super();
-	        this.#templateDir = path.resolve(
-	            platform.getProcessEnv("app_cache_template_path"),
-	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-	        );
-	    }
-
-	    start(type, ...rest) {
-	        const typeHandler = new Map([
-	            ["list", this.list],
-	            ["add", this.add],
-	            ["update", this.update],
-	            ["delete", this.delete],
-	        ]);
-
-	        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
-	    }
-	    list() {
-	        const templateList = this.getTemplateList();
-	        if (templateList.length) {
-	            templateList.forEach((item) =>
-	                console.log(
-	                    `\n名称：${item}     路径：${path.resolve(this.#templateDir, item)}`,
-	                ),
-	            );
-	        } else {
-	            console.log(
-	                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
-	            );
-	        }
-	    }
-	    async add(gitLink) {
-	        if (!gitLink) {
-	            gitLink = await this.handler(inputTemplateUrl());
-	        }
-
-	        this.#gitStorage = new GitStorage({
-	            source: gitLink,
-	            local: this.#templateDir,
-	            branch: -1,
-	            isInitPull: true, // 新增仓库时，强制拉取一次仓库, 避免重复仓库
-	        });
-
-	        this.listenerGitAction();
-	    }
-	    async delete(name, source) {
-	        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
-	            deleteTemplateList = [];
-	        if (!templateList.length) return this.list();
-	        if (source.all) {
-	            const drop = await this.handler(dropCustomerTemplateAll());
-	            if (!drop) return;
-	            basicCommon.deleteFolder(this.#templateDir);
-	            deleteTemplateList = templateList;
-	        } else {
-	            name = name.filter((item) => item.trim());
-	            if (!name.length) {
-	                name = await this.handler(chooseTemplateList(templateList));
-	            }
-	            const projectDict = { exists: [], unExists: [] };
-	            name.forEach((item) => {
-	                if (templateList.includes(item)) projectDict.exists.push(item);
-	                else projectDict.unExists.push(item);
-	            });
-	            if (projectDict.exists.length) {
-	                const result = await this.handler(
-	                    deleteCustomerTemplateProject(projectDict.exists),
-	                );
-	                if (!result) return;
-
-	                this.deleteMoreProject(projectDict.exists);
-	                templateList = basicCommon.readDirPathTypeFile(
-	                    this.#templateDir,
-	                );
-	                deleteTemplateList.push(...projectDict.exists);
-	            }
-	            if (projectDict.unExists.length && templateList.length) {
-	                const delProject = await this.handler(
-	                    chooseDropCustomerProject(
-	                        projectDict.unExists.join("、"),
-	                        templateList,
-	                    ),
-	                );
-	                this.deleteMoreProject(delProject);
-	                deleteTemplateList.push(...delProject);
-	            }
-	        }
-	        console.log(
-	            `${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!\n`,
-	        );
-	        this.list();
-	    }
-	    async update(name, source) {
-	        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
-	            updateList = [];
-
-	        if (!templateList.length) return this.list();
-	        if (source.all) {
-	            const result = await this.handler(updateAllTemplate());
-	            if (!result) return;
-	            await this.updateMoreProject(templateList);
-	            updateList = templateList;
-	        } else {
-	            name = name.filter((item) => item.trim());
-	            if (!name.length) {
-	                name = await this.handler(chooseTemplateList(templateList));
-	            }
-
-	            const projectDict = { exists: [], unExists: [] };
-	            name.forEach((item) => {
-	                if (templateList.includes(item)) projectDict.exists.push(item);
-	                else projectDict.unExists.push(item);
-	            });
-
-	            if (projectDict.exists.length) {
-	                const result = await this.handler(
-	                    updateCustomerTemplateProject(projectDict.exists),
-	                );
-	                if (!result) return;
-
-	                await this.updateMoreProject(projectDict.exists);
-	                updateList.push(projectDict.exists);
-	                templateList = templateList.filter((item) => {
-	                    return !projectDict.exists.includes(item);
-	                });
-	            }
-
-	            if (projectDict.unExists.length && templateList.length) {
-	                const result = await this.handler(
-	                    updateCustomerProject(
-	                        projectDict.unExists.join("、"),
-	                        templateList,
-	                    ),
-	                );
-	                await this.updateMoreProject(result);
-	                updateList.push(result);
-	            }
-	        }
-	        console.log(
-	            `${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
-	        );
-	    }
-	    deleteMoreProject(list) {
-	        list.forEach((item) => {
-	            basicCommon.deleteFolder(path.resolve(this.#templateDir, item));
-	        });
-	    }
-	    async updateMoreProject(list) {
-	        for (const item of list) {
-	            const itemPath = path.resolve(this.#templateDir, item);
-	            console.log(`正在更新${item}项目`);
-	            await basicCommon.execCommandPro("git pull", {
-	                stdio: "inherit",
-	                cwd: itemPath,
-	            });
-	            console.log(`项目${item}更新成功！`);
-	        }
-	    }
-	    listenerGitAction() {
-	        this.#gitStorage.once("load:end", async () => {
-	            const branchList = await this.#gitStorage.getBranchRemote();
-	            let currentBranch = await this.#gitStorage.getCurrentBranch();
-
-	            if (!branchList.length || !currentBranch)
-	                return console.log(
-	                    "Git 本地分支出现异常，操作失败，请检查网络连接后重试！",
-	                );
-
-	            const hasOnlyBranchCurrent =
-	                branchList.length === 1 && branchList.includes(currentBranch);
-	            if (!hasOnlyBranchCurrent) {
-	                const needCheckBranch = await this.handler(
-	                    cloneStorageCheckoutBranch(
-	                        this.#gitStorage.storageName,
-	                        currentBranch,
-	                    ),
-	                );
-	                if (needCheckBranch) {
-	                    currentBranch = await this.handler(
-	                        checkoutBranch(branchList),
-	                    );
-	                    await this.#gitStorage.checkout(currentBranch, true);
-	                }
-	            }
-	            const createLocalProject = await this.handler(
-	                isMoveCreateTemplateForLocal(this.#gitStorage.storageName),
-	            );
-	            if (createLocalProject) {
-	                const { storagePath, storageName } = this.#gitStorage;
-	                const localPath = path.resolve(process.cwd(), storageName);
-	                requireInit().createProject(storagePath, localPath);
-	            }
-	        });
-	    }
-	    getTemplateList() {
-	        return basicCommon.readDirPathTypeFile(this.#templateDir);
-	    }
-	}
-
-	template = new Template();
-	return template;
-}
-
-var create;
-var hasRequiredCreate;
-
-function requireCreate () {
-	if (hasRequiredCreate) return create;
-	hasRequiredCreate = 1;
-	const fs = require$$0$4;
-	const path = require$$1$2;
-	const { Inquirer } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
-
-	const {
-	    createExistProject,
-	    chooseTemplateProject,
-	    chooseCreateTemplateName,
-	    inputProjectName,
-	} = require$$4;
-	const Template = requireTemplate();
-	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
-
-	class Create extends Inquirer {
-	    #templateDir;
-	    #projectName;
-	    #templateList;
-	    constructor() {
-	        super();
-	        this.#templateDir = path.resolve(
-	            platform.getProcessEnv("app_cache_template_path"),
-	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-	        );
-	    }
-
-	    async start(name, option) {
-	        if (option.template === "emplate")
-	            return console.log(`error: unknown option '-template'`);
-
-	        this.#projectName = name;
-	        this.#templateList = Template.getTemplateList();
-	        if (!this.#templateList.length)
-	            return console.log(
-	                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
-	            );
-	        this.selectCustomerProject(option.template);
-	    }
-	    async createFolder() {
-	        const basicPath = process.cwd();
-	        if (!this.#projectName) {
-	            this.#projectName = await this.handler(inputProjectName());
-	        }
-
-	        const projectPath = path.resolve(basicPath, this.#projectName);
-	        if (fs.existsSync(projectPath)) {
-	            const { cover } = await this.handler(
-	                createExistProject(this.#projectName),
-	            );
-	            if (!cover) return;
-	        }
-	        basicCommon.createCoverDir(projectPath);
-	        return projectPath;
-	    }
-	    async selectCustomerProject(template = false) {
-	        if (!template) {
-	            template = await this.handler(
-	                chooseCreateTemplateName(this.#templateList),
-	            );
-	        }
-	        if (!this.#templateList.includes(template))
-	            template = await this.handler(
-	                chooseTemplateProject(
-	                    template &&
-	                        `${template} 不存在当前的系统的项目模板中，可选择以下项目模板`,
-	                    this.#templateList,
-	                ),
-	            );
-	        this.createCustomerProject(template);
-	    }
-	    async createCustomerProject(template) {
-	        const projectPath = await this.createFolder();
-	        requireInit().createProject(
-	            path.resolve(this.#templateDir, template),
-	            projectPath,
-	        );
-	    }
-	}
-
-	create = new Create();
-	return create;
+	lib = Package;
+	return lib;
 }
 
 var install;
@@ -44353,8 +44345,8 @@ var hasRequiredInstall;
 function requireInstall () {
 	if (hasRequiredInstall) return install;
 	hasRequiredInstall = 1;
-	const { Package } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
+	const Package = requireLib$1();
+	const { basicCommon, platform } = requireLib$8();
 
 	class Install {
 	    start(packageList, option) {
@@ -44382,8 +44374,8 @@ var hasRequiredUninstall;
 function requireUninstall () {
 	if (hasRequiredUninstall) return uninstall;
 	hasRequiredUninstall = 1;
-	const { Package } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
+	const Package = requireLib$1();
+	const { basicCommon, platform } = requireLib$8();
 
 	class UnInstall {
 	    start(packageList, option) {
@@ -44435,8 +44427,9 @@ var hasRequiredPush;
 function requirePush () {
 	if (hasRequiredPush) return push;
 	hasRequiredPush = 1;
-	const { Inquirer, GitStorage } = requireModules();
-	const { basicCommon, platform } = requireLib$3();
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { basicCommon, platform } = requireLib$8();
 
 	const {
 	    commitType,
@@ -44447,7 +44440,8 @@ function requirePush () {
 	    alreadyStatusFile,
 	    alreadyCommitFile,
 	    pushOrigin,
-	} = require$$4;
+	    onlyPushLocalFile,
+	} = require$$5;
 	const { CommitTypeDict } = requireCommandConfig();
 
 	class Commit extends Inquirer {
@@ -44462,6 +44456,7 @@ function requirePush () {
 	    diffFile = [];
 	    statusFile = [];
 	    push = false;
+	    onlyPush = false;
 	    commitAll = false;
 
 	    async start(source = {}) {
@@ -44471,7 +44466,7 @@ function requirePush () {
 	                    return console.log("提交失败，请重试!");
 	                }
 	                const { type, file, origin, branch, message } = config;
-	                if (!this.push) {
+	                if (!this.push && !this.onlyPush) {
 	                    const confirm = await this.handler(
 	                        commitAction({
 	                            ...config,
@@ -44541,24 +44536,26 @@ function requirePush () {
 	    chooseOption(source) {
 	        return new Promise((resolve) => {
 	            this.#gitStorage = new GitStorage(process.cwd());
-	            let { branch, origin, message } = source;
+	            let { branch, origin, message, onlyPush } = source;
 	            this.#gitStorage.once("load:origin:end", async (originList) => {
-	                this.diffFile = await this.#gitStorage.diffFile();
-	                if (!this.diffFile.length) {
-	                    this.statusFile = await this.#gitStorage.status();
-	                    if (!this.statusFile.length) {
-	                        const notPushFile =
-	                            await this.#gitStorage.getCommitNotPushFileList();
-	                        if (!notPushFile.length) {
-	                            return console.log(
-	                                "当前路径下暂无变更的文件, 无需提交.",
-	                            );
-	                        } else {
-	                            const pushFile = await this.handler(
-	                                alreadyCommitFile(notPushFile),
-	                            );
-	                            if (!pushFile) return;
-	                            this.push = true;
+	                if (!onlyPush) {
+	                    this.diffFile = await this.#gitStorage.diffFile();
+	                    if (!this.diffFile.length) {
+	                        this.statusFile = await this.#gitStorage.status();
+	                        if (!this.statusFile.length) {
+	                            const notPushFile =
+	                                await this.#gitStorage.getCommitNotPushFileList();
+	                            if (!notPushFile.length) {
+	                                return console.log(
+	                                    "当前路径下暂无变更的文件, 无需提交.",
+	                                );
+	                            } else {
+	                                const pushFile = await this.handler(
+	                                    alreadyCommitFile(notPushFile),
+	                                );
+	                                if (!pushFile) return;
+	                                this.push = true;
+	                            }
 	                        }
 	                    }
 	                }
@@ -44595,8 +44592,18 @@ function requirePush () {
 
 	                this.#config.origin = origin;
 	                this.#config.branch = branch;
+	                this.onlyPush = onlyPush;
 
-	                if (!this.push) {
+	                if (this.onlyPush) {
+	                    const notPushFile =
+	                        await this.#gitStorage.getCommitNotPushFileList();
+
+	                    if (!notPushFile.length)
+	                        return console.log("当前分支不存在已提交的本地文件");
+	                    if (!(await this.handler(onlyPushLocalFile()))) return;
+	                }
+
+	                if (!this.push && !this.onlyPush) {
 	                    await this.chooseType(source);
 	                    await this.chooseCommitFile(source);
 	                    if (!this.#config.file.trim()) return;
@@ -44628,9 +44635,9 @@ function requireRun () {
 	hasRequiredRun = 1;
 	const fs = require$$0$4;
 	const path = require$$1$2;
-	const { Inquirer } = requireModules();
-	const { filterEmptyArray, basicCommon, platform } = requireLib$3();
-	const { chooseRunCommand } = require$$4;
+	const Inquirer = requireLib$4();
+	const { filterEmptyArray, basicCommon, platform } = requireLib$8();
+	const { chooseRunCommand } = require$$5;
 
 	class Run extends Inquirer {
 	    #config = {
@@ -44700,9 +44707,10 @@ var hasRequiredBranch;
 function requireBranch () {
 	if (hasRequiredBranch) return branch;
 	hasRequiredBranch = 1;
-	const { Inquirer, GitStorage } = requireModules();
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
 	const { CommitTypeDict } = requireCommandConfig();
-	const { delay, basicCommon } = requireLib$3();
+	const { delay, basicCommon } = requireLib$8();
 	const Config = requireConfig();
 
 	const {
@@ -44716,7 +44724,7 @@ function requireBranch () {
 	    chooseDelLocalBranch,
 	    syncDelRemoteBranch,
 	    notDelBranchConfirm,
-	} = require$$4;
+	} = require$$5;
 	const Push = requirePush();
 
 	class Branch extends Inquirer {
@@ -44759,7 +44767,24 @@ function requireBranch () {
 	    }
 	    async listBranch() {
 	        const list = await this.#gitStorage.getBranch();
-	        console.log(`项目分支列表如下：(本地/远程)\n${list.join("\n")}`);
+	        const { local, remote } = this.distinguishBranchType(list);
+	        if (!local.length && !remote.length)
+	            return console.log("当前仓库暂无代码分支");
+
+	        if (local.length) console.log(`\n本地分支如下：\n${local.join("\n")}`);
+	        if (local.length) console.log(`\n远程分支如下：\n${remote.join("\n")}`);
+	    }
+	    distinguishBranchType(branchList) {
+	        return branchList.reduce(
+	            (pre, next) => {
+	                if (next.startsWith(`remotes/${this.#origin}/`))
+	                    pre.remote.push(next);
+	                else pre.local.push(next);
+
+	                return pre;
+	            },
+	            { local: [], remote: [] },
+	        );
 	    }
 	    addBranch(branchName, option) {
 	        this.#addConfig.type = option.type;
@@ -44941,15 +44966,11 @@ function requireBranch () {
 	        if (!commitNotPushFile.length && !notCommitFile.length)
 	            return console.log("\n当前分支暂无变更的文件");
 
-	        if (commitNotPushFile.length) {
-	            console.log("\n暂存区的文件有：");
-	            console.log(commitNotPushFile.join("\n"));
-	        }
+	        if (commitNotPushFile.length)
+	            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
 
-	        if (notCommitFile.length) {
-	            console.log("\n还未提交的文件有：");
-	            console.log(notCommitFile.join("\n"));
-	        }
+	        if (notCommitFile.length)
+	            console.log(`\n还未提交的文件有：\n${notCommitFile.join("\n")}`);
 	    }
 	}
 
@@ -45160,6 +45181,10 @@ function requireCommand$1 () {
 	                    command: "-o, --origin <origin>",
 	                    description: "提交的远程源名称",
 	                },
+	                {
+	                    command: "--onlyPush",
+	                    description: "直接将暂存区的代码推送至远程分支",
+	                },
 	            ],
 	            action: Push,
 	        },
@@ -45207,8 +45232,8 @@ var hasRequiredCommand;
 function requireCommand () {
 	if (hasRequiredCommand) return command;
 	hasRequiredCommand = 1;
-	const { basicCommon, platform } = requireLib$3();
-	const { RegisterCommand: RegisterCommandUtil } = requireModules();
+	const { basicCommon, platform } = requireLib$8();
+	const RegisterCommandUtil = requireLib$7();
 
 	class BaseCommand extends RegisterCommandUtil {
 	    constructor() {
@@ -45251,7 +45276,7 @@ function requireCore () {
 	    setProcessEnv,
 	    getProcessEnv,
 	} = requirePlatform();
-	const { basicCommon } = requireLib$3();
+	const { basicCommon } = requireLib$8();
 
 	const {
 	    SUPPORT_SYSTEM,
@@ -45338,12 +45363,12 @@ function requireCore () {
 var hasRequiredLib;
 
 function requireLib () {
-	if (hasRequiredLib) return lib$3;
+	if (hasRequiredLib) return lib$8;
 	hasRequiredLib = 1;
 	const { name, version } = require$$0$2;
 	const mvCliCore = requireCore();
 	mvCliCore.start({ name, version });
-	return lib$3;
+	return lib$8;
 }
 
 var libExports = requireLib();

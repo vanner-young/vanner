@@ -1,4 +1,4 @@
-const { getProcessEnv } = require("@mvanner/common/lib/platform");
+const { getProcessEnv } = require("@mvanners/common/lib/platform");
 
 const Config = require("../command/config");
 const Exec = require("../command/exec");

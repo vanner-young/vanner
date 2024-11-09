@@ -1,6 +1,6 @@
 {
-    "name": "@mvanners/common",
-    "version": "0.0.1",
+    "name": "@mvanners/config",
+    "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
     "scripts": {
@@ -10,6 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "mv-common": "^1.0.2"
+        "ini": "^5.0.0",
+        "@mvanners/common": "workspace:^"
     }
 }

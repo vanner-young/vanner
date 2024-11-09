@@ -1,5 +1,5 @@
-const { basicCommon, platform } = require("@mvanner/common");
-const { RegisterCommand: RegisterCommandUtil } = require("@mvanner/modules");
+const { basicCommon, platform } = require("@mvanners/common");
+const RegisterCommandUtil = require("@mvanners/registerCommand");
 
 class BaseCommand extends RegisterCommandUtil {
     constructor() {

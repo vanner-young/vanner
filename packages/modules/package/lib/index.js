@@ -1,5 +1,5 @@
 const axios = require("axios");
-const { basicCommon, platform } = require("@mvanner/common");
+const { basicCommon, platform } = require("@mvanners/common");
 
 class Package {
     execCwd = process.cwd();
