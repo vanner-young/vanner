@@ -8,11 +8,6 @@ importers:
 
   .:
     dependencies:
-      packages:
-
-        specifier: link:F:/workspace/npm-packages/mvanner/packages
-
-        version: link:packages
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
         version: 28.0.1(rollup@4.24.2)

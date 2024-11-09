@@ -202,7 +202,7 @@ const findParentFile = (targetPath, handler) => {
  * @param { string } targetPath 基准目录
  * @returns { string } 查询到的可执行文件目录
  * **/
-const findProjectParentExecCwd = async (targetPath) => {
+const findProjectParentExecCwd = async (targetPath = process.cwd()) => {
     const result = await findParentFile(targetPath, "package.json");
     if (!result) throw new Error("当前及父级目录下不是一个项目目录");
     return result;

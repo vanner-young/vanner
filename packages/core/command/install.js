@@ -1,17 +1,15 @@
 const Package = require("@mvanners/package");
-const { basicCommon, platform } = require("@mvanners/common");
+const { platform } = require("@mvanners/common");
 
 class Install {
-    start(packageList, option) {
+    async start(packageList, option) {
         if (option.cli === "li")
             return console.log(`error: unknown option '-cli'`);
 
+        const execPath = await platform.findProjectParentExecCwd();
         new Package({
             packageList,
-            packageCli:
-                !option.cli || basicCommon.isType(option.cli, "boolean")
-                    ? platform.getProcessEnv("default_package_cli")
-                    : option.cli,
+            packageCli: platform.getPackageCli(execPath),
             registry: platform.getProcessEnv("default_registry"),
         }).action();
     }
