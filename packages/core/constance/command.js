@@ -1,4 +1,4 @@
-const { getProcessEnv } = require("@mvanners/common/lib/platform");
+const { getProcessEnv } = require("@vanner/common/lib/platform");
 
 const Config = require("../command/config");
 const Exec = require("../command/exec");
@@ -15,8 +15,8 @@ const commandConfig = () => {
     const {
         app_version: version,
         app_name: name,
-        app_des: description,
-    } = getProcessEnv(["app_version", "app_name", "app_des"]);
+        app_description: description,
+    } = getProcessEnv(["app_version", "app_name", "app_description"]);
 
     return [
         {
@@ -69,10 +69,10 @@ const commandConfig = () => {
         {
             command: "exec [filename...]",
             description:
-                "可在当前目录或指定的目录下执行系统命令或JavaScript文件(.js|.mjs)",
+                "可在当前目录或指定的目录下执行系统命令或JavaScript文件",
             option: [
                 {
-                    command: "-f",
+                    command: "-f, --file",
                     description:
                         "当值存在时, 将采用Node执行一个JavaScript 文件",
                 },
@@ -111,14 +111,14 @@ const commandConfig = () => {
             description: "删除一个已经安装的Npm包",
             option: [
                 {
-                    command: "cli [name]",
+                    command: "--cli [name]",
                     description: "使用的包管理器名称",
                 },
             ],
             action: UnInstall,
         },
         {
-            command: "init",
+            command: "init [projectName]",
             description: "根据官方或自定义的模板初始化一个项目",
             action: Init,
         },
@@ -137,7 +137,7 @@ const commandConfig = () => {
                     action: (...rest) => Template.start("add", ...rest),
                 },
                 {
-                    command: "delete [projectName...]",
+                    command: "del [projectName...]",
                     description: "删除一个或全部的自定义项目模板",
                     option: [
                         {
@@ -148,7 +148,7 @@ const commandConfig = () => {
                     action: (...rest) => Template.start("delete", ...rest),
                 },
                 {
-                    command: "update [projectName...]",
+                    command: "upd [projectName...]",
                     description: "更新一个或全部的自定义项目模板",
                     option: [
                         {
@@ -157,17 +157,6 @@ const commandConfig = () => {
                         },
                     ],
                     action: (...rest) => Template.start("update", ...rest),
-                },
-                {
-                    command: "create [projectName]",
-                    description: "基于自定义项目模板创建一个项目",
-                    option: [
-                        {
-                            command: "-t, --template <template>",
-                            description: "模板名称",
-                        },
-                    ],
-                    action: Create,
                 },
             ],
         },

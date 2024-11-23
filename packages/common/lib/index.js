@@ -19,7 +19,7 @@ const arrayExecSyncHandler = (cb, options) => {
 const filterObject = (value, filterList) => {
     if (
         !basicCommon.isType(value, "object") ||
-        !basicCommon.isArray(filterList)
+        !basicCommon.isType(value, "array")
     )
         return value;
 

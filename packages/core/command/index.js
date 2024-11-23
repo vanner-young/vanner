@@ -1,5 +1,5 @@
-const { basicCommon, platform } = require("@mvanners/common");
-const RegisterCommandUtil = require("@mvanners/registerCommand");
+const { basicCommon, platform } = require("@vanner/common");
+const RegisterCommandUtil = require("@vanner/registerCommand");
 
 class BaseCommand extends RegisterCommandUtil {
     constructor() {
@@ -10,7 +10,7 @@ class BaseCommand extends RegisterCommandUtil {
     start() {
         this.commandGlobalCatch((source, dest) => {
             const args = dest.args,
-                isEmptySource = basicCommon.isEmptyObject(source);
+                isEmptySource = basicCommon.isEmptyJSON(source);
             if (args?.at(0) === "help" || (isEmptySource && !args.length)) {
                 this.program.outputHelp();
             } else if (source.v) {

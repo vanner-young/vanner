@@ -1,19 +1,20 @@
 const fs = require("fs");
 const path = require("path");
 const mvCommon = require("mv-common");
+const axios = require("axios");
 
 /**
  * 返回平台信息
  * **/
-const backPlatForm = () => {
-    return mvCommon.systemInfo().platform;
+const platForm = () => {
+    return mvCommon.getSystemInfo().platform;
 };
 
 /**
  * 是否是有效的AppData路径
  * **/
 const effectiveAppDataHome = () => {
-    const appDataHome = mvCommon.appData();
+    const appDataHome = mvCommon.getAppData();
     if (!appDataHome) return;
     return fs.existsSync(appDataHome);
 };
@@ -21,8 +22,8 @@ const effectiveAppDataHome = () => {
 /**
  * 返回Node版本
  * **/
-const backNodeVersion = async () => {
-    const result = await mvCommon.getExecCommandResult("node -v");
+const nodeVersion = async () => {
+    const result = await mvCommon.execCommand("node -v");
     return result?.slice(1);
 };
 
@@ -79,20 +80,22 @@ const getPackageCli = (targetPath) => {
  * 在某个路径下执行依赖的安装
  * **/
 const installDependencies = (
-    packageCli = null,
+    packageCli = false,
     targetPath,
     dependencies = [],
-    registry = null,
+    registry = "",
 ) => {
-    if (!packageCli) packageCli = getPackageCli(targetPath);
-
+    if (!packageCli || !verifyPackageCliName(packageCli)) {
+        packageCli = getPackageCli(targetPath);
+        console.log("包管理器无效，已重置为：", packageCli);
+    }
     const dependenciesStr = dependencies.length
             ? ` ${dependencies.join(" ")}`
             : "",
         registryStr = registry ? ` --registry ${registry}` : "",
         packageCliStr = packageCli === "pnpm" ? ` -w` : "";
-    return mvCommon.execCommandPro(
-        `${packageCli} ${packageCli === "yarn" ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
+    return mvCommon.execCommand(
+        `${packageCli} ${!dependencies.length ? `install` : ["yarn", "pnpm"].includes(packageCli) ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
         {
             cwd: targetPath,
             stdio: "inherit",
@@ -107,9 +110,12 @@ const uninstallDependencies = (
     packageCli = null,
     targetPath,
     dependencies = [],
-    registry = null,
+    registry = "",
 ) => {
-    if (!packageCli) packageCli = getPackageCli(targetPath);
+    if (!packageCli || !verifyPackageCliName(packageCli)) {
+        packageCli = getPackageCli(targetPath);
+        console.log("包管理器无效，已重置为：", packageCli);
+    }
 
     const dependenciesStr = dependencies.length
             ? ` ${dependencies.join(" ")}`
@@ -120,7 +126,7 @@ const uninstallDependencies = (
             ? "remove"
             : "uninstall";
 
-    return mvCommon.execCommandPro(
+    return mvCommon.execCommand(
         `${packageCli} ${packageRemoveStr}${dependenciesStr}${packageCliStr}`,
         {
             cwd: targetPath,
@@ -202,10 +208,8 @@ const findParentFile = (targetPath, handler) => {
  * @param { string } targetPath 基准目录
  * @returns { string } 查询到的可执行文件目录
  * **/
-const findProjectParentExecCwd = async (targetPath = process.cwd()) => {
-    const result = await findParentFile(targetPath, "package.json");
-    if (!result) throw new Error("当前及父级目录下不是一个项目目录");
-    return result;
+const findProjectParentExecCwd = (targetPath = process.cwd()) => {
+    return findParentFile(targetPath, "package.json");
 };
 
 /**
@@ -216,18 +220,6 @@ const findProjectParentExecCwd = async (targetPath = process.cwd()) => {
 const isActiveEmptyGitProject = (targetPath) => {
     const onlyGitFolder = path.resolve(targetPath, ".git");
     return fs.existsSync(onlyGitFolder);
-    // const packageFilePath = path.resolve(targetPath, "package.json");
-    // const onlyGitFolder = path.resolve(targetPath, ".git");
-    // if (!fs.existsSync(packageFilePath) || !fs.existsSync(onlyGitFolder))
-    //     return;
-    // try {
-    //     const { name, version } = JSON.parse(
-    //         basicCommon.readFileIsExists(packageFilePath).toString(),
-    //     );
-    //     return name.trim() || version.trim();
-    // } catch (e) {
-    //     console.log("check project active is fail...", targetPath);
-    // }
 };
 
 const dfsParser = (dict, result) => {
@@ -237,11 +229,52 @@ const dfsParser = (dict, result) => {
     }, dict);
 };
 
+/**
+ * 检测当前的脚手架是否符合要求
+ * **/
+const verifyPackageCliName = (name) => {
+    return [
+        ...mvCommon.packageMangerViewer.keys().toArray(),
+        getProcessEnv("app_name"),
+    ].includes(name);
+};
+
+/**
+ * 判断一个地址是否能正常响应
+ * **/
+const responseUrl = async (url, options) => {
+    if (!mvCommon.isValidUrl(url)) return false;
+    try {
+        const response = await axios.get(url, options);
+        if (response.status === 200 && response.data) return true;
+        else throw new Error(false);
+    } catch (e) {
+        return false;
+    }
+};
+
+/**
+ * 获取自定义模板路径
+ * **/
+const getTemplateList = () => {
+    return mvCommon.readForTypeFileDir(
+        getProcessEnv("app_customer_template_path"),
+        "dir",
+    );
+};
+
+/**
+ * 获取某个自定义模板的路径
+ * **/
+const getTemplatePathByName = (name) => {
+    return path.resolve(getProcessEnv("app_customer_template_path"), name);
+};
+
 module.exports = {
-    backPlatForm,
+    platForm,
     effectiveAppDataHome,
     effectiveAppDataHome,
-    backNodeVersion,
+    nodeVersion,
     greaterNewVersion,
     setProcessEnv,
     getProcessEnv,
@@ -254,4 +287,8 @@ module.exports = {
     isActiveEmptyGitProject,
     dfsParser,
     uninstallDependencies,
+    verifyPackageCliName,
+    responseUrl,
+    getTemplateList,
+    getTemplatePathByName,
 };

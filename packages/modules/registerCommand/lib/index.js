@@ -1,5 +1,5 @@
 const { Command, Option } = require("commander");
-const { basicCommon } = require("@mvanners/common");
+const { basicCommon } = require("@vanner/common");
 
 class SingleCommandRegister {
     usage(program, content) {

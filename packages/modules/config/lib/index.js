@@ -1,13 +1,13 @@
 const ini = require("ini");
 const path = require("path");
-const { basicCommon } = require("@mvanners/common");
+const { basicCommon, platform } = require("@vanner/common");
 
 class Config {
     #source;
     #encoding = "utf8";
     #defaultContent = {};
     data = new Map();
-    constructor({ source, encoding, defaultContent }) {
+    constructor({ source, encoding, defaultContent = {} }) {
         this.#source = source;
         this.#encoding = encoding || this.#encoding;
         this.#defaultContent = defaultContent;
@@ -31,15 +31,26 @@ class Config {
         });
         this.save();
     }
+    setProcessEnv() {
+        platform.setProcessEnv(
+            Object.entries(Object.fromEntries(this.data)).map(
+                ([key, value]) => ({
+                    key,
+                    value,
+                }),
+            ),
+        );
+    }
     load() {
-        basicCommon.writeNotExistsFile(
+        basicCommon.createFile(
             this.#source,
             ini.stringify(this.#defaultContent).trim(),
         );
         this.#coverContent(
-            ini.parse(basicCommon.readFileIsExists(this.#source).toString()),
+            ini.parse(basicCommon.readExistsFile(this.#source).toString()),
         );
         this.#writeNotExistsDefaultData();
+        this.setProcessEnv();
     }
     has(key) {
         return this.data.has(key);
@@ -70,15 +81,17 @@ class Config {
             path.dirname(this.#source),
             `.Cache/Config/${sourceFileName}.${Date.now()}`,
         );
-        basicCommon.writeNotExistsFile(
+
+        basicCommon.createFile(
             CachePath,
-            ini.stringify(this.#defaultContent).trim(),
+            ini.stringify(Object.fromEntries(this.data)).trim(),
+            true,
         );
         this.#coverContent(this.#defaultContent);
     }
 
     save() {
-        basicCommon.writeCoverFile(this.#source, this.stringify());
+        basicCommon.createFile(this.#source, this.stringify(), true);
     }
 
     list() {

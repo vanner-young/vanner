@@ -1,5 +1,5 @@
 {
-    "name": "@mvanners/config",
+    "name": "@vanner/config",
     "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
@@ -11,6 +11,6 @@
     "license": "ISC",
     "dependencies": {
         "ini": "^5.0.0",
-        "@mvanners/common": "workspace:^"
+        "@vanner/common": "workspace:^"
     }
 }

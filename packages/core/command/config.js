@@ -1,36 +1,19 @@
-const Inquirer = require("@mvanners/inquirer");
-const ConfigModule = require("@mvanners/config");
-const { getProcessEnv } = require("@mvanners/common/lib/platform");
-const { resetConfigFile } = require("../constance/question");
-const { basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const ConfigModule = require("@vanner/config");
+const { basicCommon, platform } = require("@vanner/common");
+const { getProcessEnv } = require("@vanner/common/lib/platform");
 
-const defaultContent = {
-    branch_secure: true,
-    init_storage_pull: false,
-    request_timeout: 3000,
-    default_registry: "https://registry.npmmirror.com/",
-    default_package_cli: "npm",
-    default_commit_type: "fix",
-    default_exec_file: "index.js",
-};
+const { defaultConfigModuleContent } = require("../constance");
+const { resetConfigFile } = require("../constance/question");
 
 class Config extends ConfigModule {
     #inquirer;
     constructor() {
         super({
-            source: getProcessEnv("app_source_file_path"),
+            source: getProcessEnv("app_cache_config_path"),
             encoding: "utf-8",
-            defaultContent,
+            defaultContent: defaultConfigModuleContent,
         });
-
-        platform.setProcessEnv(
-            Object.entries(Object.fromEntries(this.data)).map(
-                ([key, value]) => ({
-                    key,
-                    value,
-                }),
-            ),
-        );
         this.#inquirer = new Inquirer();
     }
     /**
@@ -46,14 +29,14 @@ class Config extends ConfigModule {
         if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
     }
     invalidSetContent(key, value, cb) {
-        if (Object.keys(defaultContent).includes(key) && !value) {
+        if (Object.keys(defaultConfigModuleContent).includes(key) && !value) {
             return console.log("当前Key为系统固定预设值，必须设定一个值");
         }
         if (key === "default_registry") {
             if (!basicCommon.isValidUrl(value))
                 return console.log("设置无效，必须是一个有效的http|https链接");
         } else if (key === "default_package_cli") {
-            if (!basicCommon.invalidPackageCli(value))
+            if (!platform.verifyPackageCliName(value))
                 return console.log(
                     `设置无效，值必须为:${Object.keys(Object.fromEntries(basicCommon.packageMangerViewer)).join("|")}`,
                 );
@@ -70,10 +53,13 @@ class Config extends ConfigModule {
     outputList() {
         return console.log(this.stringify());
     }
+    getConfigResult(key) {
+        if (!this.has(key)) return;
+        return this.get(key);
+    }
     getConfig(key) {
         if (!this.has(key)) return console.log(`${key} 不存在此配置`);
-        const val = this.get(key);
-        return val;
+        console.log(this.get(key));
     }
     setConfig(key, value) {
         if (key.includes("=")) {
@@ -84,7 +70,7 @@ class Config extends ConfigModule {
         });
     }
     deleteConfig(key) {
-        if (Object.keys(defaultContent).includes(key)) {
+        if (Object.keys(defaultConfigModuleContent).includes(key)) {
             return console.log("当前Key为系统固定预设值，无法删除");
         }
         this.delete(key);

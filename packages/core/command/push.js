@@ -1,6 +1,6 @@
-const Inquirer = require("@mvanners/inquirer");
-const GitStorage = require("@mvanners/gitStorage");
-const { basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { basicCommon, platform } = require("@vanner/common");
 
 const {
     commitType,
@@ -13,7 +13,7 @@ const {
     pushOrigin,
     onlyPushLocalFile,
 } = require("../constance/question");
-const { CommitTypeDict } = require("../constance/commandConfig");
+const { commitTypeDict } = require("../constance");
 
 class Commit extends Inquirer {
     #gitStorage;
@@ -66,7 +66,7 @@ class Commit extends Inquirer {
 
     async chooseType({ type }) {
         if (type) {
-            const typeExists = Object.keys(CommitTypeDict).includes(
+            const typeExists = Object.keys(commitTypeDict).includes(
                 type.toLocaleLowerCase(),
             );
             if (typeExists) return (this.#config.type = type);
@@ -75,7 +75,7 @@ class Commit extends Inquirer {
             commitType(
                 type &&
                     `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
-                Object.entries(CommitTypeDict).map(([key, value]) => ({
+                Object.entries(commitTypeDict).map(([key, value]) => ({
                     name: `${key}: ${value}`,
                     value: key,
                 })),

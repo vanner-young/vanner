@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
-const Inquirer = require("@mvanners/inquirer");
-const { basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const { basicCommon, platform } = require("@vanner/common");
 
 const {
     createExistProject,
@@ -10,19 +10,12 @@ const {
     inputProjectName,
 } = require("../constance/question");
 const Template = require("./template");
-const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = require("../constance");
+const { CUSTOMER_TEMPLATE_PATH } = require("../constance");
 
 class Create extends Inquirer {
     #templateDir;
     #projectName;
-    #templateList;
-    constructor() {
-        super();
-        this.#templateDir = path.resolve(
-            platform.getProcessEnv("app_cache_template_path"),
-            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-        );
-    }
+    #templateList = CUSTOMER_TEMPLATE_PATH;
 
     async start(name, option) {
         if (option.template === "emplate")
@@ -32,7 +25,7 @@ class Create extends Inquirer {
         this.#templateList = Template.getTemplateList();
         if (!this.#templateList.length)
             return console.log(
-                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
+                `当前系统暂已无项目模板数据，可使用 ${platform.getProcessEnv("app_name")} template add <git remote> 进行添加`,
             );
         this.selectCustomerProject(option.template);
     }
@@ -49,7 +42,7 @@ class Create extends Inquirer {
             );
             if (!cover) return;
         }
-        basicCommon.createCoverDir(projectPath);
+        basicCommon.createDir(projectPath, true);
         return projectPath;
     }
     async selectCustomerProject(template = false) {

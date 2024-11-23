@@ -1,12 +1,9 @@
-const Inquirer = require("@mvanners/inquirer");
-const { basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const { basicCommon, platform } = require("@vanner/common");
 
 class Exec extends Inquirer {
-    defaultFileName;
-
-    constructor() {
-        super();
-        this.defaultFileName = platform.getProcessEnv("default_exec_file");
+    get defaultExecFileName() {
+        return platform.getProcessEnv("default_exec_file");
     }
 
     start(source, option) {
@@ -21,7 +18,7 @@ class Exec extends Inquirer {
     }
 
     execCommand(source, option) {
-        basicCommon.execCommandPro(source.join(" "), {
+        basicCommon.execCommand(source.join(" "), {
             stdio: "inherit",
             cwd: option.dir || process.cwd(),
         });
@@ -30,13 +27,14 @@ class Exec extends Inquirer {
     async execFile(source, option) {
         source = source.filter((item) => item.trim());
         if (!source.length) {
-            source = [this.defaultFileName];
+            source = [this.defaultExecFileName];
         }
         const invalidFile = [],
             execFile = [];
         for (const item of source) {
             const type =
-                /\.(js|mjs)$/.test(item) && basicCommon.existsFileForCwd(item)
+                /\.(js|mjs)$/.test(item) &&
+                basicCommon.exists(item, process.cwd())
                     ? execFile
                     : invalidFile;
             type.push(item);
@@ -53,7 +51,7 @@ class Exec extends Inquirer {
             );
         }
         for (const item of execFile) {
-            basicCommon.execCommandPro(`node ${item}`, {
+            basicCommon.execCommand(`node ${item}`, {
                 stdio: "inherit",
                 cwd: option.dir || process.cwd(),
             });

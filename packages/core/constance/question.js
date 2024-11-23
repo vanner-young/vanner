@@ -1,9 +1,9 @@
-export const createProjectQuestion = [
+export const createProjectQuestion = () => [
     {
         name: "type",
         type: "search",
         required: true,
-        message: "请选择项目模板",
+        message: "请选择项目模板：",
         choices: [
             {
                 name: "vue 项目",
@@ -19,7 +19,7 @@ export const createProjectQuestion = [
         name: "buildTools",
         type: "search",
         required: true,
-        message: "请选择项目构建工具",
+        message: "请选择项目构建工具：",
         choices: [
             {
                 name: "webpack",
@@ -35,7 +35,7 @@ export const createProjectQuestion = [
         name: "language",
         type: "search",
         required: true,
-        message: "请选择使用的开发语言?",
+        message: "请选择使用的开发语言：",
         choices: [
             {
                 name: "TypeScript",
@@ -48,6 +48,22 @@ export const createProjectQuestion = [
         ],
     },
 ];
+
+export const isInstallDependencies = () => {
+    return {
+        type: "confirm",
+        message: "是否需要安装依赖?",
+        default: true,
+    };
+};
+
+export const confirmCreateProject = (option) => {
+    return {
+        name: "confirmCreateProject",
+        type: "confirm",
+        message: `模板名称为：${option.projectName}，模板类型为：${option.type}，语言类型: ${option.language}，构建工具为: ${option.buildTools}，确定要生成吗？`,
+    };
+};
 
 export const initNotExistsCustomerTemplate = (projectName, templateList) => {
     return [
@@ -113,7 +129,7 @@ export const inputTemplateUrl = () => {
         name: "templateUrl",
         type: "input",
         required: true,
-        message: "请输入模板的的Git仓库地址：",
+        message: "你需要以哪个Git仓库作为项目模板，请输入Git地址：",
     };
 };
 
@@ -121,7 +137,7 @@ export const isMoveCreateTemplateForLocal = (projectName) => {
     return {
         name: "move",
         type: "confirm",
-        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目？`,
+        message: `自定义项目模板 ${projectName} 添加成功！是否立刻基于此模板创建项目？`,
         default: false,
     };
 };
@@ -427,4 +443,36 @@ export const inputProjectName = () => {
         message: "请输入项目名称：",
         require: true,
     };
+};
+
+export const createTemplateType = () => {
+    return {
+        name: "templateType",
+        type: "search",
+        message: "请输入创建模板的类型",
+        choices: [
+            {
+                name: "自定义模板",
+                value: "customer",
+            },
+            {
+                name: "官方模板",
+                value: "official",
+            },
+        ],
+    };
+};
+
+export const chooseSingleTemplate = (list) => {
+    return [
+        {
+            name: "chooseSingleTemplate",
+            type: "search",
+            message: "请选择一个自定义模板：",
+            choices: list.map((item) => ({
+                name: item,
+                value: item,
+            })),
+        },
+    ];
 };

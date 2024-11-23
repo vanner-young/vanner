@@ -1,5 +1,5 @@
 const inquirer = require("@inquirer/prompts");
-const { arrayExecSyncHandler, filterObject } = require("@mvanners/common");
+const { arrayExecSyncHandler, filterObject } = require("@vanner/common");
 
 class Inquirer {
     constructor() {

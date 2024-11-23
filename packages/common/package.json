@@ -1,5 +1,5 @@
 {
-    "name": "@mvanners/common",
+    "name": "@vanner/common",
     "version": "0.0.1",
     "description": "",
     "main": "lib/index.js",
@@ -10,6 +10,7 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "mv-common": "^1.0.2"
+        "axios": "^1.7.7",
+        "mv-common": "^1.1.6"
     }
 }

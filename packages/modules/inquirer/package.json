@@ -1,5 +1,5 @@
 {
-    "name": "@mvanners/inquirer",
+    "name": "@vanner/inquirer",
     "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
@@ -11,6 +11,6 @@
     "license": "ISC",
     "dependencies": {
         "@inquirer/prompts": "^6.0.1",
-        "@mvanners/common": "workspace:^"
+        "@vanner/common": "workspace:^"
     }
 }

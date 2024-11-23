@@ -1,8 +1,8 @@
 const path = require("path");
-const { platform, basicCommon } = require("@mvanners/common");
-const Inquirer = require("@mvanners/inquirer");
-const GitStorage = require("@mvanners/gitStorage");
-const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = require("../constance");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { platform, basicCommon } = require("@vanner/common");
+const { CUSTOMER_TEMPLATE_PATH } = require("../constance");
 const {
     checkoutBranch,
     dropCustomerTemplateAll,
@@ -15,18 +15,15 @@ const {
     updateCustomerProject,
     inputTemplateUrl,
     chooseTemplateList,
+    inputProjectName,
 } = require("../constance/question");
 
 class Template extends Inquirer {
     #gitStorage;
-    #templateDir;
-
+    #templateDir = CUSTOMER_TEMPLATE_PATH;
     constructor() {
         super();
-        this.#templateDir = path.resolve(
-            platform.getProcessEnv("app_cache_template_path"),
-            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-        );
+        basicCommon.createDir(this.#templateDir, false);
     }
 
     start(type, ...rest) {
@@ -40,7 +37,7 @@ class Template extends Inquirer {
         if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
     }
     list() {
-        const templateList = this.getTemplateList();
+        const templateList = platform.getTemplateList();
         if (templateList.length) {
             templateList.forEach((item) =>
                 console.log(
@@ -49,14 +46,12 @@ class Template extends Inquirer {
             );
         } else {
             console.log(
-                "当前系统暂已无项目模板数据，可使用 mvanner template add <git remote> 进行添加",
+                `当前系统暂已无项目模板数据，可使用 ${platform.getProcessEnv("app_name")} template add <git remote> 进行添加`,
             );
         }
     }
     async add(gitLink) {
-        if (!gitLink) {
-            gitLink = await this.handler(inputTemplateUrl());
-        }
+        if (!gitLink) gitLink = await this.handler(inputTemplateUrl());
 
         this.#gitStorage = new GitStorage({
             source: gitLink,
@@ -68,13 +63,13 @@ class Template extends Inquirer {
         this.listenerGitAction();
     }
     async delete(name, source) {
-        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
+        let templateList = platform.getTemplateList(),
             deleteTemplateList = [];
         if (!templateList.length) return this.list();
         if (source.all) {
             const drop = await this.handler(dropCustomerTemplateAll());
             if (!drop) return;
-            basicCommon.deleteFolder(this.#templateDir);
+            basicCommon.removeFileOrDir(this.#templateDir);
             deleteTemplateList = templateList;
         } else {
             name = name.filter((item) => item.trim());
@@ -93,9 +88,7 @@ class Template extends Inquirer {
                 if (!result) return;
 
                 this.deleteMoreProject(projectDict.exists);
-                templateList = basicCommon.readDirPathTypeFile(
-                    this.#templateDir,
-                );
+                templateList = platform.getTemplateList();
                 deleteTemplateList.push(...projectDict.exists);
             }
             if (projectDict.unExists.length && templateList.length) {
@@ -110,12 +103,12 @@ class Template extends Inquirer {
             }
         }
         console.log(
-            `${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!\n`,
+            `\n${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!`,
         );
         this.list();
     }
     async update(name, source) {
-        let templateList = basicCommon.readDirPathTypeFile(this.#templateDir),
+        let templateList = platform.getTemplateList(),
             updateList = [];
 
         if (!templateList.length) return this.list();
@@ -161,23 +154,29 @@ class Template extends Inquirer {
             }
         }
         console.log(
-            `${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
+            `\n${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
         );
     }
     deleteMoreProject(list) {
         list.forEach((item) => {
-            basicCommon.deleteFolder(path.resolve(this.#templateDir, item));
+            basicCommon.removeFileOrDir(path.resolve(this.#templateDir, item));
         });
     }
     async updateMoreProject(list) {
         for (const item of list) {
-            const itemPath = path.resolve(this.#templateDir, item);
-            console.log(`正在更新${item}项目`);
-            await basicCommon.execCommandPro("git pull", {
-                stdio: "inherit",
-                cwd: itemPath,
-            });
-            console.log(`项目${item}更新成功！`);
+            try {
+                const itemPath = path.resolve(this.#templateDir, item);
+                console.log(`\n正在更新${item}项目`);
+                await basicCommon.execCommand("git fetch --all && git pull", {
+                    stdio: "inherit",
+                    cwd: itemPath,
+                });
+                console.log(`项目${item}更新成功！`);
+            } catch (e) {
+                console.log(
+                    `项目${item}更新失败！，错误信息为：${e.message || e}`,
+                );
+            }
         }
     }
     listenerGitAction() {
@@ -210,14 +209,12 @@ class Template extends Inquirer {
                 isMoveCreateTemplateForLocal(this.#gitStorage.storageName),
             );
             if (createLocalProject) {
-                const { storagePath, storageName } = this.#gitStorage;
-                const localPath = path.resolve(process.cwd(), storageName);
+                const projectName = await this.handler(inputProjectName());
+                const { storagePath } = this.#gitStorage;
+                const localPath = path.resolve(process.cwd(), projectName);
                 require("./init").createProject(storagePath, localPath);
             }
         });
-    }
-    getTemplateList() {
-        return basicCommon.readDirPathTypeFile(this.#templateDir);
     }
 }
 

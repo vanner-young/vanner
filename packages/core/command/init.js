@@ -1,115 +1,116 @@
-const fs = require("fs");
 const path = require("path");
-const Inquirer = require("@mvanners/inquirer");
-const GitStorage = require("@mvanners/gitStorage");
-const { basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { basicCommon, platform } = require("@vanner/common");
 const {
     createProjectQuestion,
     inputProjectName,
+    confirmCreateProject,
+    isInstallDependencies,
+    createTemplateType,
+    chooseSingleTemplate,
 } = require("../constance/question");
-const { INIT_PROJECT_VITE_REMOTE } = require("../constance");
-
-const questionDict = {
-    webpack: {
-        vue: {
-            javaScript: "template-vue3",
-            typeScript: "template-vue3-ts",
-        },
-        react: {
-            javaScript: "template-react",
-            typeScript: "template-react-ts",
-        },
-    },
-    vite: {
-        vue: {
-            javaScript: "template-vue",
-            typeScript: "template-vue-ts",
-        },
-        react: {
-            javaScript: "template-react",
-            typeScript: "template-react-ts",
-        },
-    },
-};
+const { INIT_PROJECT_ADDRESS, initProjectDict } = require("../constance");
 
 class Init extends Inquirer {
     #config = {
+        type: "",
+        language: "",
+        buildTools: "",
         projectName: "",
     };
     #gitStorage = null;
-    async start() {
-        this.loadStorage().then(() => this.generatorProjectName());
-    }
-    aliveProject(projectName) {
-        const projectPath = path.resolve(process.cwd(), projectName),
-            existsProject = fs.existsSync(projectPath);
-        return { projectPath, existsProject };
-    }
-    createProject(originPath, projectPath) {
-        basicCommon.copyDirectory(originPath, projectPath);
-        this.handler({
-            type: "confirm",
-            message: "是否需要安装依赖?",
-            default: true,
-        }).then((res) => {
-            const packageCli = platform.getPackageCli(projectPath);
-            if (res) platform.installDependencies(null, projectPath);
+    async start(projectName) {
+        projectName = projectName?.trim?.();
+        if (projectName) this.#config.projectName = projectName;
 
-            console.log("\n执行以下命令运行项目");
-            console.log(`1. cd ${path.basename(projectPath)}`);
-            if (res) {
-                console.log(`2. ${packageCli} run dev`);
+        this.loadStorage().then(async () => {
+            if (!this.#config.projectName) await this.generatorProjectName();
+            // 判断，可创建官方模示例模板，也可创建本地添加的模板
+            const result = await this.handler(createTemplateType());
+            if (result === "official") {
+                this.handler(createProjectQuestion()).then((result) => {
+                    this.#config = { ...this.#config, ...result };
+                    return this.createOfficialTemplate();
+                });
             } else {
-                console.log(`2. ${packageCli} install`);
+                this.handler(
+                    chooseSingleTemplate(platform.getTemplateList()),
+                ).then(({ chooseSingleTemplate }) => {
+                    this.createProject(
+                        platform.getTemplatePathByName(chooseSingleTemplate),
+                        this.#config.projectName,
+                    );
+                });
             }
         });
     }
-    async createOfficialTemplate(projectPath, options) {
-        const { buildTools, type, language } = options;
-        const templateName = platform.dfsParser(questionDict, [
+    async loadStorage() {
+        return new Promise((resolve) => {
+            this.#gitStorage = new GitStorage({
+                source: INIT_PROJECT_ADDRESS,
+                local: path.resolve(
+                    platform.getProcessEnv("app_cache_template_path"),
+                ),
+                isInitPull: require("./config").get("init_storage_pull"),
+            });
+            this.#gitStorage.once("load:end", () => resolve(true));
+        });
+    }
+    async generatorProjectName() {
+        const projectName = await this.handler(inputProjectName());
+        if (basicCommon.exists(projectName)) {
+            console.log("需要创建的项目已存在，请重新输入项目名称：");
+            return this.generatorProjectName();
+        }
+        this.#config.projectName = projectName;
+    }
+    async createOfficialTemplate() {
+        const projectPath = path.resolve(
+            process.cwd(),
+            this.#config.projectName,
+        );
+        const { buildTools, type, language } = this.#config;
+        const templateName = platform.dfsParser(initProjectDict, [
             buildTools,
             type,
             language,
         ]);
         if (!templateName) return console.log("当前配置暂未开放，敬请期待...");
-        console.log(
-            `正在生成中... 模板类型为：${type},  语言类型: ${language}，构建工具为: ${buildTools}`,
-        );
-
-        this.createProject(
-            path.resolve(
-                path.resolve(this.#gitStorage.storagePath, buildTools),
-                templateName,
-            ),
-            projectPath,
-        );
-    }
-    async generatorProjectName() {
-        const projectName = await this.handler(inputProjectName());
-
-        const { existsProject, projectPath } = this.aliveProject(projectName);
-        if (existsProject) {
-            console.log("需要创建的项目已存在，请重新输入项目名称");
-            return this.generatorProjectName();
-        }
-        this.handler(createProjectQuestion).then((res) => {
-            this.#config.projectName = projectName;
-            return this.createOfficialTemplate(projectPath, res);
-        });
-    }
-    async loadStorage() {
-        return new Promise((resolve) => {
-            const appCacheTemplatePath = path.resolve(
-                platform.getProcessEnv("app_cache_template_path"),
+        this.handler(
+            confirmCreateProject({
+                type,
+                language,
+                buildTools,
+                projectName: this.#config.projectName,
+            }),
+        ).then(() => {
+            this.createProject(
+                path.resolve(
+                    path.resolve(this.#gitStorage.storagePath, buildTools),
+                    templateName,
+                ),
+                projectPath,
             );
-
-            this.#gitStorage = new GitStorage({
-                source: INIT_PROJECT_VITE_REMOTE,
-                local: appCacheTemplatePath,
-                isInitPull: require("./config").get("init_storage_pull"),
-            });
-            this.#gitStorage.once("load:end", () => resolve(true));
         });
+    }
+    createProject(originPath, projectPath) {
+        const app_name = platform.getProcessEnv("app_name");
+        basicCommon.copyDirectory(originPath, projectPath);
+        this.handler(isInstallDependencies()).then(
+            async (installDependencies) => {
+                if (installDependencies)
+                    await platform.installDependencies(app_name, projectPath);
+                console.log("\n执行以下命令运行项目");
+                console.log(`1. cd ${path.basename(projectPath)}`);
+                if (installDependencies) {
+                    console.log(`2.${app_name} run dev`);
+                } else {
+                    console.log(`2.${app_name} install`);
+                    console.log(`3.${app_name} run dev`);
+                }
+            },
+        );
     }
 }
 

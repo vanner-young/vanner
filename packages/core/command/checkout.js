@@ -1,7 +1,7 @@
-const { delay } = require("@mvanners/common");
-const Inquirer = require("@mvanners/inquirer");
-const GitStorage = require("@mvanners/gitStorage");
-const { CommitTypeDict } = require("../constance/commandConfig");
+const { delay } = require("@vanner/common");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { commitTypeDict } = require("../constance");
 
 const {
     chooseCommitOrigin,
@@ -23,7 +23,7 @@ class Checkout extends Inquirer {
     };
     #gitStorage;
     get commitType() {
-        return Object.keys(CommitTypeDict);
+        return Object.keys(commitTypeDict);
     }
     start(branchName, source) {
         this.#config.type = source.type;
@@ -101,7 +101,7 @@ class Checkout extends Inquirer {
 
                 if (!type || !this.commitType.includes(type)) {
                     this.#config.type = await this.handler(
-                        chooseOperateType(CommitTypeDict, type),
+                        chooseOperateType(commitTypeDict, type),
                     );
                 }
 

@@ -1,5 +1,5 @@
 {
-    "name": "@mvanners/package",
+    "name": "@vanner/package",
     "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
@@ -10,7 +10,6 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "axios": "^1.7.7",
-        "@mvanners/common": "workspace:^"
+        "@vanner/common": "workspace:^"
     }
 }

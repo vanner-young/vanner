@@ -1,43 +1,33 @@
-const axios = require("axios");
-const { basicCommon, platform } = require("@mvanners/common");
+const { basicCommon, platform } = require("@vanner/common");
 
 class Package {
     execCwd = process.cwd();
     packageCli = "";
     type = "install";
     #packageConfig = {
+        cwd: process.cwd(),
         packageList: [],
         registry: null,
+        packageCli: null,
     };
-    constructor({ packageList, registry }) {
-        this.#packageConfig.packageList = packageList;
+    constructor({ packageList, registry, cwd, packageCli }) {
+        this.#packageConfig.cwd = cwd;
+        this.#packageConfig.packageCli = packageCli;
         this.#packageConfig.registry = registry;
-    }
-    async getPackageMangerCliName() {
-        try {
-            const pnpmDependencies = await basicCommon.getExecCommandResult(
-                "pnpm list -r",
-                { cwd: this.execCwd },
-            );
-            if (pnpmDependencies.trim()) this.packageCli = "pnpm";
-            else throw new Error("");
-        } catch (e) {
-            this.packageCli = platform.getPackageCli(this.execCwd);
-        }
-        if (!this.packageCli)
-            throw new Error(
-                "缺少包管理工具(npm | yarn | pnpm)，请检查包管理工具后重试",
-            );
+        this.#packageConfig.packageList = packageList;
     }
     async invalidProject(cb) {
-        this.execCwd = await platform.findProjectParentExecCwd(this.execCwd);
-        await this.getPackageMangerCliName();
+        const { cwd, packageCli } = this.#packageConfig;
+        if (!cwd || !packageCli)
+            throw new Error("当前目录不是一个有效项目，请检查后重试");
+
+        if (!platform.verifyPackageCliName(packageCli))
+            throw new Error(
+                `包管理器无效, 仅支持${basicCommon.packageMangerViewer.keys().toArray().join("、")}, 当前使用的为:${packageCli}`,
+            );
 
         if (this.#packageConfig.registry) {
-            const validUrl = basicCommon.isValidUrl(
-                this.#packageConfig.registry,
-            );
-            if (!validUrl) {
+            if (!basicCommon.isValidUrl(this.#packageConfig.registry)) {
                 console.log("当前默认的registry链接格式无效，已重置");
                 this.#packageConfig.registry = null;
             }
@@ -45,60 +35,52 @@ class Package {
         cb();
     }
     async confirmRegistry() {
-        try {
-            const result = await basicCommon.getExecCommandResult(
-                `${this.packageCli} config get registry`,
-                { cwd: this.execCwd },
-            );
-            if (basicCommon.isValidUrl(result)) {
-                const response = await axios.get(result, {
-                    timeout: Number(
-                        platform.getProcessEnv("request_timeout") || 3000,
-                    ),
-                });
-                if (response.status === 200) return result;
-            }
-            throw new Error("");
-        } catch (e) {
-            return this.#packageConfig.registry;
-        }
+        const result = await basicCommon.execCommand(
+            `${this.#packageConfig.packageCli} config get registry`,
+            { cwd: this.#packageConfig.cwd },
+        );
+        const isResponse = await platform.responseUrl(result.trim(), {
+            timeout: Number(platform.getProcessEnv("request_timeout")) || 1000,
+        });
+        if (isResponse) return result;
+        else return this.#packageConfig.registry;
     }
     async initAction() {
         const registry = await this.confirmRegistry();
         platform.installDependencies(
-            this.packageCli,
-            this.execCwd,
-            null,
+            this.#packageConfig.packageCli,
+            this.#packageConfig.cwd,
+            [],
             registry,
         );
     }
     async packageNameAction(packageList) {
+        if (!packageList.length)
+            throw new Error("包名称不可为空, 请输入后重试");
         const registry = await this.confirmRegistry();
-        if (this.type === "install")
-            platform.installDependencies(
-                this.packageCli,
-                this.execCwd,
-                packageList,
-                registry,
-            );
-        else
-            platform.uninstallDependencies(
-                this.packageCli,
-                this.execCwd,
-                packageList,
-                registry,
-            );
+        const handler =
+            this.type === "install"
+                ? platform.installDependencies
+                : platform.uninstallDependencies;
+
+        handler(
+            this.#packageConfig.packageCli,
+            this.#packageConfig.cwd,
+            packageList || [],
+            registry,
+        );
     }
     action(type) {
         if (type) this.type = type;
         this.invalidProject(() => {
-            if (
+            const isInitInstall =
                 !this.#packageConfig.packageList.length &&
-                this.type === "install"
-            )
+                this.type === "install";
+            if (isInitInstall) {
                 return this.initAction();
-
-            this.packageNameAction(this.#packageConfig.packageList);
+            } else {
+                this.packageNameAction(this.#packageConfig.packageList);
+            }
         });
     }
 }

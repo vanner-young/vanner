@@ -1,7 +1,7 @@
-const Inquirer = require("@mvanners/inquirer");
-const GitStorage = require("@mvanners/gitStorage");
-const { CommitTypeDict } = require("../constance/commandConfig");
-const { delay, basicCommon } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { commitTypeDict } = require("../constance");
+const { delay, basicCommon } = require("@vanner/common");
 const Config = require("./config");
 
 const {
@@ -32,7 +32,7 @@ class Branch extends Inquirer {
         notDelBranch: ["master"],
     };
     get commitType() {
-        return Object.keys(CommitTypeDict);
+        return Object.keys(commitTypeDict);
     }
     start(type, ...args) {
         const typeHandler = new Map([
@@ -42,7 +42,10 @@ class Branch extends Inquirer {
             ["status", this.statusCurrentBranch],
         ]);
         if (typeHandler.has(type)) {
-            this.#delBranchSecure.open = !!Config.getConfig("branch_secure");
+            branch_secure = Config.getConfigResult("branch_secure");
+            if (branch_secure === undefined)
+                throw new Error("invalid branch_secure...");
+            this.#delBranchSecure.open = !!branch_secure;
             this.invalid().then(() => {
                 typeHandler.get(type).call(this, ...args);
             });
@@ -115,7 +118,7 @@ class Branch extends Inquirer {
             const { type } = this.#addConfig;
             if (!type || !this.commitType.includes(type)) {
                 this.#addConfig.type = await this.handler(
-                    chooseOperateType(CommitTypeDict, type),
+                    chooseOperateType(commitTypeDict, type),
                 );
             }
 

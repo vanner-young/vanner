@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const EventEmitter = require("events");
-const { basicCommon, platform } = require("@mvanners/common");
+const { basicCommon, platform } = require("@vanner/common");
 
 class GitStorage extends EventEmitter {
     #config = {
@@ -13,6 +13,15 @@ class GitStorage extends EventEmitter {
         isInitPull: false, // 是否在初始化时，拉取一下仓库的代码
         init: false, //仓库是否初始化过
     };
+    get storageName() {
+        return this.#config.storageName;
+    }
+    get storagePath() {
+        return this.#config.storagePath;
+    }
+    get remote() {
+        return this.#config.source;
+    }
     constructor(option) {
         super();
         this.hasGit()
@@ -27,7 +36,7 @@ class GitStorage extends EventEmitter {
                 this.#config.branch = branch || "master";
                 this.#config.isInitPull = isInitPull;
                 this.invalid(async () => {
-                    basicCommon.createNotExistsFolder(this.#config.local);
+                    basicCommon.createDir(this.#config.local);
                     await this.load();
                     this.#config.init = true;
                 });
@@ -36,15 +45,7 @@ class GitStorage extends EventEmitter {
                 console.log("当先系统还未安装Git，请安装Git地址后重试");
             });
     }
-    get storageName() {
-        return this.#config.storageName;
-    }
-    get storagePath() {
-        return this.#config.storagePath;
-    }
-    get remote() {
-        return this.#config.source;
-    }
+
     async initLocalStorage(localPath) {
         try {
             this.#config.storagePath = localPath;
@@ -53,13 +54,12 @@ class GitStorage extends EventEmitter {
                 throw new Error("当前项目暂Git源，初始化失败");
             this.emit("load:origin:end", originList);
         } catch (e) {
-            console.log("操作失败。", e.message);
+            console.log("操作失败。", e.message || e);
         }
     }
     async getOriginList() {
-        const source = await basicCommon.getExecCommandResult("git remote -v", {
+        const source = await basicCommon.execCommand("git remote -v", {
             cwd: this.storagePath,
-            stdio: "pipe",
         });
         let pushOriginList = source
             .split("\n")
@@ -83,7 +83,7 @@ class GitStorage extends EventEmitter {
         return gitName.replace(".git", "");
     };
     hasGit() {
-        return basicCommon.getExecCommandResult("git -v");
+        return basicCommon.execCommand("git -v");
     }
     async invalid(cb) {
         const { source, local } = this.#config;
@@ -118,10 +118,10 @@ class GitStorage extends EventEmitter {
         }
     }
     dropStorage() {
-        basicCommon.deleteFolder(this.storagePath);
+        basicCommon.removeFileOrDir(this.storagePath);
     }
     async clone() {
-        await basicCommon.execCommandPro(`git clone ${this.remote}`, {
+        await basicCommon.execCommand(`git clone ${this.remote}`, {
             cwd: this.#config.local,
             stdio: "inherit",
         });
@@ -134,35 +134,31 @@ class GitStorage extends EventEmitter {
     }
     checkout(branch, force = false) {
         if (force) return this.pull(branch);
-        return basicCommon.execCommandPro(`git checkout ${branch}`, {
+        return basicCommon.execCommand(`git checkout ${branch}`, {
             cwd: this.storagePath,
             stdio: "inherit",
         });
     }
     addFile(file) {
-        return basicCommon.execCommandPro(`git add ${file}`, {
+        return basicCommon.execCommand(`git add ${file}`, {
             cwd: this.storagePath,
             stdio: "inherit",
         });
     }
     commit(message) {
-        return basicCommon.execCommandPro(`git commit -m "${message}"`, {
+        return basicCommon.execCommand(`git commit -m "${message}"`, {
             cwd: this.storagePath,
             stdio: "inherit",
         });
     }
     push(origin, branch, option = {}) {
         if (!origin || !branch) throw new Error("push remote have to origin");
-        return basicCommon.execCommandPro(
-            `git push ${origin} ${branch}`,
-            option,
-        );
+        return basicCommon.execCommand(`git push ${origin} ${branch}`, option);
     }
     async diffFile() {
-        const diffString = await basicCommon.getExecCommandResult(
-            "git status -s",
-            { stdio: ["ignore", "pipe", "ignore"] },
-        );
+        const diffString = await basicCommon.execCommand("git status -s", {
+            stdio: ["ignore", "pipe", "ignore"],
+        });
         const result = diffString
             .split("\n")
             .filter((item) => item)
@@ -173,8 +169,7 @@ class GitStorage extends EventEmitter {
         return result;
     }
     async status() {
-        const fileString =
-            await basicCommon.getExecCommandResult("git status --short");
+        const fileString = await basicCommon.execCommand("git status --short");
         return fileString
             .split("\n")
             .map((item) => item.replace("M  ", ""))
@@ -186,20 +181,20 @@ class GitStorage extends EventEmitter {
             branch === -1
                 ? `git pull`
                 : `git fetch --all && git checkout -f ${branch} && git reset origin/${branch} --hard && git pull`;
-        await basicCommon.execCommandPro(command, {
+        await basicCommon.execCommand(command, {
             cwd: this.storagePath,
             stdio: "inherit",
         });
     }
     async getCurrentBranch() {
-        const branch = await basicCommon.getExecCommandResult(
+        const branch = await basicCommon.execCommand(
             "git branch --show-current",
             { cwd: this.#config.storagePath },
         );
         return (branch && branch.replaceAll("\n", "")) || "";
     }
     async getBranchRemote(origin = "") {
-        const branchResult = await basicCommon.getExecCommandResult(
+        const branchResult = await basicCommon.execCommand(
             "git fetch --all && git branch -r",
             { cwd: this.#config.storagePath },
         );
@@ -221,12 +216,9 @@ class GitStorage extends EventEmitter {
             .filter((item) => item);
     }
     async getBranchLocal() {
-        const branchList = await basicCommon.getExecCommandResult(
-            "git branch",
-            {
-                stdio: ["ignore", "pipe", "ignore"],
-            },
-        );
+        const branchList = await basicCommon.execCommand("git branch", {
+            stdio: ["ignore", "pipe", "ignore"],
+        });
         return branchList
             .split("\n")
             .map((item) => item.replace("* ", "").trim());
@@ -237,12 +229,9 @@ class GitStorage extends EventEmitter {
         return basicCommon.unionArrayList(remoteBranch, localBranch);
     }
     async getBranch() {
-        const branchList = await basicCommon.getExecCommandResult(
-            `git branch -a`,
-            {
-                stdio: ["ignore", "pipe", "ignore"],
-            },
-        );
+        const branchList = await basicCommon.execCommand(`git branch -a`, {
+            stdio: ["ignore", "pipe", "ignore"],
+        });
         return branchList
             .split("\n")
             .map((item) => item.replace("* ", "").trim());
@@ -258,13 +247,13 @@ class GitStorage extends EventEmitter {
                 }
             }
         }
-        await basicCommon.execCommandPro(
+        await basicCommon.execCommand(
             `git branch --delete ${branchListContent} ${syncRemote && delRemoteBranch.length ? `&& git push ${origin} --delete ${delRemoteBranch.join(" ")}` : ""}`,
             { stdio: "inherit" },
         );
     }
     async getCommitNotPushFileList() {
-        const conteString = await basicCommon.getExecCommandResult(
+        const conteString = await basicCommon.execCommand(
             `git log --branches --not --remotes --name-only`,
             { stdio: ["ignore", "pipe", "ignore"] },
         );
@@ -283,40 +272,37 @@ class GitStorage extends EventEmitter {
     }
 
     async getGitUserName() {
-        const username = await basicCommon.getExecCommandResult(
-            "git config user.name",
-            {
-                cwd: this.#config.storagePath,
-            },
-        );
+        const username = await basicCommon.execCommand("git config user.name", {
+            cwd: this.#config.storagePath,
+        });
         if (username.trim() && !["null", "undefined", "NaN"].includes(username))
             return username.slice(0, 10);
         return false;
     }
 
     async setUserName(username) {
-        return await basicCommon.execCommandPro(
+        return await basicCommon.execCommand(
             `git config user.name ${username}`,
             { stdio: "inherit" },
         );
     }
 
     async checkoutOnBasicOfOriginBranch(origin, branchName, basicOfBranch) {
-        return await basicCommon.execCommandPro(
+        return await basicCommon.execCommand(
             `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
             { stdio: "inherit" },
         );
     }
 
     async checkoutOnBasicOfLocalBranch(branchName, basicOfBranch) {
-        return await basicCommon.execCommandPro(
+        return await basicCommon.execCommand(
             `git checkout -b ${branchName} ${basicOfBranch}`,
             { stdio: "inherit" },
         );
     }
 
     async getNowBranchName() {
-        return await basicCommon.getExecCommandResult(
+        return await basicCommon.execCommand(
             `git rev-parse --abbrev-ref HEAD`,
             { stdio: ["ignore", "pipe", "ignore"] },
         );

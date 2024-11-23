@@ -1,5 +1,5 @@
 {
-    "name": "@mvanners/core",
+    "name": "@vanner/core",
     "version": "0.0.1",
     "description": "",
     "main": "index.js",
@@ -10,11 +10,11 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@mvanners/common": "workspace:^",
-        "@mvanners/gitStorage": "workspace:^",
-        "@mvanners/inquirer": "workspace:^",
-        "@mvanners/package": "workspace:^",
-        "@mvanners/registerCommand": "workspace:^",
-        "@mvanners/config": "workspace:^"
+        "@vanner/common": "workspace:^",
+        "@vanner/gitStorage": "workspace:^",
+        "@vanner/inquirer": "workspace:^",
+        "@vanner/package": "workspace:^",
+        "@vanner/registerCommand": "workspace:^",
+        "@vanner/config": "workspace:^"
     }
 }

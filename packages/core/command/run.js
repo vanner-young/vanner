@@ -1,13 +1,13 @@
 const fs = require("fs");
 const path = require("path");
-const Inquirer = require("@mvanners/inquirer");
-const { filterEmptyArray, basicCommon, platform } = require("@mvanners/common");
+const Inquirer = require("@vanner/inquirer");
+const { filterEmptyArray, basicCommon } = require("@vanner/common");
 const { chooseRunCommand } = require("../constance/question");
 
 class Run extends Inquirer {
     #config = {
-        cwd: process.cwd(),
         env: {},
+        cwd: process.cwd(),
         command: null,
     };
     async start(command, option) {
@@ -18,7 +18,7 @@ class Run extends Inquirer {
     exec() {
         const { command, cwd } = this.#config;
         if (!command || !cwd) return;
-        return basicCommon.execCommandPro(this.#config.command, {
+        return basicCommon.execCommand(this.#config.command, {
             stdio: "inherit",
             cwd,
             env: {
@@ -28,9 +28,14 @@ class Run extends Inquirer {
         });
     }
     async parseCommand(command) {
-        this.#config.cwd = await platform.findProjectParentExecCwd(
+        this.#config.cwd = await basicCommon.findParentFile(
             this.#config.cwd,
+            "package.json",
         );
+        if (!this.#config.cwd)
+            throw new Error(
+                "当前目录及其父级目录不是一个前端项目，请更换路径后重试",
+            );
         const scripts = JSON.parse(
             fs.readFileSync(path.resolve(this.#config.cwd, "package.json")),
             "{}",
@@ -38,7 +43,7 @@ class Run extends Inquirer {
 
         const commandList = Object.keys(scripts);
         if (!commandList.length)
-            return console.log("当前项目下，无运行的命令，请检查后重试。");
+            throw new Error("当前项目下，无运行的命令，请检查后重试");
         if (!commandList.includes(command))
             this.#config.command = await this.handler(
                 chooseRunCommand(
