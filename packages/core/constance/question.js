@@ -419,7 +419,7 @@ export const notDelBranchConfirm = (branchList) => {
     return {
         name: "notDelBranchConfirm",
         type: "confirm",
-        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
+        message: `${branchList.join("、")}为当前所在分支或保护分支，不可删除。是否忽略后继续删除其它分支？`,
         default: false,
     };
 };

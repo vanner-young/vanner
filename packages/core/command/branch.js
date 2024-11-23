@@ -205,28 +205,29 @@ class Branch extends Inquirer {
     async delLocalBranch(branch) {
         if (!branch.length) throw new Error("缺少需要删除的分支列表...");
 
+        const currentBranch = await this.#gitStorage.getCurrentBranch();
         const { open, notDelBranch } = this.#delBranchSecure;
-        if (open) {
-            const notDelBranchList = branch.filter((item) =>
-                notDelBranch.includes(item.toLocaleLowerCase()),
+        const notDelBranchList = branch.filter(
+            (item) =>
+                (open && notDelBranch.includes(item.toLocaleLowerCase())) ||
+                currentBranch === item,
+        );
+        if (notDelBranchList.length) {
+            const delBranchList = basicCommon.differenceArrayList(
+                branch,
+                notDelBranchList,
             );
-            if (notDelBranchList.length) {
-                const delBranchList = basicCommon.differenceArrayList(
-                    branch,
-                    notDelBranchList,
+            if (delBranchList.length) {
+                const continueStep = await this.handler(
+                    notDelBranchConfirm(notDelBranchList),
                 );
-                if (delBranchList.length) {
-                    const continueStep = await this.handler(
-                        notDelBranchConfirm(notDelBranchList),
-                    );
-                    if (continueStep) {
-                        return this.delLocalBranch(delBranchList);
-                    }
-                } else {
-                    return console.log(
-                        `${notDelBranchList.join("、")} 分支不可删除`,
-                    );
+                if (continueStep) {
+                    return this.delLocalBranch(delBranchList);
                 }
+            } else {
+                return console.log(
+                    `\n${notDelBranchList.join("、")} 为当前所在分支或保护分支，删除失败。`,
+                );
             }
         }
 
