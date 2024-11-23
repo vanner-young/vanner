@@ -42,7 +42,7 @@ class Branch extends Inquirer {
             ["status", this.statusCurrentBranch],
         ]);
         if (typeHandler.has(type)) {
-            branch_secure = Config.getConfigResult("branch_secure");
+            const branch_secure = Config.getConfigResult("branch_secure");
             if (branch_secure === undefined)
                 throw new Error("invalid branch_secure...");
             this.#delBranchSecure.open = !!branch_secure;
@@ -260,11 +260,10 @@ class Branch extends Inquirer {
         if (!commitNotPushFile.length && !notCommitFile.length)
             return console.log("\n当前分支暂无变更的文件");
 
-        if (commitNotPushFile.length)
-            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
-
         if (notCommitFile.length)
             console.log(`\n还未提交的文件有：\n${notCommitFile.join("\n")}`);
+        if (commitNotPushFile.length)
+            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
     }
 }
 

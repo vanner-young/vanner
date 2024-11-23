@@ -118,7 +118,7 @@ class Commit extends Inquirer {
                                 await this.#gitStorage.getCommitNotPushFileList();
                             if (!notPushFile.length) {
                                 return console.log(
-                                    "当前路径下暂无变更的文件, 无需提交.",
+                                    "当前路径下暂无变更的文件, 无需提交",
                                 );
                             } else {
                                 const pushFile = await this.handler(
