@@ -60,13 +60,13 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.0";
+var version = "1.0.1";
 var description = "";
-var main$1 = "lib/index.js";
+var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	vanner: "lib/index.js",
+	vanner: "bundle/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -74,9 +74,7 @@ var publishConfig = {
 	registry: "https://registry.npmjs.org/"
 };
 var files = [
-	"lib/**/*",
 	"bundle/**/*",
-	"packages/**/*",
 	"README.md"
 ];
 var license = "MIT";
