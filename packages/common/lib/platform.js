@@ -84,6 +84,7 @@ const installDependencies = (
     targetPath,
     dependencies = [],
     registry = "",
+    commandPadStr = "",
 ) => {
     if (!packageCli || !verifyPackageCliName(packageCli)) {
         packageCli = getPackageCli(targetPath);
@@ -93,12 +94,14 @@ const installDependencies = (
             ? ` ${dependencies.join(" ")}`
             : "",
         registryStr = registry ? ` --registry ${registry}` : "",
-        packageCliStr = packageCli === "pnpm" ? ` -w` : "";
+        packageCliStr =
+            (packageCli === "pnpm" ? ` -w` : "") + ` ${commandPadStr}`;
+
     return mvCommon.execCommand(
         `${packageCli} ${!dependencies.length ? `install` : ["yarn", "pnpm"].includes(packageCli) ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
         {
             cwd: targetPath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         },
     );
 };
@@ -130,7 +133,7 @@ const uninstallDependencies = (
         `${packageCli} ${packageRemoveStr}${dependenciesStr}${packageCliStr}`,
         {
             cwd: targetPath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         },
     );
 };
@@ -155,7 +158,7 @@ const isDriveDirectory = (targetPath) => {
  * **/
 const parentExecHandlerPromise = (targetPath, cb) => {
     return new Promise((resolve) => {
-        if (isDriveDirectory(targetPath)) resolve(false);
+        if (isDriveDirectory(targetPath)) return resolve(false);
 
         const recursionExecHandler = () =>
             resolve(parentExecHandlerPromise(path.dirname(targetPath), cb));
@@ -164,18 +167,18 @@ const parentExecHandlerPromise = (targetPath, cb) => {
             cb(targetPath)
                 .then((result) => {
                     if (!result) throw new Error("");
-                    resolve(result);
+                    return resolve(result);
                 })
                 .catch(() => {
-                    recursionExecHandler();
+                    return recursionExecHandler();
                 });
         } else {
             try {
                 const result = cb(targetPath);
-                if (result) resolve(result);
+                if (result) return resolve(result);
                 else throw new Error("");
             } catch (e) {
-                recursionExecHandler();
+                return recursionExecHandler();
             }
         }
     });
@@ -270,6 +273,13 @@ const getTemplatePathByName = (name) => {
     return path.resolve(getProcessEnv("app_customer_template_path"), name);
 };
 
+/**
+ * 判断一个地址是不是git地址
+ * **/
+const isValidGitUrl = (url) => {
+    return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
+};
+
 module.exports = {
     platForm,
     effectiveAppDataHome,
@@ -291,4 +301,5 @@ module.exports = {
     responseUrl,
     getTemplateList,
     getTemplatePathByName,
+    isValidGitUrl,
 };

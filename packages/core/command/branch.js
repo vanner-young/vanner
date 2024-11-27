@@ -1,7 +1,8 @@
+const fs = require("fs");
 const Inquirer = require("@vanner/inquirer");
 const GitStorage = require("@vanner/gitStorage");
 const { commitTypeDict } = require("../constance");
-const { delay, basicCommon } = require("@vanner/common");
+const { delay, basicCommon, platform } = require("@vanner/common");
 const Config = require("./config");
 
 const {
@@ -15,21 +16,34 @@ const {
     chooseDelLocalBranch,
     syncDelRemoteBranch,
     notDelBranchConfirm,
+    addProjectOriginName,
+    addProjectOriginUrl,
+    addOriginBranch,
+    inputBranchName,
+    pushOrigin,
+    delOriginList,
+    syncRemoteBranch,
+    checkoutBranch,
+    waningSyncRemoteBranchMerge,
 } = require("../constance/question");
 const Push = require("./push");
 
 class Branch extends Inquirer {
     #origin = "";
+    #gitStorage;
     #addConfig = {
         type: "",
         username: "",
         targetBranch: "",
         newBranchName: "",
     };
-    #gitStorage;
     #delBranchSecure = {
         open: true,
         notDelBranch: ["master"],
+    };
+    #addOriginConfig = {
+        name: "",
+        address: "",
     };
     get commitType() {
         return Object.keys(commitTypeDict);
@@ -40,15 +54,20 @@ class Branch extends Inquirer {
             ["add", this.addBranch],
             ["del", this.deleteBranch],
             ["status", this.statusCurrentBranch],
+            ["addOrigin", this.addOrigin],
+            ["delOrigin", this.delOrigin],
         ]);
         if (typeHandler.has(type)) {
             const branch_secure = Config.getConfigResult("branch_secure");
             if (branch_secure === undefined)
                 throw new Error("invalid branch_secure...");
             this.#delBranchSecure.open = !!branch_secure;
-            this.invalid().then(() => {
-                typeHandler.get(type).call(this, ...args);
-            });
+            if (["addOrigin", "delOrigin"].includes(type))
+                return typeHandler.get(type).call(this, ...args);
+            else
+                this.invalid().then(() => {
+                    typeHandler.get(type).call(this, ...args);
+                });
         }
     }
     invalid() {
@@ -80,8 +99,120 @@ class Branch extends Inquirer {
             { local: [], remote: [] },
         );
     }
-    addBranch(branchName, option) {
-        this.#addConfig.type = option.type;
+    async addOrigin(originName, originAddress, cwdPath = false) {
+        return new Promise(async (resolve) => {
+            originName = originName?.trim?.();
+            originAddress = originAddress?.trim?.();
+            this.#addOriginConfig.name =
+                originName || (await this.handler(addProjectOriginName()));
+            this.#addOriginConfig.address =
+                originAddress || (await this.addOriginAddress());
+            let projectCwd =
+                cwdPath || (await platform.findProjectParentExecCwd());
+            if (!fs.existsSync(projectCwd)) projectCwd = process.cwd();
+
+            this.#gitStorage = new GitStorage({
+                local: projectCwd,
+                storagePath: projectCwd,
+                addInitGit: true,
+            });
+            this.#gitStorage.once("load:origin:end", async () => {
+                await this.handlePushLocalFile();
+                await this.#gitStorage.addOrigin(this.#addOriginConfig);
+                await this.#gitStorage.fetch();
+                console.log(
+                    `\nGit源 ${this.#addOriginConfig.name} 创建成功！\n`,
+                );
+                try {
+                    const remoteBranch = await this.#gitStorage.getBranchRemote(
+                        this.#addOriginConfig.name,
+                    );
+                    // 提示创建分支
+                    if (!remoteBranch.length) {
+                        const isAddBranch = await this.handler(
+                            addOriginBranch(this.#addOriginConfig.name),
+                        );
+                        if (isAddBranch) {
+                            const branchName =
+                                await this.handler(inputBranchName());
+                            await this.#gitStorage.createBranch(branchName);
+
+                            const pushBranch = await this.handler(pushOrigin());
+                            if (pushBranch) {
+                                await this.#gitStorage.push(
+                                    this.#addOriginConfig.name,
+                                    branchName,
+                                );
+                            }
+                        }
+                    } else {
+                        const isSyncRemoteBranch = await this.handler(
+                            syncRemoteBranch(
+                                this.#addOriginConfig.name,
+                                remoteBranch,
+                            ),
+                        );
+                        if (isSyncRemoteBranch) {
+                            const branchName = await this.handler(
+                                checkoutBranch(remoteBranch),
+                            );
+
+                            const warningConfirm = await this.handler(
+                                waningSyncRemoteBranchMerge(branchName),
+                            );
+
+                            if (warningConfirm) {
+                                this.#gitStorage.pullRemoteForce(
+                                    this.#addOriginConfig.name,
+                                    branchName,
+                                );
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log(
+                        `\nGit源 ${this.#addOriginConfig.name} 创建失败！`,
+                        e.message || e,
+                    );
+                    this.#gitStorage.removeOrigin(this.#addOriginConfig.name);
+                }
+                return resolve(true);
+            });
+        });
+    }
+    async delOrigin() {
+        let projectCwd = await platform.findProjectParentExecCwd();
+        if (!fs.existsSync(projectCwd)) projectCwd = process.cwd();
+        this.#gitStorage = new GitStorage(projectCwd);
+        this.#gitStorage.once("load:origin:end", async (originList) => {
+            const list = await this.handler(
+                delOriginList(originList.map((item) => item.origin)),
+            );
+            for (const item of list) {
+                await this.#gitStorage.removeOrigin(item);
+            }
+            console.log(
+                `Git源 ${list.join("\n")} 累计 ${list.length} 个删除成功！`,
+            );
+        });
+    }
+    async handlePushLocalFile() {
+        const notPushFile = await this.#gitStorage.getNotCommitFile();
+        if (notPushFile.length) {
+            console.log("\n当前项目下存在未提交的文件，请下提交至暂存区\n");
+            const commitType = await Push.chooseType();
+            const commitMessage = await Push.commitMessage();
+            await this.#gitStorage.addFile(".");
+            await this.#gitStorage.commit(`${commitType}: ${commitMessage}`);
+        }
+    }
+    async addOriginAddress(again = false) {
+        const address = await this.handler(addProjectOriginUrl(again));
+        if (!platform.isValidGitUrl(address))
+            return this.addOriginAddress(true);
+        return address;
+    }
+    addBranch(branchName) {
         this.#addConfig.newBranchName = branchName;
 
         this.chooseOption().then(async () => {
@@ -177,16 +308,16 @@ class Branch extends Inquirer {
         }
         return branchList;
     }
-    async handlerNotPushFile() {
+    async handlerNotPushFile(source = {}) {
         const notPushFile = await this.#gitStorage.getNotCommitFile();
         if (notPushFile.length) {
             const commitPush = await this.handler(
                 alreadyStatusFileCheckout(notPushFile),
             );
             if (!commitPush) process.exit(0);
-            await Push.start();
+            await Push.start(source);
             await delay();
-            console.log("暂存区代码提交完成！\n");
+            console.log("代码提交完成！\n");
         }
     }
     deleteBranch(branch) {
@@ -205,28 +336,29 @@ class Branch extends Inquirer {
     async delLocalBranch(branch) {
         if (!branch.length) throw new Error("缺少需要删除的分支列表...");
 
+        const currentBranch = await this.#gitStorage.getCurrentBranch();
         const { open, notDelBranch } = this.#delBranchSecure;
-        if (open) {
-            const notDelBranchList = branch.filter((item) =>
-                notDelBranch.includes(item.toLocaleLowerCase()),
+        const notDelBranchList = branch.filter(
+            (item) =>
+                (open && notDelBranch.includes(item.toLocaleLowerCase())) ||
+                currentBranch === item,
+        );
+        if (notDelBranchList.length) {
+            const delBranchList = basicCommon.differenceArrayList(
+                branch,
+                notDelBranchList,
             );
-            if (notDelBranchList.length) {
-                const delBranchList = basicCommon.differenceArrayList(
-                    branch,
-                    notDelBranchList,
+            if (delBranchList.length) {
+                const continueStep = await this.handler(
+                    notDelBranchConfirm(notDelBranchList),
                 );
-                if (delBranchList.length) {
-                    const continueStep = await this.handler(
-                        notDelBranchConfirm(notDelBranchList),
-                    );
-                    if (continueStep) {
-                        return this.delLocalBranch(delBranchList);
-                    }
-                } else {
-                    return console.log(
-                        `${notDelBranchList.join("、")} 分支不可删除`,
-                    );
+                if (continueStep) {
+                    return this.delLocalBranch(delBranchList);
                 }
+            } else {
+                return console.log(
+                    `\n${notDelBranchList.join("、")} 为当前所在分支或保护分支，删除失败。`,
+                );
             }
         }
 

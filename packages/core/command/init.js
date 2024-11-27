@@ -9,8 +9,10 @@ const {
     isInstallDependencies,
     createTemplateType,
     chooseSingleTemplate,
+    associationStorage,
 } = require("../constance/question");
 const { INIT_PROJECT_ADDRESS, initProjectDict } = require("../constance");
+const Branch = require("./branch");
 
 class Init extends Inquirer {
     #config = {
@@ -94,15 +96,36 @@ class Init extends Inquirer {
             );
         });
     }
-    createProject(originPath, projectPath) {
+    createProject(originPath, projectName) {
         const app_name = platform.getProcessEnv("app_name");
-        basicCommon.copyDirectory(originPath, projectPath);
+        basicCommon.copyDirectory(
+            originPath,
+            projectName,
+            true,
+            (sourcePath) => !sourcePath.includes(".git"),
+        );
         this.handler(isInstallDependencies()).then(
             async (installDependencies) => {
-                if (installDependencies)
-                    await platform.installDependencies(app_name, projectPath);
+                if (installDependencies) {
+                    await platform.installDependencies(
+                        app_name,
+                        path.resolve(process.cwd(), projectName),
+                        [],
+                        "",
+                        `--dir ${path.resolve(process.cwd(), projectName)}`,
+                    );
+                }
+
+                const associationGit = await this.handler(associationStorage());
+                if (associationGit)
+                    await Branch.addOrigin(
+                        "origin",
+                        null,
+                        path.resolve(process.cwd(), projectName),
+                    );
+
                 console.log("\n执行以下命令运行项目");
-                console.log(`1. cd ${path.basename(projectPath)}`);
+                console.log(`1. cd ${path.basename(projectName)}`);
                 if (installDependencies) {
                     console.log(`2.${app_name} run dev`);
                 } else {

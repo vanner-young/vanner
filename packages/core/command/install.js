@@ -3,13 +3,10 @@ const { basicCommon, platform } = require("@vanner/common");
 
 class Install {
     async start(packageList, option) {
-        if (option.cli === "li")
-            return console.log(`error: unknown option '-cli'`);
+        const execPath = option.dir
+            ? option.dir
+            : await basicCommon.findParentFile(process.cwd(), "package.json");
 
-        const execPath = await basicCommon.findParentFile(
-            process.cwd(),
-            "package.json",
-        );
         new Package({
             packageList,
             cwd: execPath,

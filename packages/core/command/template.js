@@ -168,7 +168,7 @@ class Template extends Inquirer {
                 const itemPath = path.resolve(this.#templateDir, item);
                 console.log(`\n正在更新${item}项目`);
                 await basicCommon.execCommand("git fetch --all && git pull", {
-                    stdio: "inherit",
+                    stdio: ["inherit", "inherit", "pipe"],
                     cwd: itemPath,
                 });
                 console.log(`项目${item}更新成功！`);

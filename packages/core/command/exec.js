@@ -19,7 +19,7 @@ class Exec extends Inquirer {
 
     execCommand(source, option) {
         basicCommon.execCommand(source.join(" "), {
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
             cwd: option.dir || process.cwd(),
         });
     }
@@ -52,7 +52,7 @@ class Exec extends Inquirer {
         }
         for (const item of execFile) {
             basicCommon.execCommand(`node ${item}`, {
-                stdio: "inherit",
+                stdio: ["inherit", "inherit", "pipe"],
                 cwd: option.dir || process.cwd(),
             });
             console.log(`exec file ${item} is end...`);

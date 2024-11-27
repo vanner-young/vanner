@@ -268,6 +268,7 @@ export const commitMessage = () => {
         name: "commitMessage",
         type: "input",
         message: "请输入本次提交备注信息: ",
+        required: true,
     };
 };
 
@@ -419,7 +420,7 @@ export const notDelBranchConfirm = (branchList) => {
     return {
         name: "notDelBranchConfirm",
         type: "confirm",
-        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
+        message: `${branchList.join("、")}为当前所在分支或保护分支，不可删除。是否忽略后继续删除其它分支？`,
         default: false,
     };
 };
@@ -475,4 +476,90 @@ export const chooseSingleTemplate = (list) => {
             })),
         },
     ];
+};
+
+export const addProjectOriginName = () => {
+    return {
+        name: "name",
+        type: "input",
+        message: "请输入源的名称：",
+        required: true,
+    };
+};
+
+export const addProjectOriginUrl = (again = false) => {
+    return {
+        name: "address",
+        type: "input",
+        message: again
+            ? "输入Git地址不合法，请重新输入："
+            : "请输入源的地址（Git仓库地址）：",
+        required: true,
+    };
+};
+
+export const addOriginBranch = (origin) => {
+    return {
+        name: "isAddBranch",
+        type: "confirm",
+        message: `当前源：${origin} 还未存在分支，是否创建？`,
+        default: true,
+    };
+};
+
+export const inputBranchName = () => {
+    return {
+        name: "branchName",
+        type: "input",
+        message: `请输入分支名称：`,
+        required: true,
+    };
+};
+
+export const addOriginSuccessCheckoutBranch = (origin) => {
+    return {
+        name: "branchName",
+        type: "confirm",
+        message: `Git源：${origin} 添加成功，且该源已存在分支, 是否需要切换？`,
+        default: false,
+    };
+};
+
+export const delOriginList = (originList) => {
+    return {
+        name: "originList",
+        type: "checkbox",
+        message: "请选择需要删除的源：",
+        choices: originList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+export const syncRemoteBranch = (origin, branchList) => {
+    return {
+        name: "syncRemoteBranch",
+        type: "confirm",
+        default: false,
+        message: `添加的Git源 ${origin} 已存在 ${branchList.join("、")} 分支，是否需要将本地分支代码进行合并？`,
+    };
+};
+
+export const waningSyncRemoteBranchMerge = (branch) => {
+    return {
+        name: "syncRemoteBranch",
+        type: "confirm",
+        default: false,
+        message: `由于与新增的源与本地不属于同源，此操作将会强制合并本地代码与远程分支 ${branch} ，请确认在无冲突后进行合并，反之可能存在风险，确认要继续？`,
+    };
+};
+
+export const associationStorage = () => {
+    return {
+        name: "associationGitStorage",
+        type: "confirm",
+        default: false,
+        message: "是否需要关联至Git仓库？",
+    };
 };

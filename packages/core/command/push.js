@@ -56,22 +56,25 @@ class Commit extends Inquirer {
                     this.#gitStorage.commit(`${type}: ${message}`);
 
                     await basicCommon.sleep(1000);
+                    if (source.notPushOrigin) return resolve(true);
                     if (!(await this.handler(pushOrigin()))) return;
                 }
-                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
+                this.#gitStorage.push(origin, branch, {
+                    stdio: ["inherit", "inherit", "pipe"],
+                });
                 resolve(this.#config);
             });
         });
     }
 
-    async chooseType({ type }) {
+    async chooseType({ type } = {}) {
         if (type) {
             const typeExists = Object.keys(commitTypeDict).includes(
                 type.toLocaleLowerCase(),
             );
-            if (typeExists) return (this.#config.type = type);
+            if (typeExists) return type;
         }
-        this.#config.type = await this.handler(
+        return await this.handler(
             commitType(
                 type &&
                     `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
@@ -175,7 +178,7 @@ class Commit extends Inquirer {
                 }
 
                 if (!this.push && !this.onlyPush) {
-                    await this.chooseType(source);
+                    this.#config.type = await this.chooseType(source);
                     await this.chooseCommitFile(source);
                     if (!this.#config.file.trim()) return;
 
@@ -188,9 +191,7 @@ class Commit extends Inquirer {
     }
 
     async commitMessage() {
-        const value = await this.handler(commitMessage());
-        if (!value) return this.commitMessage();
-        return value;
+        return await this.handler(commitMessage());
     }
 }
 
