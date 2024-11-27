@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.6";
+var version = "1.0.0";
 var description = "";
 var main$1 = "lib/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
@@ -655,7 +655,7 @@ function requireCommon () {
 		        const result = node_child_process.spawnSync(commandList[0], commandList.slice(1), spawnOption);
 		        const stdout = result.stdout?.trim?.();
 		        const error = result.error || result.stderr;
-		        if (error || ['error', 'Error'].includes(error))
+		        if (error && ['error', 'Error'].includes(error))
 		            reject(error);
 		        else
 		            return resolve(stdout);
