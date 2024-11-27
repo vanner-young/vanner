@@ -91,7 +91,10 @@ var engines = {
 };
 var keywords = [
 	"cli",
-	"commander"
+	"commander",
+	"template",
+	"git",
+	"manager"
 ];
 var workspaces = [
 	"packages/**/*"
@@ -651,10 +654,11 @@ function requireCommon () {
 		            return reject('exec command cwd is not exists...');
 		        const result = node_child_process.spawnSync(commandList[0], commandList.slice(1), spawnOption);
 		        const stdout = result.stdout?.trim?.();
-		        if (result.error || (result.stderr && !stdout))
-		            reject(result.error || result.stderr);
+		        const error = result.error || result.stderr;
+		        if (error || ['error', 'Error'].includes(error))
+		            reject(error);
 		        else
-		            resolve(stdout);
+		            return resolve(stdout);
 		    });
 		};
 		/**
@@ -18924,7 +18928,7 @@ function requirePlatform () {
 	        `${packageCli} ${!dependencies.length ? `install` : ["yarn", "pnpm"].includes(packageCli) ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
 	        {
 	            cwd: targetPath,
-	            stdio: ["ignore", "inherit", "pipe"],
+	            stdio: ["inherit", "inherit", "pipe"],
 	        },
 	    );
 	};
@@ -18955,7 +18959,7 @@ function requirePlatform () {
 	        `${packageCli} ${packageRemoveStr}${dependenciesStr}${packageCliStr}`,
 	        {
 	            cwd: targetPath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        },
 	    );
 	};
@@ -43719,7 +43723,7 @@ function requireExec () {
 
 	    execCommand(source, option) {
 	        basicCommon.execCommand(source.join(" "), {
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	            cwd: option.dir || process.cwd(),
 	        });
 	    }
@@ -43752,7 +43756,7 @@ function requireExec () {
 	        }
 	        for (const item of execFile) {
 	            basicCommon.execCommand(`node ${item}`, {
-	                stdio: "inherit",
+	                stdio: ["inherit", "inherit", "pipe"],
 	                cwd: option.dir || process.cwd(),
 	            });
 	            console.log(`exec file ${item} is end...`);
@@ -43844,7 +43848,7 @@ function requireLib$2 () {
 	                `Git源 ${name} 已存在，添加源失败！${originList.join("、")}`,
 	            );
 	        return basicCommon.execCommand(`git remote add ${name} ${address}`, {
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	            cwd: this.#config.local || this.#config.storagePath,
 	        });
 	    }
@@ -43853,7 +43857,7 @@ function requireLib$2 () {
 	    async removeOrigin(name) {
 	        if (!name) throw new Error("缺少源名称，删除源失败！");
 	        return basicCommon.execCommand(`git remote remove ${name}`, {
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	            cwd: this.#config.local || this.#config.storagePath,
 	        });
 	    }
@@ -43947,7 +43951,7 @@ function requireLib$2 () {
 	    async clone() {
 	        await basicCommon.execCommand(`git clone ${this.remote}`, {
 	            cwd: this.#config.local,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 
 	        if (!platform.isActiveEmptyGitProject(this.storagePath))
@@ -43960,19 +43964,19 @@ function requireLib$2 () {
 	        if (force) return this.pull(branch);
 	        return basicCommon.execCommand(`git checkout ${branch}`, {
 	            cwd: this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    addFile(file) {
 	        return basicCommon.execCommand(`git add ${file}`, {
 	            cwd: this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    commit(message) {
 	        return basicCommon.execCommand(`git commit -m "${message}"`, {
 	            cwd: this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    push(origin, branch, option = {}) {
@@ -44007,7 +44011,7 @@ function requireLib$2 () {
 
 	        return basicCommon.execCommand(`git pull ${origin} ${branch}`, {
 	            cwd: this.local || this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    async pullRemoteForce(origin, branch) {
@@ -44017,7 +44021,7 @@ function requireLib$2 () {
 	            `git pull ${origin} ${branch} --allow-unrelated-histories`,
 	            {
 	                cwd: this.local || this.storagePath,
-	                stdio: "inherit",
+	                stdio: ["inherit", "inherit", "pipe"],
 	            },
 	        );
 	    }
@@ -44029,13 +44033,13 @@ function requireLib$2 () {
 	                : `git fetch --all && git checkout -f ${branch} && git reset origin/${branch} --hard && git pull`;
 	        await basicCommon.execCommand(command, {
 	            cwd: this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    async fetch() {
 	        await basicCommon.execCommand(`git fetch --all`, {
 	            cwd: this.local || this.storagePath,
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 	    async getCurrentBranch() {
@@ -44101,7 +44105,7 @@ function requireLib$2 () {
 	        }
 	        await basicCommon.execCommand(
 	            `git branch --delete ${branchListContent} ${syncRemote && delRemoteBranch.length ? `&& git push ${origin} --delete ${delRemoteBranch.join(" ")}` : ""}`,
-	            { stdio: "inherit" },
+	            { stdio: ["inherit", "inherit", "pipe"] },
 	        );
 	    }
 	    async getCommitNotPushFileList() {
@@ -44135,27 +44139,27 @@ function requireLib$2 () {
 	    async setUserName(username) {
 	        return await basicCommon.execCommand(
 	            `git config user.name ${username}`,
-	            { stdio: "inherit" },
+	            { stdio: ["inherit", "inherit", "pipe"] },
 	        );
 	    }
 
 	    async createBranch(branchName) {
 	        return await basicCommon.execCommand(`git checkout -b ${branchName}`, {
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
 
 	    async checkoutOnBasicOfOriginBranch(origin, branchName, basicOfBranch) {
 	        return await basicCommon.execCommand(
 	            `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
-	            { stdio: "inherit" },
+	            { stdio: ["inherit", "inherit", "pipe"] },
 	        );
 	    }
 
 	    async checkoutOnBasicOfLocalBranch(branchName, basicOfBranch) {
 	        return await basicCommon.execCommand(
 	            `git checkout -b ${branchName} ${basicOfBranch}`,
-	            { stdio: "inherit" },
+	            { stdio: ["inherit", "inherit", "pipe"] },
 	        );
 	    }
 
@@ -44238,7 +44242,9 @@ function requirePush () {
 	                    if (source.notPushOrigin) return resolve(true);
 	                    if (!(await this.handler(pushOrigin()))) return;
 	                }
-	                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
+	                this.#gitStorage.push(origin, branch, {
+	                    stdio: ["inherit", "inherit", "pipe"],
+	                });
 	                resolve(this.#config);
 	            });
 	        });
@@ -45112,7 +45118,7 @@ function requireTemplate () {
 	                const itemPath = path.resolve(this.#templateDir, item);
 	                console.log(`\n正在更新${item}项目`);
 	                await basicCommon.execCommand("git fetch --all && git pull", {
-	                    stdio: "inherit",
+	                    stdio: ["inherit", "inherit", "pipe"],
 	                    cwd: itemPath,
 	                });
 	                console.log(`项目${item}更新成功！`);
@@ -45431,7 +45437,7 @@ function requireRun () {
 	        const { command, cwd } = this.#config;
 	        if (!command || !cwd) return;
 	        return basicCommon.execCommand(this.#config.command, {
-	            stdio: "inherit",
+	            stdio: ["inherit", "inherit", "pipe"],
 	            cwd,
 	            env: {
 	                ...process.env,

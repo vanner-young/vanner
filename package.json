@@ -1,6 +1,6 @@
 {
     "name": "vanner",
-    "version": "1.0.6",
+    "version": "1.0.0",
     "description": "",
     "main": "lib/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
@@ -31,7 +31,10 @@
     },
     "keywords": [
         "cli",
-        "commander"
+        "commander",
+        "template",
+        "git",
+        "manager"
     ],
     "workspaces": [
         "packages/**/*"
