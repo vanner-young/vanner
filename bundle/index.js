@@ -10,13 +10,13 @@ var require$$3$1 = require('node:child_process');
 var require$$0$4 = require('util');
 var require$$1$2 = require('stream');
 var require$$3$2 = require('http');
-var require$$4$1 = require('https');
+var require$$4$2 = require('https');
 var require$$0$5 = require('url');
-var require$$4$2 = require('assert');
+var require$$4$3 = require('assert');
 var require$$7$1 = require('zlib');
 var require$$9 = require('events');
 var require$$0$7 = require('node:events');
-var require$$4$3 = require('node:process');
+var require$$4$4 = require('node:process');
 var require$$0$8 = require('node:async_hooks');
 var require$$0$9 = require('node:tty');
 var require$$0$a = require('tty');
@@ -60,14 +60,13 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var cName = "vanner";
 var version = "1.0.6";
 var description = "";
-var main$1 = "bundle/index.js";
+var main$1 = "lib/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	vanner: "bundle/index.js",
+	vanner: "lib/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -109,7 +108,6 @@ var devDependencies = {
 };
 var require$$0$2 = {
 	name: name,
-	cName: cName,
 	version: version,
 	description: description,
 	main: main$1,
@@ -383,8 +381,10 @@ function requireCommon () {
 		        return list;
 		    return list.filter((item) => {
 		        const itemPath = path.resolve(targetPath, item);
-		        const stat = fs.statSync(itemPath).isDirectory();
-		        return type === 'file' ? !stat : stat;
+		        const stat = fs.statSync(itemPath);
+		        if (typeof type !== 'string')
+		            return type(itemPath, stat);
+		        return type === 'file' ? !stat.isDirectory() : stat.isDirectory();
 		    });
 		};
 		/**
@@ -460,15 +460,17 @@ function requireCommon () {
 		    for (const entry of entries) {
 		        const sourcePath = path.resolve(origin, entry.name);
 		        const destPath = path.resolve(targetPath, entry.name);
-		        if (entry.isDirectory()) {
-		            copyDirectory(sourcePath, destPath, cover, filterCb);
+		        if (isType(filterCb, 'function') &&
+		            !filterCb(sourcePath, destPath)) {
+		            continue;
 		        }
 		        else {
-		            if (isType(filterCb, 'function') &&
-		                !filterCb(sourcePath, destPath))
-		                continue;
-		            else
+		            if (entry.isDirectory()) {
+		                copyDirectory(sourcePath, destPath, cover, filterCb);
+		            }
+		            else {
 		                copyFile(sourcePath, destPath, cover);
+		            }
 		        }
 		    }
 		};
@@ -573,22 +575,22 @@ function requireCommon () {
 		                .then((result) => {
 		                if (!result)
 		                    throw new Error('');
-		                resolve(result);
+		                return resolve(result);
 		            })
 		                .catch(() => {
-		                recursionExecHandler();
+		                return recursionExecHandler();
 		            });
 		        }
 		        else {
 		            try {
 		                const result = cb(targetPath);
 		                if (result)
-		                    resolve(result);
+		                    return resolve(result);
 		                else
 		                    throw new Error('');
 		            }
 		            catch (e) {
-		                recursionExecHandler();
+		                return recursionExecHandler();
 		            }
 		        }
 		    });
@@ -617,6 +619,21 @@ function requireCommon () {
 		        return result ? cwd : result;
 		    });
 		};
+		/**
+		 * 给定一个目录，返回这个目录的根目录
+		 * @param { string } value 给定的目录字符串
+		 * @returns { string } 根目录字符串
+		 * **/
+		const findRootParentPath = (value) => {
+		    if (!value.trim())
+		        return value;
+		    value = value.replaceAll('//', '/');
+		    const parentPath = path.dirname(value);
+		    if (['.', '/'].includes(parentPath))
+		        return value;
+		    else
+		        return findRootParentPath(parentPath);
+		};
 
 		/**
 		 * 使用子进程执行一条命令
@@ -633,10 +650,11 @@ function requireCommon () {
 		        if (!fs.existsSync(spawnOption.cwd || ''))
 		            return reject('exec command cwd is not exists...');
 		        const result = node_child_process.spawnSync(commandList[0], commandList.slice(1), spawnOption);
-		        if (result.stderr)
-		            reject(result.stderr);
+		        const stdout = result.stdout?.trim?.();
+		        if (result.error || (result.stderr && !stdout))
+		            reject(result.error || result.stderr);
 		        else
-		            resolve(result.stdout?.trim?.());
+		            resolve(stdout);
 		    });
 		};
 		/**
@@ -891,6 +909,7 @@ function requireCommon () {
 		exports.execCommand = execCommand;
 		exports.exists = exists;
 		exports.findParentFile = findParentFile;
+		exports.findRootParentPath = findRootParentPath;
 		exports.flatJSON = flatJSON;
 		exports.getAppData = getAppData;
 		exports.getHome = getHome;
@@ -12670,7 +12689,7 @@ function requireForm_data () {
 	var util = require$$0$4;
 	var path = require$$1$3;
 	var http = require$$3$2;
-	var https = require$$4$1;
+	var https = require$$4$2;
 	var parseUrl = require$$0$5.parse;
 	var fs = require$$0$6;
 	var Stream = require$$1$2.Stream;
@@ -13321,9 +13340,9 @@ function requireFollowRedirects () {
 	var url = require$$0$5;
 	var URL = url.URL;
 	var http = require$$3$2;
-	var https = require$$4$1;
+	var https = require$$4$2;
 	var Writable = require$$1$2.Writable;
-	var assert = require$$4$2;
+	var assert = require$$4$3;
 	var debug = requireDebug();
 
 	// Preventive platform detection
@@ -14018,7 +14037,7 @@ function requireAxios () {
 	const url = require$$0$5;
 	const proxyFromEnv = requireProxyFromEnv();
 	const http = require$$3$2;
-	const https = require$$4$1;
+	const https = require$$4$2;
 	const util = require$$0$4;
 	const followRedirects = requireFollowRedirects();
 	const zlib = require$$7$1;
@@ -18888,22 +18907,24 @@ function requirePlatform () {
 	    targetPath,
 	    dependencies = [],
 	    registry = "",
+	    commandPadStr = "",
 	) => {
 	    if (!packageCli || !verifyPackageCliName(packageCli)) {
 	        packageCli = getPackageCli(targetPath);
 	        console.log("包管理器无效，已重置为：", packageCli);
 	    }
-
 	    const dependenciesStr = dependencies.length
 	            ? ` ${dependencies.join(" ")}`
 	            : "",
 	        registryStr = registry ? ` --registry ${registry}` : "",
-	        packageCliStr = packageCli === "pnpm" ? ` -w` : "";
+	        packageCliStr =
+	            (packageCli === "pnpm" ? ` -w` : "") + ` ${commandPadStr}`;
+
 	    return mvCommon.execCommand(
 	        `${packageCli} ${!dependencies.length ? `install` : ["yarn", "pnpm"].includes(packageCli) ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
 	        {
 	            cwd: targetPath,
-	            stdio: "inherit",
+	            stdio: ["ignore", "inherit", "pipe"],
 	        },
 	    );
 	};
@@ -18959,7 +18980,7 @@ function requirePlatform () {
 	 * **/
 	const parentExecHandlerPromise = (targetPath, cb) => {
 	    return new Promise((resolve) => {
-	        if (isDriveDirectory(targetPath)) resolve(false);
+	        if (isDriveDirectory(targetPath)) return resolve(false);
 
 	        const recursionExecHandler = () =>
 	            resolve(parentExecHandlerPromise(path.dirname(targetPath), cb));
@@ -18968,18 +18989,18 @@ function requirePlatform () {
 	            cb(targetPath)
 	                .then((result) => {
 	                    if (!result) throw new Error("");
-	                    resolve(result);
+	                    return resolve(result);
 	                })
 	                .catch(() => {
-	                    recursionExecHandler();
+	                    return recursionExecHandler();
 	                });
 	        } else {
 	            try {
 	                const result = cb(targetPath);
-	                if (result) resolve(result);
+	                if (result) return resolve(result);
 	                else throw new Error("");
 	            } catch (e) {
-	                recursionExecHandler();
+	                return recursionExecHandler();
 	            }
 	        }
 	    });
@@ -19057,6 +19078,30 @@ function requirePlatform () {
 	    }
 	};
 
+	/**
+	 * 获取自定义模板路径
+	 * **/
+	const getTemplateList = () => {
+	    return mvCommon.readForTypeFileDir(
+	        getProcessEnv("app_customer_template_path"),
+	        "dir",
+	    );
+	};
+
+	/**
+	 * 获取某个自定义模板的路径
+	 * **/
+	const getTemplatePathByName = (name) => {
+	    return path.resolve(getProcessEnv("app_customer_template_path"), name);
+	};
+
+	/**
+	 * 判断一个地址是不是git地址
+	 * **/
+	const isValidGitUrl = (url) => {
+	    return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
+	};
+
 	platform = {
 	    platForm,
 	    effectiveAppDataHome,
@@ -19076,6 +19121,9 @@ function requirePlatform () {
 	    uninstallDependencies,
 	    verifyPackageCliName,
 	    responseUrl,
+	    getTemplateList,
+	    getTemplatePathByName,
+	    isValidGitUrl,
 	};
 	return platform;
 }
@@ -19149,11 +19197,11 @@ function requireConstance () {
 	hasRequiredConstance = 1;
 	const path = require$$1$3;
 	const { basicCommon: common } = requireLib$8();
-	const { cName } = require$$0$2;
+	const { name } = require$$0$2;
 
 	const basicConfig = {
 	    SUPPORT_SYSTEM: ["win32"], // 支持的系统平台
-	    APP_DIR_NAME: cName, // APP缓存目录名称
+	    APP_DIR_NAME: "." + name, // APP缓存目录名称
 	    APP_CACHE_NAME: ".Cache",
 	    SOURCE_FILE_NAME: ".mv.cli.rc", // APP配置文件名称
 	    APP_DESCRIPTION: "一款便捷的项目开发管理工具", // 脚手架简介
@@ -19215,11 +19263,19 @@ function requireConstance () {
 
 	// 缓存目录路径
 	const APP_CACHE_PATH = path.resolve(HOME_PATH, basicConfig.APP_DIR_NAME);
-	// 自定义模板路径
+
+	// 项目模板路径
 	const APP_TEMPLATE_PATH = path.resolve(
-	    HOME_PATH,
+	    APP_CACHE_PATH,
 	    basicConfig.INIT_PROJECT_TEMPLATE_DIR_NAME,
 	);
+
+	// 项目自定义模板路径
+	const CUSTOMER_TEMPLATE_PATH = path.resolve(
+	    APP_TEMPLATE_PATH,
+	    basicConfig.INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
+	);
+
 	// 项目配置文件路径
 	const APP_CONFIG_PATH = path.resolve(
 	    APP_CACHE_PATH,
@@ -19231,6 +19287,7 @@ function requireConstance () {
 	    APP_CACHE_PATH,
 	    APP_TEMPLATE_PATH,
 	    APP_CONFIG_PATH,
+	    CUSTOMER_TEMPLATE_PATH,
 	    defaultConfigModuleContent,
 	    commitTypeDict,
 	    initProjectDict,
@@ -20441,7 +20498,7 @@ function requireCommand$2 () {
 	const childProcess = require$$3$1;
 	const path = require$$1$1;
 	const fs = require$$0$3;
-	const process = require$$4$3;
+	const process = require$$4$4;
 
 	const { Argument, humanReadableArgName } = requireArgument();
 	const { CommanderError } = requireError();
@@ -23530,7 +23587,7 @@ function requireCommonjs () {
 		// process.env dot-notation access prints:
 		// Property 'TERM' comes from an index signature, so it must be accessed with ['TERM'].ts(4111)
 		/* eslint dot-notation: ["off"] */
-		const node_process_1 = __importDefault(require$$4$3);
+		const node_process_1 = __importDefault(require$$4$4);
 		// Ported from is-unicode-supported
 		function isUnicodeSupported() {
 		    if (node_process_1.default.platform !== 'win32') {
@@ -35989,12 +36046,12 @@ var gbChars = [
 	39394,
 	189000
 ];
-var require$$4 = {
+var require$$4$1 = {
 	uChars: uChars,
 	gbChars: gbChars
 };
 
-var require$$5$1 = [
+var require$$5 = [
 	[
 		"0",
 		"\u0000",
@@ -39716,7 +39773,7 @@ function requireDbcsData () {
 	    'gb18030': {
 	        type: '_dbcs',
 	        table: function() { return require$$2.concat(require$$3) },
-	        gb18030: function() { return require$$4 },
+	        gb18030: function() { return require$$4$1 },
 	        encodeSkipVals: [0x80],
 	        encodeAdd: {'€': 0xA2E3},
 	    },
@@ -39731,7 +39788,7 @@ function requireDbcsData () {
 	    '949': 'cp949',
 	    'cp949': {
 	        type: '_dbcs',
-	        table: function() { return require$$5$1 },
+	        table: function() { return require$$5 },
 	    },
 
 	    'cseuckr': 'cp949',
@@ -42979,7 +43036,7 @@ const confirmCreateProject = (option) => {
     return {
         name: "confirmCreateProject",
         type: "confirm",
-        message: `模板名称为：${option.projectName}，模板类型为：${option.type}，包管理器为：${option.packageCli}，语言类型: ${option.language}，构建工具为: ${option.buildTools}，确定要生成吗？`,
+        message: `模板名称为：${option.projectName}，模板类型为：${option.type}，语言类型: ${option.language}，构建工具为: ${option.buildTools}，确定要生成吗？`,
     };
 };
 
@@ -43047,7 +43104,7 @@ const inputTemplateUrl = () => {
         name: "templateUrl",
         type: "input",
         required: true,
-        message: "请输入模板的的Git仓库地址：",
+        message: "你需要以哪个Git仓库作为项目模板，请输入Git地址：",
     };
 };
 
@@ -43055,7 +43112,7 @@ const isMoveCreateTemplateForLocal = (projectName) => {
     return {
         name: "move",
         type: "confirm",
-        message: `自定义项目模板 ${projectName} 添加成功!, 是否立刻基于此模板创建项目？`,
+        message: `自定义项目模板 ${projectName} 添加成功！是否立刻基于此模板创建项目？`,
         default: false,
     };
 };
@@ -43186,6 +43243,7 @@ const commitMessage = () => {
         name: "commitMessage",
         type: "input",
         message: "请输入本次提交备注信息: ",
+        required: true,
     };
 };
 
@@ -43337,7 +43395,7 @@ const notDelBranchConfirm = (branchList) => {
     return {
         name: "notDelBranchConfirm",
         type: "confirm",
-        message: `${branchList.join("、")}分支不可删除，是否忽略后继续？`,
+        message: `${branchList.join("、")}为当前所在分支或保护分支，不可删除。是否忽略后继续删除其它分支？`,
         default: false,
     };
 };
@@ -43363,11 +43421,134 @@ const inputProjectName = () => {
     };
 };
 
+const createTemplateType = () => {
+    return {
+        name: "templateType",
+        type: "search",
+        message: "请输入创建模板的类型",
+        choices: [
+            {
+                name: "自定义模板",
+                value: "customer",
+            },
+            {
+                name: "官方模板",
+                value: "official",
+            },
+        ],
+    };
+};
+
+const chooseSingleTemplate = (list) => {
+    return [
+        {
+            name: "chooseSingleTemplate",
+            type: "search",
+            message: "请选择一个自定义模板：",
+            choices: list.map((item) => ({
+                name: item,
+                value: item,
+            })),
+        },
+    ];
+};
+
+const addProjectOriginName = () => {
+    return {
+        name: "name",
+        type: "input",
+        message: "请输入源的名称：",
+        required: true,
+    };
+};
+
+const addProjectOriginUrl = (again = false) => {
+    return {
+        name: "address",
+        type: "input",
+        message: again
+            ? "输入Git地址不合法，请重新输入："
+            : "请输入源的地址（Git仓库地址）：",
+        required: true,
+    };
+};
+
+const addOriginBranch = (origin) => {
+    return {
+        name: "isAddBranch",
+        type: "confirm",
+        message: `当前源：${origin} 还未存在分支，是否创建？`,
+        default: true,
+    };
+};
+
+const inputBranchName = () => {
+    return {
+        name: "branchName",
+        type: "input",
+        message: `请输入分支名称：`,
+        required: true,
+    };
+};
+
+const addOriginSuccessCheckoutBranch = (origin) => {
+    return {
+        name: "branchName",
+        type: "confirm",
+        message: `Git源：${origin} 添加成功，且该源已存在分支, 是否需要切换？`,
+        default: false,
+    };
+};
+
+const delOriginList = (originList) => {
+    return {
+        name: "originList",
+        type: "checkbox",
+        message: "请选择需要删除的源：",
+        choices: originList.map((item) => ({
+            name: item,
+            value: item,
+        })),
+    };
+};
+
+const syncRemoteBranch = (origin, branchList) => {
+    return {
+        name: "syncRemoteBranch",
+        type: "confirm",
+        default: false,
+        message: `添加的Git源 ${origin} 已存在 ${branchList.join("、")} 分支，是否需要将本地分支代码进行合并？`,
+    };
+};
+
+const waningSyncRemoteBranchMerge = (branch) => {
+    return {
+        name: "syncRemoteBranch",
+        type: "confirm",
+        default: false,
+        message: `由于与新增的源与本地不属于同源，此操作将会强制合并本地代码与远程分支 ${branch} ，请确认在无冲突后进行合并，反之可能存在风险，确认要继续？`,
+    };
+};
+
+const associationStorage = () => {
+    return {
+        name: "associationGitStorage",
+        type: "confirm",
+        default: false,
+        message: "是否需要关联至Git仓库？",
+    };
+};
+
 var question = /*#__PURE__*/Object.freeze({
 	__proto__: null,
+	addOriginBranch: addOriginBranch,
+	addOriginSuccessCheckoutBranch: addOriginSuccessCheckoutBranch,
+	addProjectOriginName: addProjectOriginName,
+	addProjectOriginUrl: addProjectOriginUrl,
 	alreadyCommitFile: alreadyCommitFile,
 	alreadyStatusFile: alreadyStatusFile,
 	alreadyStatusFileCheckout: alreadyStatusFileCheckout,
+	associationStorage: associationStorage,
 	checkoutBranch: checkoutBranch,
 	chooseCommitFile: chooseCommitFile,
 	chooseCommitOrigin: chooseCommitOrigin,
@@ -43376,6 +43557,7 @@ var question = /*#__PURE__*/Object.freeze({
 	chooseDropCustomerProject: chooseDropCustomerProject,
 	chooseOperateType: chooseOperateType,
 	chooseRunCommand: chooseRunCommand,
+	chooseSingleTemplate: chooseSingleTemplate,
 	chooseTargetBranch: chooseTargetBranch,
 	chooseTemplateList: chooseTemplateList,
 	chooseTemplateProject: chooseTemplateProject,
@@ -43387,11 +43569,14 @@ var question = /*#__PURE__*/Object.freeze({
 	confirmCreateProject: confirmCreateProject,
 	createExistProject: createExistProject,
 	createProjectQuestion: createProjectQuestion,
+	createTemplateType: createTemplateType,
 	delBranchConfirm: delBranchConfirm,
+	delOriginList: delOriginList,
 	deleteCustomerTemplateProject: deleteCustomerTemplateProject,
 	dropCustomerTemplateAll: dropCustomerTemplateAll,
 	initExistsCustomerTemplate: initExistsCustomerTemplate,
 	initNotExistsCustomerTemplate: initNotExistsCustomerTemplate,
+	inputBranchName: inputBranchName,
 	inputCheckoutBranchName: inputCheckoutBranchName,
 	inputGitUserName: inputGitUserName,
 	inputProjectName: inputProjectName,
@@ -43403,13 +43588,15 @@ var question = /*#__PURE__*/Object.freeze({
 	pushOrigin: pushOrigin,
 	resetConfigFile: resetConfigFile,
 	syncDelRemoteBranch: syncDelRemoteBranch,
+	syncRemoteBranch: syncRemoteBranch,
 	unExistsExecFile: unExistsExecFile,
 	updateAllTemplate: updateAllTemplate,
 	updateCustomerProject: updateCustomerProject,
-	updateCustomerTemplateProject: updateCustomerTemplateProject
+	updateCustomerTemplateProject: updateCustomerTemplateProject,
+	waningSyncRemoteBranchMerge: waningSyncRemoteBranchMerge
 });
 
-var require$$5 = /*@__PURE__*/getAugmentedNamespace(question);
+var require$$4 = /*@__PURE__*/getAugmentedNamespace(question);
 
 var config;
 var hasRequiredConfig;
@@ -43423,7 +43610,7 @@ function requireConfig () {
 	const { getProcessEnv } = requirePlatform();
 
 	const { defaultConfigModuleContent } = requireConstance();
-	const { resetConfigFile } = require$$5;
+	const { resetConfigFile } = require$$4;
 
 	class Config extends ConfigModule {
 	    #inquirer;
@@ -43590,11 +43777,11 @@ function requireLib$2 () {
 
 	class GitStorage extends EventEmitter {
 	    #config = {
+	        branch: "", // git 拉取的分支
 	        source: "", // git 地址
 	        local: "", // git 拉取的本地路径
-	        storagePath: "", // git 拉取的本地路径的项目路径
+	        storagePath: "", // git 仓库路径
 	        storageName: "", // git 拉取仓库的名称
-	        branch: "", // git 拉取的分支
 	        isInitPull: false, // 是否在初始化时，拉取一下仓库的代码
 	        init: false, //仓库是否初始化过
 	    };
@@ -43611,10 +43798,17 @@ function requireLib$2 () {
 	        super();
 	        this.hasGit()
 	            .then(() => {
+	                // 没有git仓库，给项目添加git仓库并新增源
+	                if (option.addInitGit) {
+	                    return this.addInitGitProject(option);
+	                }
+
+	                // 已存在git仓库，对仓库进行管理
 	                if (basicCommon.isType(option, "string")) {
 	                    return this.initLocalStorage(option);
 	                }
 
+	                // 建立链接，将git仓库与本地路径进行关联同步
 	                const { source, local, branch, isInitPull = true } = option;
 	                this.#config.source = source;
 	                this.#config.local = local;
@@ -43626,20 +43820,65 @@ function requireLib$2 () {
 	                    this.#config.init = true;
 	                });
 	            })
-	            .catch(() => {
-	                console.log("当先系统还未安装Git，请安装Git地址后重试");
+	            .catch((e) => {
+	                console.log(e.message || e);
 	            });
 	    }
 
-	    async initLocalStorage(localPath) {
+	    // 初始化git仓库
+	    async initGitProject() {
+	        return basicCommon.execCommand("git init", {
+	            cwd: this.#config.local,
+	        });
+	    }
+
+	    // 添加一个源
+	    async addOrigin({ name, address }) {
+	        if (!name || !address)
+	            throw new Error("缺少源名称或地址，添加源失败！");
+	        const originList = (await this.getOriginList()).map(
+	            (item) => item.origin,
+	        );
+	        if (originList.includes(name))
+	            throw new Error(
+	                `Git源 ${name} 已存在，添加源失败！${originList.join("、")}`,
+	            );
+	        return basicCommon.execCommand(`git remote add ${name} ${address}`, {
+	            stdio: "inherit",
+	            cwd: this.#config.local || this.#config.storagePath,
+	        });
+	    }
+
+	    // 删除一个源
+	    async removeOrigin(name) {
+	        if (!name) throw new Error("缺少源名称，删除源失败！");
+	        return basicCommon.execCommand(`git remote remove ${name}`, {
+	            stdio: "inherit",
+	            cwd: this.#config.local || this.#config.storagePath,
+	        });
+	    }
+
+	    async addInitGitProject(option) {
+	        if (!option.local) throw new Error("未找到项目路径，git 初始化失败");
+	        if (!fs.existsSync(option.local))
+	            throw new Error("项目路径不存在，请重新输入");
+
+	        this.#config.local = option.local;
+	        this.#config.storagePath = option.storagePath;
+	        const existsGit = platform.isActiveEmptyGitProject(option.local);
+	        if (!existsGit) await this.initGitProject();
+	        this.emit("load:origin:end", true);
+	    }
+
+	    async initLocalStorage(targetPath) {
 	        try {
-	            this.#config.storagePath = localPath;
+	            this.#config.storagePath = targetPath;
 	            const originList = await this.getOriginList();
 	            if (!originList.length)
 	                throw new Error("当前项目暂Git源，初始化失败");
 	            this.emit("load:origin:end", originList);
 	        } catch (e) {
-	            console.log("操作失败。", e.message);
+	            console.log("操作失败。", e.message || e);
 	        }
 	    }
 	    async getOriginList() {
@@ -43743,6 +43982,8 @@ function requireLib$2 () {
 	    async diffFile() {
 	        const diffString = await basicCommon.execCommand("git status -s", {
 	            stdio: ["ignore", "pipe", "ignore"],
+	            cwd:
+	                this.#config.local || this.#config.storagePath || process.cwd(),
 	        });
 	        const result = diffString
 	            .split("\n")
@@ -43760,6 +44001,26 @@ function requireLib$2 () {
 	            .map((item) => item.replace("M  ", ""))
 	            .filter((item) => item);
 	    }
+	    async pullRemoteBranch(origin, branch) {
+	        if (!origin || !branch)
+	            throw new Error("Git源或分支名称为空，拉取仓库失败！");
+
+	        return basicCommon.execCommand(`git pull ${origin} ${branch}`, {
+	            cwd: this.local || this.storagePath,
+	            stdio: "inherit",
+	        });
+	    }
+	    async pullRemoteForce(origin, branch) {
+	        if (!origin || !branch)
+	            throw new Error("Git源或分支名称为空，拉取仓库失败！");
+	        return basicCommon.execCommand(
+	            `git pull ${origin} ${branch} --allow-unrelated-histories`,
+	            {
+	                cwd: this.local || this.storagePath,
+	                stdio: "inherit",
+	            },
+	        );
+	    }
 	    async pull(branch) {
 	        if (!branch) branch = this.#config.branch;
 	        const command =
@@ -43768,6 +44029,12 @@ function requireLib$2 () {
 	                : `git fetch --all && git checkout -f ${branch} && git reset origin/${branch} --hard && git pull`;
 	        await basicCommon.execCommand(command, {
 	            cwd: this.storagePath,
+	            stdio: "inherit",
+	        });
+	    }
+	    async fetch() {
+	        await basicCommon.execCommand(`git fetch --all`, {
+	            cwd: this.local || this.storagePath,
 	            stdio: "inherit",
 	        });
 	    }
@@ -43872,6 +44139,12 @@ function requireLib$2 () {
 	        );
 	    }
 
+	    async createBranch(branchName) {
+	        return await basicCommon.execCommand(`git checkout -b ${branchName}`, {
+	            stdio: "inherit",
+	        });
+	    }
+
 	    async checkoutOnBasicOfOriginBranch(origin, branchName, basicOfBranch) {
 	        return await basicCommon.execCommand(
 	            `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
@@ -43898,6 +44171,622 @@ function requireLib$2 () {
 	return lib$1;
 }
 
+var push;
+var hasRequiredPush;
+
+function requirePush () {
+	if (hasRequiredPush) return push;
+	hasRequiredPush = 1;
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { basicCommon, platform } = requireLib$8();
+
+	const {
+	    commitType,
+	    chooseCommitOrigin,
+	    commitMessage,
+	    commitAction,
+	    chooseCommitFile,
+	    alreadyStatusFile,
+	    alreadyCommitFile,
+	    pushOrigin,
+	    onlyPushLocalFile,
+	} = require$$4;
+	const { commitTypeDict } = requireConstance();
+
+	class Commit extends Inquirer {
+	    #gitStorage;
+	    #config = {
+	        type: "",
+	        file: "",
+	        branch: "",
+	        message: "",
+	        origin: "",
+	    };
+	    diffFile = [];
+	    statusFile = [];
+	    push = false;
+	    onlyPush = false;
+	    commitAll = false;
+
+	    async start(source = {}) {
+	        return new Promise((resolve) => {
+	            this.chooseOption(source).then(async (config) => {
+	                if (!basicCommon.isType(config, "object")) {
+	                    return console.log("提交失败，请重试!");
+	                }
+	                const { type, file, origin, branch, message } = config;
+	                if (!this.push && !this.onlyPush) {
+	                    const confirm = await this.handler(
+	                        commitAction({
+	                            ...config,
+	                            file: `\n${file
+	                                .split(" ")
+	                                .map((item, index) => ` ${index + 1}. ${item}`)
+	                                .join("\n")}`,
+	                            message: message
+	                                .split(";")
+	                                .filter((item) => item.trim())
+	                                .join("\n"),
+	                        }),
+	                    );
+	                    if (!confirm) return;
+	                    this.#gitStorage.addFile(this.commitAll ? "." : file);
+	                    this.#gitStorage.commit(`${type}: ${message}`);
+
+	                    await basicCommon.sleep(1000);
+	                    if (source.notPushOrigin) return resolve(true);
+	                    if (!(await this.handler(pushOrigin()))) return;
+	                }
+	                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
+	                resolve(this.#config);
+	            });
+	        });
+	    }
+
+	    async chooseType({ type } = {}) {
+	        if (type) {
+	            const typeExists = Object.keys(commitTypeDict).includes(
+	                type.toLocaleLowerCase(),
+	            );
+	            if (typeExists) return type;
+	        }
+	        return await this.handler(
+	            commitType(
+	                type &&
+	                    `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
+	                Object.entries(commitTypeDict).map(([key, value]) => ({
+	                    name: `${key}: ${value}`,
+	                    value: key,
+	                })),
+	                platform.getProcessEnv("default_commit_type"),
+	            ),
+	        );
+	    }
+
+	    async chooseCommitFile({ file }) {
+	        if (Array.isArray(file) && file?.length)
+	            return (this.#config.file = file.join(" "));
+
+	        if (this.diffFile.length) {
+	            const commitFiles = await this.handler(
+	                chooseCommitFile(this.diffFile),
+	            );
+	            if (commitFiles.length === this.diffFile.length) {
+	                this.commitAll = true;
+	            }
+	            this.#config.file = commitFiles.join(" ");
+	        } else {
+	            const isReady = await this.handler(
+	                alreadyStatusFile(this.statusFile),
+	            );
+	            if (isReady) this.#config.file = this.statusFile.join(" ");
+	        }
+	    }
+
+	    chooseOption(source) {
+	        return new Promise((resolve) => {
+	            this.#gitStorage = new GitStorage(process.cwd());
+	            let { branch, origin, message, onlyPush } = source;
+	            this.#gitStorage.once("load:origin:end", async (originList) => {
+	                if (!onlyPush) {
+	                    this.diffFile = await this.#gitStorage.diffFile();
+	                    if (!this.diffFile.length) {
+	                        this.statusFile = await this.#gitStorage.status();
+	                        if (!this.statusFile.length) {
+	                            const notPushFile =
+	                                await this.#gitStorage.getCommitNotPushFileList();
+	                            if (!notPushFile.length) {
+	                                return console.log(
+	                                    "当前路径下暂无变更的文件, 无需提交",
+	                                );
+	                            } else {
+	                                const pushFile = await this.handler(
+	                                    alreadyCommitFile(notPushFile),
+	                                );
+	                                if (!pushFile) return;
+	                                this.push = true;
+	                            }
+	                        }
+	                    }
+	                }
+
+	                if (!originList || !originList.length)
+	                    return console.log("当前地址不存在提交源，请创建后重试!");
+
+	                if (!origin || !originList.includes(origin)) {
+	                    if (originList.length > 1) {
+	                        origin = await this.handler(
+	                            chooseCommitOrigin(
+	                                origin && "当前指定的源不存在，请重新选择源:",
+	                                originList.map((item) => ({
+	                                    name: `${item.origin}  ${item.remote}`,
+	                                    value: item.origin,
+	                                })),
+	                            ),
+	                        );
+	                    } else {
+	                        origin = originList.at(0).origin;
+	                    }
+	                }
+
+	                if (!branch) {
+	                    const branchList =
+	                        await this.#gitStorage.getBranchRemote(origin);
+	                    if (!branchList.length)
+	                        return console.log(
+	                            "当前项目源还未创建分支，请创建后重试!",
+	                        );
+
+	                    branch = await this.#gitStorage.getCurrentBranch();
+	                }
+
+	                this.#config.origin = origin;
+	                this.#config.branch = branch;
+	                this.onlyPush = onlyPush;
+
+	                if (this.onlyPush) {
+	                    const notPushFile =
+	                        await this.#gitStorage.getCommitNotPushFileList();
+
+	                    if (!notPushFile.length)
+	                        return console.log("当前分支不存在已提交的本地文件");
+	                    if (!(await this.handler(onlyPushLocalFile()))) return;
+	                }
+
+	                if (!this.push && !this.onlyPush) {
+	                    this.#config.type = await this.chooseType(source);
+	                    await this.chooseCommitFile(source);
+	                    if (!this.#config.file.trim()) return;
+
+	                    if (message) this.#config.message = message;
+	                    else this.#config.message = await this.commitMessage();
+	                }
+	                resolve(this.#config);
+	            });
+	        });
+	    }
+
+	    async commitMessage() {
+	        return await this.handler(commitMessage());
+	    }
+	}
+
+	push = new Commit();
+	return push;
+}
+
+var branch;
+var hasRequiredBranch;
+
+function requireBranch () {
+	if (hasRequiredBranch) return branch;
+	hasRequiredBranch = 1;
+	const fs = require$$0$6;
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { commitTypeDict } = requireConstance();
+	const { delay, basicCommon, platform } = requireLib$8();
+	const Config = requireConfig();
+
+	const {
+	    chooseCommitOrigin,
+	    alreadyStatusFileCheckout,
+	    chooseOperateType,
+	    inputCheckoutBranchName,
+	    chooseTargetBranch,
+	    inputGitUserName,
+	    delBranchConfirm,
+	    chooseDelLocalBranch,
+	    syncDelRemoteBranch,
+	    notDelBranchConfirm,
+	    addProjectOriginName,
+	    addProjectOriginUrl,
+	    addOriginBranch,
+	    inputBranchName,
+	    pushOrigin,
+	    delOriginList,
+	    syncRemoteBranch,
+	    checkoutBranch,
+	    waningSyncRemoteBranchMerge,
+	} = require$$4;
+	const Push = requirePush();
+
+	class Branch extends Inquirer {
+	    #origin = "";
+	    #gitStorage;
+	    #addConfig = {
+	        type: "",
+	        username: "",
+	        targetBranch: "",
+	        newBranchName: "",
+	    };
+	    #delBranchSecure = {
+	        open: true,
+	        notDelBranch: ["master"],
+	    };
+	    #addOriginConfig = {
+	        name: "",
+	        address: "",
+	    };
+	    get commitType() {
+	        return Object.keys(commitTypeDict);
+	    }
+	    start(type, ...args) {
+	        const typeHandler = new Map([
+	            ["list", this.listBranch],
+	            ["add", this.addBranch],
+	            ["del", this.deleteBranch],
+	            ["status", this.statusCurrentBranch],
+	            ["addOrigin", this.addOrigin],
+	            ["delOrigin", this.delOrigin],
+	        ]);
+	        if (typeHandler.has(type)) {
+	            const branch_secure = Config.getConfigResult("branch_secure");
+	            if (branch_secure === undefined)
+	                throw new Error("invalid branch_secure...");
+	            this.#delBranchSecure.open = !!branch_secure;
+	            if (["addOrigin", "delOrigin"].includes(type))
+	                return typeHandler.get(type).call(this, ...args);
+	            else
+	                this.invalid().then(() => {
+	                    typeHandler.get(type).call(this, ...args);
+	                });
+	        }
+	    }
+	    invalid() {
+	        return new Promise((resolve) => {
+	            this.#gitStorage = new GitStorage(process.cwd());
+	            this.#gitStorage.once("load:origin:end", async (originList) => {
+	                return resolve(await this.confirmOrigin(originList));
+	            });
+	        });
+	    }
+	    async listBranch() {
+	        const list = await this.#gitStorage.getBranch();
+	        const { local, remote } = this.distinguishBranchType(list);
+	        if (!local.length && !remote.length)
+	            return console.log("当前仓库暂无代码分支");
+
+	        if (local.length) console.log(`\n本地分支如下：\n${local.join("\n")}`);
+	        if (local.length) console.log(`\n远程分支如下：\n${remote.join("\n")}`);
+	    }
+	    distinguishBranchType(branchList) {
+	        return branchList.reduce(
+	            (pre, next) => {
+	                if (next.startsWith(`remotes/${this.#origin}/`))
+	                    pre.remote.push(next);
+	                else pre.local.push(next);
+
+	                return pre;
+	            },
+	            { local: [], remote: [] },
+	        );
+	    }
+	    async addOrigin(originName, originAddress, cwdPath = false) {
+	        return new Promise(async (resolve) => {
+	            originName = originName?.trim?.();
+	            originAddress = originAddress?.trim?.();
+	            this.#addOriginConfig.name =
+	                originName || (await this.handler(addProjectOriginName()));
+	            this.#addOriginConfig.address =
+	                originAddress || (await this.addOriginAddress());
+	            let projectCwd =
+	                cwdPath || (await platform.findProjectParentExecCwd());
+	            if (!fs.existsSync(projectCwd)) projectCwd = process.cwd();
+
+	            this.#gitStorage = new GitStorage({
+	                local: projectCwd,
+	                storagePath: projectCwd,
+	                addInitGit: true,
+	            });
+	            this.#gitStorage.once("load:origin:end", async () => {
+	                await this.handlePushLocalFile();
+	                await this.#gitStorage.addOrigin(this.#addOriginConfig);
+	                await this.#gitStorage.fetch();
+	                console.log(
+	                    `\nGit源 ${this.#addOriginConfig.name} 创建成功！\n`,
+	                );
+	                try {
+	                    const remoteBranch = await this.#gitStorage.getBranchRemote(
+	                        this.#addOriginConfig.name,
+	                    );
+	                    // 提示创建分支
+	                    if (!remoteBranch.length) {
+	                        const isAddBranch = await this.handler(
+	                            addOriginBranch(this.#addOriginConfig.name),
+	                        );
+	                        if (isAddBranch) {
+	                            const branchName =
+	                                await this.handler(inputBranchName());
+	                            await this.#gitStorage.createBranch(branchName);
+
+	                            const pushBranch = await this.handler(pushOrigin());
+	                            if (pushBranch) {
+	                                await this.#gitStorage.push(
+	                                    this.#addOriginConfig.name,
+	                                    branchName,
+	                                );
+	                            }
+	                        }
+	                    } else {
+	                        const isSyncRemoteBranch = await this.handler(
+	                            syncRemoteBranch(
+	                                this.#addOriginConfig.name,
+	                                remoteBranch,
+	                            ),
+	                        );
+	                        if (isSyncRemoteBranch) {
+	                            const branchName = await this.handler(
+	                                checkoutBranch(remoteBranch),
+	                            );
+
+	                            const warningConfirm = await this.handler(
+	                                waningSyncRemoteBranchMerge(branchName),
+	                            );
+
+	                            if (warningConfirm) {
+	                                this.#gitStorage.pullRemoteForce(
+	                                    this.#addOriginConfig.name,
+	                                    branchName,
+	                                );
+	                            }
+	                        }
+	                    }
+	                } catch (e) {
+	                    console.log(
+	                        `\nGit源 ${this.#addOriginConfig.name} 创建失败！`,
+	                        e.message || e,
+	                    );
+	                    this.#gitStorage.removeOrigin(this.#addOriginConfig.name);
+	                }
+	                return resolve(true);
+	            });
+	        });
+	    }
+	    async delOrigin() {
+	        let projectCwd = await platform.findProjectParentExecCwd();
+	        if (!fs.existsSync(projectCwd)) projectCwd = process.cwd();
+	        this.#gitStorage = new GitStorage(projectCwd);
+	        this.#gitStorage.once("load:origin:end", async (originList) => {
+	            const list = await this.handler(
+	                delOriginList(originList.map((item) => item.origin)),
+	            );
+	            for (const item of list) {
+	                await this.#gitStorage.removeOrigin(item);
+	            }
+	            console.log(
+	                `Git源 ${list.join("\n")} 累计 ${list.length} 个删除成功！`,
+	            );
+	        });
+	    }
+	    async handlePushLocalFile() {
+	        const notPushFile = await this.#gitStorage.getNotCommitFile();
+	        if (notPushFile.length) {
+	            console.log("\n当前项目下存在未提交的文件，请下提交至暂存区\n");
+	            const commitType = await Push.chooseType();
+	            const commitMessage = await Push.commitMessage();
+	            await this.#gitStorage.addFile(".");
+	            await this.#gitStorage.commit(`${commitType}: ${commitMessage}`);
+	        }
+	    }
+	    async addOriginAddress(again = false) {
+	        const address = await this.handler(addProjectOriginUrl(again));
+	        if (!platform.isValidGitUrl(address))
+	            return this.addOriginAddress(true);
+	        return address;
+	    }
+	    addBranch(branchName) {
+	        this.#addConfig.newBranchName = branchName;
+
+	        this.chooseOption().then(async () => {
+	            const { targetBranch, newBranchName } = this.#addConfig;
+
+	            const localBranch = await this.#gitStorage.getBranchLocal();
+	            if (localBranch.includes(targetBranch)) {
+	                await this.#gitStorage.checkoutOnBasicOfLocalBranch(
+	                    newBranchName,
+	                    targetBranch,
+	                );
+	            } else {
+	                await this.#gitStorage.checkoutOnBasicOfOriginBranch(
+	                    this.#origin,
+	                    newBranchName,
+	                    targetBranch,
+	                );
+	            }
+	            console.log(`\n新增代码分支成功，已切换为新分支：${newBranchName}`);
+	        });
+	    }
+	    chooseOption() {
+	        return new Promise(async (resolve) => {
+	            const branchList = await this.invalidBranch();
+	            await this.handlerNotPushFile();
+
+	            let username = await this.#gitStorage.getGitUserName();
+	            if (!username) {
+	                username = await this.handler(inputGitUserName());
+	                await this.#gitStorage.setUserName(username);
+	            }
+	            this.#addConfig.username = username;
+
+	            const { type } = this.#addConfig;
+	            if (!type || !this.commitType.includes(type)) {
+	                this.#addConfig.type = await this.handler(
+	                    chooseOperateType(commitTypeDict, type),
+	                );
+	            }
+
+	            this.#addConfig.newBranchName = await this.confirmNewBranchName();
+
+	            const nowBranchName = await this.#gitStorage.getNowBranchName();
+	            this.#addConfig.targetBranch = await this.handler(
+	                chooseTargetBranch(branchList, nowBranchName),
+	            );
+
+	            resolve(this.#addConfig);
+	        });
+	    }
+	    async confirmNewBranchName(invalid = false) {
+	        const { type, username } = this.#addConfig;
+	        let newBranchName = this.#addConfig.newBranchName;
+	        const branchList = await this.#gitStorage.getBranchLocalAndRemoteList();
+
+	        if (!newBranchName) {
+	            const newBranch = await this.handler(
+	                inputCheckoutBranchName(
+	                    invalid
+	                        ? "分支名称或(需求/Bug/优化)ID已存在，请重新输入："
+	                        : "请输入分支名称, 推荐使用(需求/Bug/优化/)ID：",
+	                ),
+	            );
+	            newBranchName = `${type}/${username}/${newBranch}`;
+	        }
+	        if (branchList.includes(newBranchName)) {
+	            this.#addConfig.newBranchName = "";
+	            return this.confirmNewBranchName(true);
+	        } else {
+	            return newBranchName;
+	        }
+	    }
+	    async confirmOrigin(originList) {
+	        if (originList.length > 1) {
+	            this.#origin = await this.handler(
+	                chooseCommitOrigin(
+	                    originList.map((item) => ({
+	                        name: `${item.origin}  ${item.remote}`,
+	                        value: item.origin,
+	                    })),
+	                ),
+	            );
+	        } else {
+	            this.#origin = originList.at(0).origin;
+	        }
+	    }
+	    async invalidBranch() {
+	        const branchList = await this.#gitStorage.getBranchLocalAndRemoteList(
+	            this.#origin,
+	        );
+	        if (!branchList.length) {
+	            throw new Error("当前项目源还未创建分支，请创建后重试!");
+	        }
+	        return branchList;
+	    }
+	    async handlerNotPushFile(source = {}) {
+	        const notPushFile = await this.#gitStorage.getNotCommitFile();
+	        if (notPushFile.length) {
+	            const commitPush = await this.handler(
+	                alreadyStatusFileCheckout(notPushFile),
+	            );
+	            if (!commitPush) process.exit(0);
+	            await Push.start(source);
+	            await delay();
+	            console.log("代码提交完成！\n");
+	        }
+	    }
+	    deleteBranch(branch) {
+	        if (branch.length) {
+	            this.delLocalBranch(branch);
+	        } else {
+	            this.chooseDelBranch();
+	        }
+	    }
+	    async chooseDelBranch() {
+	        const branchList = await this.handler(
+	            chooseDelLocalBranch(await this.#gitStorage.getBranchLocal()),
+	        );
+	        this.delLocalBranch(branchList);
+	    }
+	    async delLocalBranch(branch) {
+	        if (!branch.length) throw new Error("缺少需要删除的分支列表...");
+
+	        const currentBranch = await this.#gitStorage.getCurrentBranch();
+	        const { open, notDelBranch } = this.#delBranchSecure;
+	        const notDelBranchList = branch.filter(
+	            (item) =>
+	                (open && notDelBranch.includes(item.toLocaleLowerCase())) ||
+	                currentBranch === item,
+	        );
+	        if (notDelBranchList.length) {
+	            const delBranchList = basicCommon.differenceArrayList(
+	                branch,
+	                notDelBranchList,
+	            );
+	            if (delBranchList.length) {
+	                const continueStep = await this.handler(
+	                    notDelBranchConfirm(notDelBranchList),
+	                );
+	                if (continueStep) {
+	                    return this.delLocalBranch(delBranchList);
+	                }
+	            } else {
+	                return console.log(
+	                    `\n${notDelBranchList.join("、")} 为当前所在分支或保护分支，删除失败。`,
+	                );
+	            }
+	        }
+
+	        const branchList = await this.#gitStorage.getBranchLocal();
+	        const existsBranchList = branch.filter((item) =>
+	            branchList.includes(item),
+	        );
+	        if (!existsBranchList.length) return this.chooseDelBranch();
+	        const unExistsBranch = basicCommon.differenceArrayList(
+	            branch,
+	            existsBranchList,
+	        );
+	        const confirmDelBranch = await this.handler(
+	            delBranchConfirm(
+	                `本次删除的分支有：${existsBranchList.join(" ")} 确定要继续？${unExistsBranch.length ? `，${unExistsBranch.join(" ")}不存在将忽略` : ""}`,
+	            ),
+	        );
+	        const delRemoteBranch = await this.handler(syncDelRemoteBranch());
+
+	        if (confirmDelBranch)
+	            await this.#gitStorage.delBranch(
+	                existsBranchList,
+	                delRemoteBranch,
+	                this.#origin,
+	            );
+	    }
+	    async statusCurrentBranch() {
+	        const commitNotPushFile =
+	                await this.#gitStorage.getCommitNotPushFileList(),
+	            notCommitFile = await this.#gitStorage.getNotCommitFile();
+	        if (!commitNotPushFile.length && !notCommitFile.length)
+	            return console.log("\n当前分支暂无变更的文件");
+
+	        if (notCommitFile.length)
+	            console.log(`\n还未提交的文件有：\n${notCommitFile.join("\n")}`);
+	        if (commitNotPushFile.length)
+	            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
+	    }
+	}
+
+	branch = new Branch();
+	return branch;
+}
+
 var init;
 var hasRequiredInit;
 
@@ -43913,8 +44802,12 @@ function requireInit () {
 	    inputProjectName,
 	    confirmCreateProject,
 	    isInstallDependencies,
-	} = require$$5;
+	    createTemplateType,
+	    chooseSingleTemplate,
+	    associationStorage,
+	} = require$$4;
 	const { INIT_PROJECT_ADDRESS, initProjectDict } = requireConstance();
+	const Branch = requireBranch();
 
 	class Init extends Inquirer {
 	    #config = {
@@ -43930,10 +44823,23 @@ function requireInit () {
 
 	        this.loadStorage().then(async () => {
 	            if (!this.#config.projectName) await this.generatorProjectName();
-	            this.handler(createProjectQuestion()).then((result) => {
-	                this.#config = { ...this.#config, ...result };
-	                return this.createOfficialTemplate();
-	            });
+	            // 判断，可创建官方模示例模板，也可创建本地添加的模板
+	            const result = await this.handler(createTemplateType());
+	            if (result === "official") {
+	                this.handler(createProjectQuestion()).then((result) => {
+	                    this.#config = { ...this.#config, ...result };
+	                    return this.createOfficialTemplate();
+	                });
+	            } else {
+	                this.handler(
+	                    chooseSingleTemplate(platform.getTemplateList()),
+	                ).then(({ chooseSingleTemplate }) => {
+	                    this.createProject(
+	                        platform.getTemplatePathByName(chooseSingleTemplate),
+	                        this.#config.projectName,
+	                    );
+	                });
+	            }
 	        });
 	    }
 	    async loadStorage() {
@@ -43985,21 +44891,44 @@ function requireInit () {
 	            );
 	        });
 	    }
-	    createProject(originPath, projectPath) {
+	    createProject(originPath, projectName) {
 	        const app_name = platform.getProcessEnv("app_name");
-	        basicCommon.copyDirectory(originPath, projectPath);
-	        this.handler(isInstallDependencies()).then((installDependencies) => {
-	            if (installDependencies)
-	                return platform.installDependencies(app_name, projectPath);
-	            console.log("\n执行以下命令运行项目");
-	            console.log(`1. cd ${path.basename(projectPath)}`);
-	            if (installDependencies) {
-	                console.log(`2.${app_name} run dev`);
-	            } else {
-	                console.log(`2.${app_name} install`);
-	                console.log(`3.${app_name} run dev`);
-	            }
-	        });
+	        basicCommon.copyDirectory(
+	            originPath,
+	            projectName,
+	            true,
+	            (sourcePath) => !sourcePath.includes(".git"),
+	        );
+	        this.handler(isInstallDependencies()).then(
+	            async (installDependencies) => {
+	                if (installDependencies) {
+	                    await platform.installDependencies(
+	                        app_name,
+	                        path.resolve(process.cwd(), projectName),
+	                        [],
+	                        "",
+	                        `--dir ${path.resolve(process.cwd(), projectName)}`,
+	                    );
+	                }
+
+	                const associationGit = await this.handler(associationStorage());
+	                if (associationGit)
+	                    await Branch.addOrigin(
+	                        "origin",
+	                        null,
+	                        path.resolve(process.cwd(), projectName),
+	                    );
+
+	                console.log("\n执行以下命令运行项目");
+	                console.log(`1. cd ${path.basename(projectName)}`);
+	                if (installDependencies) {
+	                    console.log(`2.${app_name} run dev`);
+	                } else {
+	                    console.log(`2.${app_name} install`);
+	                    console.log(`3.${app_name} run dev`);
+	                }
+	            },
+	        );
 	    }
 	}
 
@@ -44014,10 +44943,10 @@ function requireTemplate () {
 	if (hasRequiredTemplate) return template;
 	hasRequiredTemplate = 1;
 	const path = require$$1$3;
-	const { platform, basicCommon } = requireLib$8();
 	const Inquirer = requireLib$4();
 	const GitStorage = requireLib$2();
-	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
+	const { platform, basicCommon } = requireLib$8();
+	const { CUSTOMER_TEMPLATE_PATH } = requireConstance();
 	const {
 	    checkoutBranch,
 	    dropCustomerTemplateAll,
@@ -44030,18 +44959,15 @@ function requireTemplate () {
 	    updateCustomerProject,
 	    inputTemplateUrl,
 	    chooseTemplateList,
-	} = require$$5;
+	    inputProjectName,
+	} = require$$4;
 
 	class Template extends Inquirer {
 	    #gitStorage;
-	    #templateDir;
-
+	    #templateDir = CUSTOMER_TEMPLATE_PATH;
 	    constructor() {
 	        super();
-	        this.#templateDir = path.resolve(
-	            platform.getProcessEnv("app_cache_template_path"),
-	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-	        );
+	        basicCommon.createDir(this.#templateDir, false);
 	    }
 
 	    start(type, ...rest) {
@@ -44055,7 +44981,7 @@ function requireTemplate () {
 	        if (typeHandler.has(type)) typeHandler.get(type).call(this, ...rest);
 	    }
 	    list() {
-	        const templateList = this.getTemplateList();
+	        const templateList = platform.getTemplateList();
 	        if (templateList.length) {
 	            templateList.forEach((item) =>
 	                console.log(
@@ -44069,9 +44995,7 @@ function requireTemplate () {
 	        }
 	    }
 	    async add(gitLink) {
-	        if (!gitLink) {
-	            gitLink = await this.handler(inputTemplateUrl());
-	        }
+	        if (!gitLink) gitLink = await this.handler(inputTemplateUrl());
 
 	        this.#gitStorage = new GitStorage({
 	            source: gitLink,
@@ -44083,10 +45007,7 @@ function requireTemplate () {
 	        this.listenerGitAction();
 	    }
 	    async delete(name, source) {
-	        let templateList = basicCommon.readForTypeFileDir(
-	                this.#templateDir,
-	                "file",
-	            ),
+	        let templateList = platform.getTemplateList(),
 	            deleteTemplateList = [];
 	        if (!templateList.length) return this.list();
 	        if (source.all) {
@@ -44111,10 +45032,7 @@ function requireTemplate () {
 	                if (!result) return;
 
 	                this.deleteMoreProject(projectDict.exists);
-	                templateList = basicCommon.readForTypeFileDir(
-	                    this.#templateDir,
-	                    "file",
-	                );
+	                templateList = platform.getTemplateList();
 	                deleteTemplateList.push(...projectDict.exists);
 	            }
 	            if (projectDict.unExists.length && templateList.length) {
@@ -44129,15 +45047,12 @@ function requireTemplate () {
 	            }
 	        }
 	        console.log(
-	            `${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!\n`,
+	            `\n${deleteTemplateList.join("、")}累计共${deleteTemplateList.length}个模板已删除成功!`,
 	        );
 	        this.list();
 	    }
 	    async update(name, source) {
-	        let templateList = basicCommon.readForTypeFileDir(
-	                this.#templateDir,
-	                "file",
-	            ),
+	        let templateList = platform.getTemplateList(),
 	            updateList = [];
 
 	        if (!templateList.length) return this.list();
@@ -44183,7 +45098,7 @@ function requireTemplate () {
 	            }
 	        }
 	        console.log(
-	            `${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
+	            `\n${updateList.join("、")}累计共${updateList.length}个项目模板更新成功!`,
 	        );
 	    }
 	    deleteMoreProject(list) {
@@ -44193,13 +45108,19 @@ function requireTemplate () {
 	    }
 	    async updateMoreProject(list) {
 	        for (const item of list) {
-	            const itemPath = path.resolve(this.#templateDir, item);
-	            console.log(`正在更新${item}项目`);
-	            await basicCommon.execCommand("git pull", {
-	                stdio: "inherit",
-	                cwd: itemPath,
-	            });
-	            console.log(`项目${item}更新成功！`);
+	            try {
+	                const itemPath = path.resolve(this.#templateDir, item);
+	                console.log(`\n正在更新${item}项目`);
+	                await basicCommon.execCommand("git fetch --all && git pull", {
+	                    stdio: "inherit",
+	                    cwd: itemPath,
+	                });
+	                console.log(`项目${item}更新成功！`);
+	            } catch (e) {
+	                console.log(
+	                    `项目${item}更新失败！，错误信息为：${e.message || e}`,
+	                );
+	            }
 	        }
 	    }
 	    listenerGitAction() {
@@ -44232,14 +45153,12 @@ function requireTemplate () {
 	                isMoveCreateTemplateForLocal(this.#gitStorage.storageName),
 	            );
 	            if (createLocalProject) {
-	                const { storagePath, storageName } = this.#gitStorage;
-	                const localPath = path.resolve(process.cwd(), storageName);
+	                const projectName = await this.handler(inputProjectName());
+	                const { storagePath } = this.#gitStorage;
+	                const localPath = path.resolve(process.cwd(), projectName);
 	                requireInit().createProject(storagePath, localPath);
 	            }
 	        });
-	    }
-	    getTemplateList() {
-	        return basicCommon.readForTypeFileDir(this.#templateDir, "file");
 	    }
 	}
 
@@ -44263,21 +45182,14 @@ function requireCreate () {
 	    chooseTemplateProject,
 	    chooseCreateTemplateName,
 	    inputProjectName,
-	} = require$$5;
+	} = require$$4;
 	const Template = requireTemplate();
-	const { INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME } = requireConstance();
+	const { CUSTOMER_TEMPLATE_PATH } = requireConstance();
 
 	class Create extends Inquirer {
 	    #templateDir;
 	    #projectName;
-	    #templateList;
-	    constructor() {
-	        super();
-	        this.#templateDir = path.resolve(
-	            platform.getProcessEnv("app_cache_template_path"),
-	            INIT_PROJECT_TEMPLATE_CUSTOMER_DIR_NAME,
-	        );
-	    }
+	    #templateList = CUSTOMER_TEMPLATE_PATH;
 
 	    async start(name, option) {
 	        if (option.template === "emplate")
@@ -44387,7 +45299,7 @@ function requireLib$1 () {
 	            timeout: Number(platform.getProcessEnv("request_timeout")) || 1000,
 	        });
 	        if (isResponse) return result;
-	        else this.#packageConfig.registry;
+	        else return this.#packageConfig.registry;
 	    }
 	    async initAction() {
 	        const registry = await this.confirmRegistry();
@@ -44420,8 +45332,11 @@ function requireLib$1 () {
 	            const isInitInstall =
 	                !this.#packageConfig.packageList.length &&
 	                this.type === "install";
-	            if (isInitInstall) return this.initAction();
-	            this.packageNameAction(this.#packageConfig.packageList);
+	            if (isInitInstall) {
+	                return this.initAction();
+	            } else {
+	                this.packageNameAction(this.#packageConfig.packageList);
+	            }
 	        });
 	    }
 	}
@@ -44441,13 +45356,10 @@ function requireInstall () {
 
 	class Install {
 	    async start(packageList, option) {
-	        if (option.cli === "li")
-	            return console.log(`error: unknown option '-cli'`);
+	        const execPath = option.dir
+	            ? option.dir
+	            : await basicCommon.findParentFile(process.cwd(), "package.json");
 
-	        const execPath = await basicCommon.findParentFile(
-	            process.cwd(),
-	            "package.json",
-	        );
 	        new Package({
 	            packageList,
 	            cwd: execPath,
@@ -44492,212 +45404,6 @@ function requireUninstall () {
 	return uninstall;
 }
 
-var push;
-var hasRequiredPush;
-
-function requirePush () {
-	if (hasRequiredPush) return push;
-	hasRequiredPush = 1;
-	const Inquirer = requireLib$4();
-	const GitStorage = requireLib$2();
-	const { basicCommon, platform } = requireLib$8();
-
-	const {
-	    commitType,
-	    chooseCommitOrigin,
-	    commitMessage,
-	    commitAction,
-	    chooseCommitFile,
-	    alreadyStatusFile,
-	    alreadyCommitFile,
-	    pushOrigin,
-	    onlyPushLocalFile,
-	} = require$$5;
-	const { commitTypeDict } = requireConstance();
-
-	class Commit extends Inquirer {
-	    #gitStorage;
-	    #config = {
-	        type: "",
-	        file: "",
-	        branch: "",
-	        message: "",
-	        origin: "",
-	    };
-	    diffFile = [];
-	    statusFile = [];
-	    push = false;
-	    onlyPush = false;
-	    commitAll = false;
-
-	    async start(source = {}) {
-	        return new Promise((resolve) => {
-	            this.chooseOption(source).then(async (config) => {
-	                if (!basicCommon.isType(config, "object")) {
-	                    return console.log("提交失败，请重试!");
-	                }
-	                const { type, file, origin, branch, message } = config;
-	                if (!this.push && !this.onlyPush) {
-	                    const confirm = await this.handler(
-	                        commitAction({
-	                            ...config,
-	                            file: `\n${file
-	                                .split(" ")
-	                                .map((item, index) => ` ${index + 1}. ${item}`)
-	                                .join("\n")}`,
-	                            message: message
-	                                .split(";")
-	                                .filter((item) => item.trim())
-	                                .join("\n"),
-	                        }),
-	                    );
-	                    if (!confirm) return;
-	                    this.#gitStorage.addFile(this.commitAll ? "." : file);
-	                    this.#gitStorage.commit(`${type}: ${message}`);
-
-	                    await basicCommon.sleep(1000);
-	                    if (!(await this.handler(pushOrigin()))) return;
-	                }
-	                this.#gitStorage.push(origin, branch, { stdio: "inherit" });
-	                resolve(this.#config);
-	            });
-	        });
-	    }
-
-	    async chooseType({ type }) {
-	        if (type) {
-	            const typeExists = Object.keys(commitTypeDict).includes(
-	                type.toLocaleLowerCase(),
-	            );
-	            if (typeExists) return (this.#config.type = type);
-	        }
-	        this.#config.type = await this.handler(
-	            commitType(
-	                type &&
-	                    `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
-	                Object.entries(commitTypeDict).map(([key, value]) => ({
-	                    name: `${key}: ${value}`,
-	                    value: key,
-	                })),
-	                platform.getProcessEnv("default_commit_type"),
-	            ),
-	        );
-	    }
-
-	    async chooseCommitFile({ file }) {
-	        if (Array.isArray(file) && file?.length)
-	            return (this.#config.file = file.join(" "));
-
-	        if (this.diffFile.length) {
-	            const commitFiles = await this.handler(
-	                chooseCommitFile(this.diffFile),
-	            );
-	            if (commitFiles.length === this.diffFile.length) {
-	                this.commitAll = true;
-	            }
-	            this.#config.file = commitFiles.join(" ");
-	        } else {
-	            const isReady = await this.handler(
-	                alreadyStatusFile(this.statusFile),
-	            );
-	            if (isReady) this.#config.file = this.statusFile.join(" ");
-	        }
-	    }
-
-	    chooseOption(source) {
-	        return new Promise((resolve) => {
-	            this.#gitStorage = new GitStorage(process.cwd());
-	            let { branch, origin, message, onlyPush } = source;
-	            this.#gitStorage.once("load:origin:end", async (originList) => {
-	                if (!onlyPush) {
-	                    this.diffFile = await this.#gitStorage.diffFile();
-	                    if (!this.diffFile.length) {
-	                        this.statusFile = await this.#gitStorage.status();
-	                        if (!this.statusFile.length) {
-	                            const notPushFile =
-	                                await this.#gitStorage.getCommitNotPushFileList();
-	                            if (!notPushFile.length) {
-	                                return console.log(
-	                                    "当前路径下暂无变更的文件, 无需提交.",
-	                                );
-	                            } else {
-	                                const pushFile = await this.handler(
-	                                    alreadyCommitFile(notPushFile),
-	                                );
-	                                if (!pushFile) return;
-	                                this.push = true;
-	                            }
-	                        }
-	                    }
-	                }
-
-	                if (!originList || !originList.length)
-	                    return console.log("当前地址不存在提交源，请创建后重试!");
-
-	                if (!origin || !originList.includes(origin)) {
-	                    if (originList.length > 1) {
-	                        origin = await this.handler(
-	                            chooseCommitOrigin(
-	                                origin && "当前指定的源不存在，请重新选择源:",
-	                                originList.map((item) => ({
-	                                    name: `${item.origin}  ${item.remote}`,
-	                                    value: item.origin,
-	                                })),
-	                            ),
-	                        );
-	                    } else {
-	                        origin = originList.at(0).origin;
-	                    }
-	                }
-
-	                if (!branch) {
-	                    const branchList =
-	                        await this.#gitStorage.getBranchRemote(origin);
-	                    if (!branchList.length)
-	                        return console.log(
-	                            "当前项目源还未创建分支，请创建后重试!",
-	                        );
-
-	                    branch = await this.#gitStorage.getCurrentBranch();
-	                }
-
-	                this.#config.origin = origin;
-	                this.#config.branch = branch;
-	                this.onlyPush = onlyPush;
-
-	                if (this.onlyPush) {
-	                    const notPushFile =
-	                        await this.#gitStorage.getCommitNotPushFileList();
-
-	                    if (!notPushFile.length)
-	                        return console.log("当前分支不存在已提交的本地文件");
-	                    if (!(await this.handler(onlyPushLocalFile()))) return;
-	                }
-
-	                if (!this.push && !this.onlyPush) {
-	                    await this.chooseType(source);
-	                    await this.chooseCommitFile(source);
-	                    if (!this.#config.file.trim()) return;
-
-	                    if (message) this.#config.message = message;
-	                    else this.#config.message = await this.commitMessage();
-	                }
-	                resolve(this.#config);
-	            });
-	        });
-	    }
-
-	    async commitMessage() {
-	        const value = await this.handler(commitMessage());
-	        if (!value) return this.commitMessage();
-	        return value;
-	    }
-	}
-
-	push = new Commit();
-	return push;
-}
-
 var Run_1;
 var hasRequiredRun;
 
@@ -44708,7 +45414,7 @@ function requireRun () {
 	const path = require$$1$3;
 	const Inquirer = requireLib$4();
 	const { filterEmptyArray, basicCommon } = requireLib$8();
-	const { chooseRunCommand } = require$$5;
+	const { chooseRunCommand } = require$$4;
 
 	class Run extends Inquirer {
 	    #config = {
@@ -44777,286 +45483,6 @@ function requireRun () {
 	return Run_1;
 }
 
-var branch;
-var hasRequiredBranch;
-
-function requireBranch () {
-	if (hasRequiredBranch) return branch;
-	hasRequiredBranch = 1;
-	const Inquirer = requireLib$4();
-	const GitStorage = requireLib$2();
-	const { commitTypeDict } = requireConstance();
-	const { delay, basicCommon } = requireLib$8();
-	const Config = requireConfig();
-
-	const {
-	    chooseCommitOrigin,
-	    alreadyStatusFileCheckout,
-	    chooseOperateType,
-	    inputCheckoutBranchName,
-	    chooseTargetBranch,
-	    inputGitUserName,
-	    delBranchConfirm,
-	    chooseDelLocalBranch,
-	    syncDelRemoteBranch,
-	    notDelBranchConfirm,
-	} = require$$5;
-	const Push = requirePush();
-
-	class Branch extends Inquirer {
-	    #origin = "";
-	    #addConfig = {
-	        type: "",
-	        username: "",
-	        targetBranch: "",
-	        newBranchName: "",
-	    };
-	    #gitStorage;
-	    #delBranchSecure = {
-	        open: true,
-	        notDelBranch: ["master"],
-	    };
-	    get commitType() {
-	        return Object.keys(commitTypeDict);
-	    }
-	    start(type, ...args) {
-	        const typeHandler = new Map([
-	            ["list", this.listBranch],
-	            ["add", this.addBranch],
-	            ["del", this.deleteBranch],
-	            ["status", this.statusCurrentBranch],
-	        ]);
-	        if (typeHandler.has(type)) {
-	            branch_secure = Config.getConfigResult("branch_secure");
-	            if (branch_secure === undefined)
-	                throw new Error("invalid branch_secure...");
-	            this.#delBranchSecure.open = !!branch_secure;
-	            this.invalid().then(() => {
-	                typeHandler.get(type).call(this, ...args);
-	            });
-	        }
-	    }
-	    invalid() {
-	        return new Promise((resolve) => {
-	            this.#gitStorage = new GitStorage(process.cwd());
-	            this.#gitStorage.once("load:origin:end", async (originList) => {
-	                return resolve(await this.confirmOrigin(originList));
-	            });
-	        });
-	    }
-	    async listBranch() {
-	        const list = await this.#gitStorage.getBranch();
-	        const { local, remote } = this.distinguishBranchType(list);
-	        if (!local.length && !remote.length)
-	            return console.log("当前仓库暂无代码分支");
-
-	        if (local.length) console.log(`\n本地分支如下：\n${local.join("\n")}`);
-	        if (local.length) console.log(`\n远程分支如下：\n${remote.join("\n")}`);
-	    }
-	    distinguishBranchType(branchList) {
-	        return branchList.reduce(
-	            (pre, next) => {
-	                if (next.startsWith(`remotes/${this.#origin}/`))
-	                    pre.remote.push(next);
-	                else pre.local.push(next);
-
-	                return pre;
-	            },
-	            { local: [], remote: [] },
-	        );
-	    }
-	    addBranch(branchName, option) {
-	        this.#addConfig.type = option.type;
-	        this.#addConfig.newBranchName = branchName;
-
-	        this.chooseOption().then(async () => {
-	            const { targetBranch, newBranchName } = this.#addConfig;
-
-	            const localBranch = await this.#gitStorage.getBranchLocal();
-	            if (localBranch.includes(targetBranch)) {
-	                await this.#gitStorage.checkoutOnBasicOfLocalBranch(
-	                    newBranchName,
-	                    targetBranch,
-	                );
-	            } else {
-	                await this.#gitStorage.checkoutOnBasicOfOriginBranch(
-	                    this.#origin,
-	                    newBranchName,
-	                    targetBranch,
-	                );
-	            }
-	            console.log(`\n新增代码分支成功，已切换为新分支：${newBranchName}`);
-	        });
-	    }
-	    chooseOption() {
-	        return new Promise(async (resolve) => {
-	            const branchList = await this.invalidBranch();
-	            await this.handlerNotPushFile();
-
-	            let username = await this.#gitStorage.getGitUserName();
-	            if (!username) {
-	                username = await this.handler(inputGitUserName());
-	                await this.#gitStorage.setUserName(username);
-	            }
-	            this.#addConfig.username = username;
-
-	            const { type } = this.#addConfig;
-	            if (!type || !this.commitType.includes(type)) {
-	                this.#addConfig.type = await this.handler(
-	                    chooseOperateType(commitTypeDict, type),
-	                );
-	            }
-
-	            this.#addConfig.newBranchName = await this.confirmNewBranchName();
-
-	            const nowBranchName = await this.#gitStorage.getNowBranchName();
-	            this.#addConfig.targetBranch = await this.handler(
-	                chooseTargetBranch(branchList, nowBranchName),
-	            );
-
-	            resolve(this.#addConfig);
-	        });
-	    }
-	    async confirmNewBranchName(invalid = false) {
-	        const { type, username } = this.#addConfig;
-	        let newBranchName = this.#addConfig.newBranchName;
-	        const branchList = await this.#gitStorage.getBranchLocalAndRemoteList();
-
-	        if (!newBranchName) {
-	            const newBranch = await this.handler(
-	                inputCheckoutBranchName(
-	                    invalid
-	                        ? "分支名称或(需求/Bug/优化)ID已存在，请重新输入："
-	                        : "请输入分支名称, 推荐使用(需求/Bug/优化/)ID：",
-	                ),
-	            );
-	            newBranchName = `${type}/${username}/${newBranch}`;
-	        }
-	        if (branchList.includes(newBranchName)) {
-	            this.#addConfig.newBranchName = "";
-	            return this.confirmNewBranchName(true);
-	        } else {
-	            return newBranchName;
-	        }
-	    }
-	    async confirmOrigin(originList) {
-	        if (originList.length > 1) {
-	            this.#origin = await this.handler(
-	                chooseCommitOrigin(
-	                    originList.map((item) => ({
-	                        name: `${item.origin}  ${item.remote}`,
-	                        value: item.origin,
-	                    })),
-	                ),
-	            );
-	        } else {
-	            this.#origin = originList.at(0).origin;
-	        }
-	    }
-	    async invalidBranch() {
-	        const branchList = await this.#gitStorage.getBranchLocalAndRemoteList(
-	            this.#origin,
-	        );
-	        if (!branchList.length) {
-	            throw new Error("当前项目源还未创建分支，请创建后重试!");
-	        }
-	        return branchList;
-	    }
-	    async handlerNotPushFile() {
-	        const notPushFile = await this.#gitStorage.getNotCommitFile();
-	        if (notPushFile.length) {
-	            const commitPush = await this.handler(
-	                alreadyStatusFileCheckout(notPushFile),
-	            );
-	            if (!commitPush) process.exit(0);
-	            await Push.start();
-	            await delay();
-	            console.log("暂存区代码提交完成！\n");
-	        }
-	    }
-	    deleteBranch(branch) {
-	        if (branch.length) {
-	            this.delLocalBranch(branch);
-	        } else {
-	            this.chooseDelBranch();
-	        }
-	    }
-	    async chooseDelBranch() {
-	        const branchList = await this.handler(
-	            chooseDelLocalBranch(await this.#gitStorage.getBranchLocal()),
-	        );
-	        this.delLocalBranch(branchList);
-	    }
-	    async delLocalBranch(branch) {
-	        if (!branch.length) throw new Error("缺少需要删除的分支列表...");
-
-	        const { open, notDelBranch } = this.#delBranchSecure;
-	        if (open) {
-	            const notDelBranchList = branch.filter((item) =>
-	                notDelBranch.includes(item.toLocaleLowerCase()),
-	            );
-	            if (notDelBranchList.length) {
-	                const delBranchList = basicCommon.differenceArrayList(
-	                    branch,
-	                    notDelBranchList,
-	                );
-	                if (delBranchList.length) {
-	                    const continueStep = await this.handler(
-	                        notDelBranchConfirm(notDelBranchList),
-	                    );
-	                    if (continueStep) {
-	                        return this.delLocalBranch(delBranchList);
-	                    }
-	                } else {
-	                    return console.log(
-	                        `${notDelBranchList.join("、")} 分支不可删除`,
-	                    );
-	                }
-	            }
-	        }
-
-	        const branchList = await this.#gitStorage.getBranchLocal();
-	        const existsBranchList = branch.filter((item) =>
-	            branchList.includes(item),
-	        );
-	        if (!existsBranchList.length) return this.chooseDelBranch();
-	        const unExistsBranch = basicCommon.differenceArrayList(
-	            branch,
-	            existsBranchList,
-	        );
-	        const confirmDelBranch = await this.handler(
-	            delBranchConfirm(
-	                `本次删除的分支有：${existsBranchList.join(" ")} 确定要继续？${unExistsBranch.length ? `，${unExistsBranch.join(" ")}不存在将忽略` : ""}`,
-	            ),
-	        );
-	        const delRemoteBranch = await this.handler(syncDelRemoteBranch());
-
-	        if (confirmDelBranch)
-	            await this.#gitStorage.delBranch(
-	                existsBranchList,
-	                delRemoteBranch,
-	                this.#origin,
-	            );
-	    }
-	    async statusCurrentBranch() {
-	        const commitNotPushFile =
-	                await this.#gitStorage.getCommitNotPushFileList(),
-	            notCommitFile = await this.#gitStorage.getNotCommitFile();
-	        if (!commitNotPushFile.length && !notCommitFile.length)
-	            return console.log("\n当前分支暂无变更的文件");
-
-	        if (commitNotPushFile.length)
-	            console.log(`\n暂存区的文件有：\n${commitNotPushFile.join("\n")}`);
-
-	        if (notCommitFile.length)
-	            console.log(`\n还未提交的文件有：\n${notCommitFile.join("\n")}`);
-	    }
-	}
-
-	branch = new Branch();
-	return branch;
-}
-
 var command$1;
 var hasRequiredCommand$1;
 
@@ -45069,7 +45495,7 @@ function requireCommand$1 () {
 	const Exec = requireExec();
 	const Init = requireInit();
 	const Template = requireTemplate();
-	const Create = requireCreate();
+	requireCreate();
 	const Install = requireInstall();
 	const UnInstall = requireUninstall();
 	const Push = requirePush();
@@ -45168,6 +45594,10 @@ function requireCommand$1 () {
 	                    command: "--cli [name]",
 	                    description: "使用的包管理器名称",
 	                },
+	                {
+	                    command: "--dir [path]",
+	                    description: "执行安装包时的命令工作目录",
+	                },
 	            ],
 	            action: Install,
 	        },
@@ -45202,7 +45632,7 @@ function requireCommand$1 () {
 	                    action: (...rest) => Template.start("add", ...rest),
 	                },
 	                {
-	                    command: "delete [projectName...]",
+	                    command: "del [projectName...]",
 	                    description: "删除一个或全部的自定义项目模板",
 	                    option: [
 	                        {
@@ -45213,7 +45643,7 @@ function requireCommand$1 () {
 	                    action: (...rest) => Template.start("delete", ...rest),
 	                },
 	                {
-	                    command: "update [projectName...]",
+	                    command: "upd [projectName...]",
 	                    description: "更新一个或全部的自定义项目模板",
 	                    option: [
 	                        {
@@ -45222,17 +45652,6 @@ function requireCommand$1 () {
 	                        },
 	                    ],
 	                    action: (...rest) => Template.start("update", ...rest),
-	                },
-	                {
-	                    command: "create [projectName]",
-	                    description: "基于自定义项目模板创建一个项目",
-	                    option: [
-	                        {
-	                            command: "-t, --template <template>",
-	                            description: "模板名称",
-	                        },
-	                    ],
-	                    action: Create,
 	                },
 	            ],
 	        },
@@ -45274,11 +45693,6 @@ function requireCommand$1 () {
 	                {
 	                    command: "add [branchName]",
 	                    description: "新增一个分支",
-	                    option: [
-	                        {
-	                            command: "-t, --type <type>",
-	                        },
-	                    ],
 	                    action: (...rest) => Branch.start("add", ...rest),
 	                },
 	                {
@@ -45295,6 +45709,16 @@ function requireCommand$1 () {
 	                    command: "status",
 	                    description: "查看当前所在分支的变动文件",
 	                    action: (...rest) => Branch.start("status", ...rest),
+	                },
+	                {
+	                    command: "addOrigin [name] [address]",
+	                    description: "为当前项目添加一个Git源",
+	                    action: (...rest) => Branch.start("addOrigin", ...rest),
+	                },
+	                {
+	                    command: "delOrigin",
+	                    description: "在当前项目中，删除一个Git源",
+	                    action: (...rest) => Branch.start("delOrigin", ...rest),
 	                },
 	            ],
 	        },
@@ -45360,6 +45784,7 @@ function requireCore () {
 	    APP_CACHE_PATH,
 	    APP_TEMPLATE_PATH,
 	    APP_CONFIG_PATH,
+	    CUSTOMER_TEMPLATE_PATH,
 	} = requireConstance();
 
 	class MvCliCore {
@@ -45390,6 +45815,10 @@ function requireCore () {
 	            { key: "app_cache_path", value: APP_CACHE_PATH }, // 脚手架缓存根路径
 	            { key: "app_cache_config_path", value: APP_CONFIG_PATH }, // 脚手架配置文件路径
 	            { key: "app_cache_template_path", value: APP_TEMPLATE_PATH }, // 脚手架项目模板路径
+	            {
+	                key: "app_customer_template_path",
+	                value: CUSTOMER_TEMPLATE_PATH,
+	            },
 	        ];
 	        return setProcessEnv(envList);
 	    }
@@ -45415,9 +45844,9 @@ var hasRequiredLib;
 function requireLib () {
 	if (hasRequiredLib) return lib$8;
 	hasRequiredLib = 1;
-	const { cName, version } = require$$0$2;
+	const { name, version } = require$$0$2;
 	const mvCliCore = requireCore();
-	mvCliCore.start({ name: cName, version });
+	mvCliCore.start({ name, version });
 	return lib$8;
 }
 

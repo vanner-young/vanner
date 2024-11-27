@@ -5,11 +5,11 @@ const { basicCommon, platform } = require("@vanner/common");
 
 class GitStorage extends EventEmitter {
     #config = {
+        branch: "", // git 拉取的分支
         source: "", // git 地址
         local: "", // git 拉取的本地路径
-        storagePath: "", // git 拉取的本地路径的项目路径
+        storagePath: "", // git 仓库路径
         storageName: "", // git 拉取仓库的名称
-        branch: "", // git 拉取的分支
         isInitPull: false, // 是否在初始化时，拉取一下仓库的代码
         init: false, //仓库是否初始化过
     };
@@ -26,10 +26,17 @@ class GitStorage extends EventEmitter {
         super();
         this.hasGit()
             .then(() => {
+                // 没有git仓库，给项目添加git仓库并新增源
+                if (option.addInitGit) {
+                    return this.addInitGitProject(option);
+                }
+
+                // 已存在git仓库，对仓库进行管理
                 if (basicCommon.isType(option, "string")) {
                     return this.initLocalStorage(option);
                 }
 
+                // 建立链接，将git仓库与本地路径进行关联同步
                 const { source, local, branch, isInitPull = true } = option;
                 this.#config.source = source;
                 this.#config.local = local;
@@ -41,14 +48,59 @@ class GitStorage extends EventEmitter {
                     this.#config.init = true;
                 });
             })
-            .catch(() => {
-                console.log("当先系统还未安装Git，请安装Git地址后重试");
+            .catch((e) => {
+                console.log(e.message || e);
             });
     }
 
-    async initLocalStorage(localPath) {
+    // 初始化git仓库
+    async initGitProject() {
+        return basicCommon.execCommand("git init", {
+            cwd: this.#config.local,
+        });
+    }
+
+    // 添加一个源
+    async addOrigin({ name, address }) {
+        if (!name || !address)
+            throw new Error("缺少源名称或地址，添加源失败！");
+        const originList = (await this.getOriginList()).map(
+            (item) => item.origin,
+        );
+        if (originList.includes(name))
+            throw new Error(
+                `Git源 ${name} 已存在，添加源失败！${originList.join("、")}`,
+            );
+        return basicCommon.execCommand(`git remote add ${name} ${address}`, {
+            stdio: ["inherit", "inherit", "pipe"],
+            cwd: this.#config.local || this.#config.storagePath,
+        });
+    }
+
+    // 删除一个源
+    async removeOrigin(name) {
+        if (!name) throw new Error("缺少源名称，删除源失败！");
+        return basicCommon.execCommand(`git remote remove ${name}`, {
+            stdio: ["inherit", "inherit", "pipe"],
+            cwd: this.#config.local || this.#config.storagePath,
+        });
+    }
+
+    async addInitGitProject(option) {
+        if (!option.local) throw new Error("未找到项目路径，git 初始化失败");
+        if (!fs.existsSync(option.local))
+            throw new Error("项目路径不存在，请重新输入");
+
+        this.#config.local = option.local;
+        this.#config.storagePath = option.storagePath;
+        const existsGit = platform.isActiveEmptyGitProject(option.local);
+        if (!existsGit) await this.initGitProject();
+        this.emit("load:origin:end", true);
+    }
+
+    async initLocalStorage(targetPath) {
         try {
-            this.#config.storagePath = localPath;
+            this.#config.storagePath = targetPath;
             const originList = await this.getOriginList();
             if (!originList.length)
                 throw new Error("当前项目暂Git源，初始化失败");
@@ -123,7 +175,7 @@ class GitStorage extends EventEmitter {
     async clone() {
         await basicCommon.execCommand(`git clone ${this.remote}`, {
             cwd: this.#config.local,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         });
 
         if (!platform.isActiveEmptyGitProject(this.storagePath))
@@ -136,19 +188,19 @@ class GitStorage extends EventEmitter {
         if (force) return this.pull(branch);
         return basicCommon.execCommand(`git checkout ${branch}`, {
             cwd: this.storagePath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         });
     }
     addFile(file) {
         return basicCommon.execCommand(`git add ${file}`, {
             cwd: this.storagePath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         });
     }
     commit(message) {
         return basicCommon.execCommand(`git commit -m "${message}"`, {
             cwd: this.storagePath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
         });
     }
     push(origin, branch, option = {}) {
@@ -158,6 +210,8 @@ class GitStorage extends EventEmitter {
     async diffFile() {
         const diffString = await basicCommon.execCommand("git status -s", {
             stdio: ["ignore", "pipe", "ignore"],
+            cwd:
+                this.#config.local || this.#config.storagePath || process.cwd(),
         });
         const result = diffString
             .split("\n")
@@ -175,6 +229,26 @@ class GitStorage extends EventEmitter {
             .map((item) => item.replace("M  ", ""))
             .filter((item) => item);
     }
+    async pullRemoteBranch(origin, branch) {
+        if (!origin || !branch)
+            throw new Error("Git源或分支名称为空，拉取仓库失败！");
+
+        return basicCommon.execCommand(`git pull ${origin} ${branch}`, {
+            cwd: this.local || this.storagePath,
+            stdio: ["inherit", "inherit", "pipe"],
+        });
+    }
+    async pullRemoteForce(origin, branch) {
+        if (!origin || !branch)
+            throw new Error("Git源或分支名称为空，拉取仓库失败！");
+        return basicCommon.execCommand(
+            `git pull ${origin} ${branch} --allow-unrelated-histories`,
+            {
+                cwd: this.local || this.storagePath,
+                stdio: ["inherit", "inherit", "pipe"],
+            },
+        );
+    }
     async pull(branch) {
         if (!branch) branch = this.#config.branch;
         const command =
@@ -183,7 +257,13 @@ class GitStorage extends EventEmitter {
                 : `git fetch --all && git checkout -f ${branch} && git reset origin/${branch} --hard && git pull`;
         await basicCommon.execCommand(command, {
             cwd: this.storagePath,
-            stdio: "inherit",
+            stdio: ["inherit", "inherit", "pipe"],
+        });
+    }
+    async fetch() {
+        await basicCommon.execCommand(`git fetch --all`, {
+            cwd: this.local || this.storagePath,
+            stdio: ["inherit", "inherit", "pipe"],
         });
     }
     async getCurrentBranch() {
@@ -249,7 +329,7 @@ class GitStorage extends EventEmitter {
         }
         await basicCommon.execCommand(
             `git branch --delete ${branchListContent} ${syncRemote && delRemoteBranch.length ? `&& git push ${origin} --delete ${delRemoteBranch.join(" ")}` : ""}`,
-            { stdio: "inherit" },
+            { stdio: ["inherit", "inherit", "pipe"] },
         );
     }
     async getCommitNotPushFileList() {
@@ -283,21 +363,27 @@ class GitStorage extends EventEmitter {
     async setUserName(username) {
         return await basicCommon.execCommand(
             `git config user.name ${username}`,
-            { stdio: "inherit" },
+            { stdio: ["inherit", "inherit", "pipe"] },
         );
+    }
+
+    async createBranch(branchName) {
+        return await basicCommon.execCommand(`git checkout -b ${branchName}`, {
+            stdio: ["inherit", "inherit", "pipe"],
+        });
     }
 
     async checkoutOnBasicOfOriginBranch(origin, branchName, basicOfBranch) {
         return await basicCommon.execCommand(
             `git checkout -b ${branchName} ${origin}/${basicOfBranch}`,
-            { stdio: "inherit" },
+            { stdio: ["inherit", "inherit", "pipe"] },
         );
     }
 
     async checkoutOnBasicOfLocalBranch(branchName, basicOfBranch) {
         return await basicCommon.execCommand(
             `git checkout -b ${branchName} ${basicOfBranch}`,
-            { stdio: "inherit" },
+            { stdio: ["inherit", "inherit", "pipe"] },
         );
     }
 

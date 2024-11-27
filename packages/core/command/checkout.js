@@ -78,6 +78,7 @@ class Checkout extends Inquirer {
             const commitPush = await this.handler(
                 alreadyStatusFileCheckout(notPushFile),
             );
+            console.log(commitPush);
             if (!commitPush) process.exit(0);
             await Push.start();
             await delay();

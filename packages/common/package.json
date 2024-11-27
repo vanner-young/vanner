@@ -11,6 +11,6 @@
     "license": "ISC",
     "dependencies": {
         "axios": "^1.7.7",
-        "mv-common": "^1.1.6"
+        "mv-common": "^1.1.7"
     }
 }

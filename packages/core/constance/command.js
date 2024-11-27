@@ -103,6 +103,10 @@ const commandConfig = () => {
                     command: "--cli [name]",
                     description: "使用的包管理器名称",
                 },
+                {
+                    command: "--dir [path]",
+                    description: "执行安装包时的命令工作目录",
+                },
             ],
             action: Install,
         },
@@ -198,11 +202,6 @@ const commandConfig = () => {
                 {
                     command: "add [branchName]",
                     description: "新增一个分支",
-                    option: [
-                        {
-                            command: "-t, --type <type>",
-                        },
-                    ],
                     action: (...rest) => Branch.start("add", ...rest),
                 },
                 {
@@ -219,6 +218,16 @@ const commandConfig = () => {
                     command: "status",
                     description: "查看当前所在分支的变动文件",
                     action: (...rest) => Branch.start("status", ...rest),
+                },
+                {
+                    command: "addOrigin [name] [address]",
+                    description: "为当前项目添加一个Git源",
+                    action: (...rest) => Branch.start("addOrigin", ...rest),
+                },
+                {
+                    command: "delOrigin",
+                    description: "在当前项目中，删除一个Git源",
+                    action: (...rest) => Branch.start("delOrigin", ...rest),
                 },
             ],
         },
