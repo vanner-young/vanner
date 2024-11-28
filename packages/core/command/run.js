@@ -19,7 +19,7 @@ class Run extends Inquirer {
         const { command, cwd } = this.#config;
         if (!command || !cwd) return;
         return basicCommon.execCommand(this.#config.command, {
-            stdio: ["inherit", "inherit", "pipe"],
+            stdio: "inherit",
             cwd,
             env: {
                 ...process.env,

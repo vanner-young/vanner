@@ -44468,20 +44468,27 @@ function requireBranch () {
 	    }
 	    async listBranch() {
 	        const list = await this.#gitStorage.getBranch();
-	        const { local, remote } = this.distinguishBranchType(list);
+	        const currentBranch = await this.#gitStorage.getCurrentBranch();
+	        const { local, remote } = this.distinguishBranchType(
+	            list,
+	            currentBranch,
+	        );
 	        if (!local.length && !remote.length)
 	            return console.log("当前仓库暂无代码分支");
 
 	        if (local.length) console.log(`\n本地分支如下：\n${local.join("\n")}`);
 	        if (local.length) console.log(`\n远程分支如下：\n${remote.join("\n")}`);
 	    }
-	    distinguishBranchType(branchList) {
+	    distinguishBranchType(branchList, currentBranch) {
 	        return branchList.reduce(
 	            (pre, next) => {
-	                if (next.startsWith(`remotes/${this.#origin}/`))
+	                if (next.startsWith(`remotes/${this.#origin}/`)) {
 	                    pre.remote.push(next);
-	                else pre.local.push(next);
-
+	                } else {
+	                    pre.local.push(
+	                        next === currentBranch ? `${next}（当前分支）` : next,
+	                    );
+	                }
 	                return pre;
 	            },
 	            { local: [], remote: [] },
@@ -45435,7 +45442,7 @@ function requireRun () {
 	        const { command, cwd } = this.#config;
 	        if (!command || !cwd) return;
 	        return basicCommon.execCommand(this.#config.command, {
-	            stdio: ["inherit", "inherit", "pipe"],
+	            stdio: "inherit",
 	            cwd,
 	            env: {
 	                ...process.env,
