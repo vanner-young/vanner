@@ -43996,8 +43996,9 @@ function requireLib$2 () {
 	            stdio: ["inherit", "inherit", "pipe"],
 	        });
 	    }
-	    push(origin, branch, option = {}) {
+	    async push(origin, branch, option = {}) {
 	        if (!origin || !branch) throw new Error("push remote have to origin");
+	        await basicCommon.execCommand(`git pull ${origin} ${branch}`);
 	        return basicCommon.execCommand(`git push ${origin} ${branch}`, option);
 	    }
 	    async diffFile() {
