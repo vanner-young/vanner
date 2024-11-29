@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.2";
+var version = "1.0.3";
 var description = "";
 var main$1 = "lib/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
