@@ -60,13 +60,13 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.1";
+var version = "1.0.2";
 var description = "";
-var main$1 = "bundle/index.js";
+var main$1 = "lib/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	vanner: "bundle/index.js",
+	vanner: "lib/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -637,6 +637,24 @@ function requireCommon () {
 		};
 
 		/**
+		 * 从一个字符串中查找指定的字符是否存在
+		 * @param { string } str 需要查找的字符串
+		 * @param { Array<string> | string } ident 查找的字符串内容，可以是字符串，也可以是字符串数组
+		 * @param { boolean } absolute 是否绝对匹配
+		 * @returns { boolean } 是否可以查询到结果
+		 * **/
+		const findString = (str, ident, absolute = false) => {
+		    if (isType(ident, 'array')) {
+		        const findFunction = absolute
+		            ? (item) => !str.includes(item)
+		            : (item) => str.includes(item);
+		        const result = ident.find(findFunction);
+		        return absolute ? !result : !!result;
+		    }
+		    return !!str.includes(ident);
+		};
+
+		/**
 		 * 使用子进程执行一条命令
 		 * @param { string } command 执行的命令
 		 * @param { Partial<SpawnSyncOptionsWithStringEncoding> } options 执行命令的参数
@@ -653,8 +671,8 @@ function requireCommon () {
 		        const result = node_child_process.spawnSync(commandList[0], commandList.slice(1), spawnOption);
 		        const stdout = result.stdout?.trim?.();
 		        const error = result.error || result.stderr;
-		        if (error && ['error', 'Error'].includes(error))
-		            reject(error);
+		        if (error && findString(error, ['error', 'Error']))
+		            return reject(error);
 		        else
 		            return resolve(stdout);
 		    });
@@ -912,6 +930,7 @@ function requireCommon () {
 		exports.exists = exists;
 		exports.findParentFile = findParentFile;
 		exports.findRootParentPath = findRootParentPath;
+		exports.findString = findString;
 		exports.flatJSON = flatJSON;
 		exports.getAppData = getAppData;
 		exports.getHome = getHome;
