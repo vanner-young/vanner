@@ -42,6 +42,7 @@ class SingleCommandRegister {
 }
 
 class RegisterCommand extends SingleCommandRegister {
+    program;
     #commandOption;
     #singleRegister = new Map([
         [this.usage, "usage"],
@@ -51,7 +52,6 @@ class RegisterCommand extends SingleCommandRegister {
         [this.option, "option"],
         [this.action, "action"],
     ]);
-    program;
     constructor(props) {
         if (!props.commandOption)
             throw new Error("missing register command for commandOption...");

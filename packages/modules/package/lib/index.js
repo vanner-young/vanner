@@ -9,12 +9,17 @@ class Package {
         packageList: [],
         registry: null,
         packageCli: null,
+        type: { S: true, D: false, all: false },
     };
-    constructor({ packageList, registry, cwd, packageCli }) {
+    constructor({ packageList, registry, cwd, packageCli, type }) {
         this.#packageConfig.cwd = cwd;
-        this.#packageConfig.packageCli = packageCli;
         this.#packageConfig.registry = registry;
+        this.#packageConfig.packageCli = packageCli;
         this.#packageConfig.packageList = packageList;
+        this.#packageConfig.type = {
+            ...this.#packageConfig.type,
+            ...type,
+        };
     }
     async invalidProject(cb) {
         const { cwd, packageCli } = this.#packageConfig;
@@ -34,6 +39,18 @@ class Package {
         }
         cb();
     }
+    parserInstallType() {
+        const packageCli = this.#packageConfig.packageCli;
+        const { all, S, D } = this.#packageConfig.type;
+        if (["yarn", "pnpm"].includes(packageCli)) {
+            if (D) return "-D";
+            else return "";
+        } else {
+            if (all || (S && D)) return "-S -D";
+            else if (S) return "-S";
+            else return "-D";
+        }
+    }
     async confirmRegistry() {
         const result = await basicCommon.execCommand(
             `${this.#packageConfig.packageCli} config get registry`,
@@ -43,7 +60,11 @@ class Package {
             timeout: Number(platform.getProcessEnv("request_timeout")) || 1000,
         });
         if (isResponse) return result;
-        else return this.#packageConfig.registry;
+
+        console.log(
+            `registry is timeout... checkout npm mirror：${this.packageCli.registry}...`,
+        );
+        return this.#packageConfig.registry;
     }
     async initAction() {
         const registry = await this.confirmRegistry();
@@ -62,12 +83,13 @@ class Package {
             this.type === "install"
                 ? platform.installDependencies
                 : platform.uninstallDependencies;
-
+        const installTypeStr = this.parserInstallType();
         handler(
             this.#packageConfig.packageCli,
             this.#packageConfig.cwd,
             packageList || [],
             registry,
+            installTypeStr,
         );
     }
     action(type) {

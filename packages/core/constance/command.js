@@ -100,12 +100,16 @@ const commandConfig = () => {
             description: "安装一个Npm包",
             option: [
                 {
-                    command: "--cli [name]",
-                    description: "使用的包管理器名称",
+                    command: "-S",
+                    description: "生产依赖安装",
                 },
                 {
-                    command: "--dir [path]",
-                    description: "执行安装包时的命令工作目录",
+                    command: "-D",
+                    description: "开发依赖安装",
+                },
+                {
+                    command: "-all",
+                    description: "生产和生产依赖均安装（仅对npm有效）",
                 },
             ],
             action: Install,
