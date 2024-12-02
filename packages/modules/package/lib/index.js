@@ -9,7 +9,7 @@ class Package {
         packageList: [],
         registry: null,
         packageCli: null,
-        type: { S: true, D: false, all: false },
+        type: { D: false },
     };
     constructor({ packageList, registry, cwd, packageCli, type }) {
         this.#packageConfig.cwd = cwd;
@@ -40,16 +40,8 @@ class Package {
         cb();
     }
     parserInstallType() {
-        const packageCli = this.#packageConfig.packageCli;
-        const { all, S, D } = this.#packageConfig.type;
-        if (["yarn", "pnpm"].includes(packageCli)) {
-            if (D) return "-D";
-            else return "";
-        } else {
-            if (all || (S && D)) return "-S -D";
-            else if (S) return "-S";
-            else return "-D";
-        }
+        const { D } = this.#packageConfig.type;
+        return D ? "-D" : "";
     }
     async confirmRegistry() {
         const result = await basicCommon.execCommand(
@@ -62,7 +54,7 @@ class Package {
         if (isResponse) return result;
 
         console.log(
-            `registry is timeout... checkout npm mirror：${this.packageCli.registry}...`,
+            `registry is timeout... checkout npm mirror：${this.#packageConfig.registry}...`,
         );
         return this.#packageConfig.registry;
     }
