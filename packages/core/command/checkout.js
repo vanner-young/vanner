@@ -5,48 +5,25 @@ const { commitTypeDict } = require("../constance");
 
 const {
     chooseCommitOrigin,
+    checkoutBranchName,
     alreadyStatusFileCheckout,
-    chooseOperateType,
-    inputCheckoutBranchName,
-    chooseTargetBranch,
-    inputGitUserName,
 } = require("../constance/question");
 const Push = require("./push");
 
 class Checkout extends Inquirer {
     #config = {
         origin: "",
-        branch: "",
-        type: "",
         targetBranch: "",
-        username: "",
     };
     #gitStorage;
     get commitType() {
         return Object.keys(commitTypeDict);
     }
-    start(branchName, source) {
-        this.#config.type = source.type;
-        this.#config.branch = branchName;
-
+    start(branchName) {
+        this.#config.targetBranch = branchName;
         this.chooseOption().then(async () => {
-            const { type, origin, branch, username, targetBranch } =
-                this.#config;
-
-            const newBranchName = `${type}/${username}/${branch}`;
-            const localBranch = await this.#gitStorage.getBranchLocal();
-            if (localBranch.includes(targetBranch)) {
-                await this.#gitStorage.checkoutOnBasicOfLocalBranch(
-                    newBranchName,
-                    targetBranch,
-                );
-            } else {
-                await this.#gitStorage.checkoutOnBasicOfOriginBranch(
-                    origin,
-                    newBranchName,
-                    targetBranch,
-                );
-            }
+            const { targetBranch } = this.#config;
+            this.#gitStorage.checkout(targetBranch);
         });
     }
     async confirmOrigin(originList) {
@@ -64,13 +41,14 @@ class Checkout extends Inquirer {
         }
     }
     async invalidBranch() {
-        const branchList = await this.#gitStorage.getBranchRemote(
+        const localBranchList = await this.#gitStorage.getBranchLocal();
+        const remoteBranchList = await this.#gitStorage.getBranchRemote(
             this.#config.origin,
         );
-        if (!branchList.length) {
+        if (![...localBranchList, ...remoteBranchList].length) {
             throw new Error("当前项目源还未创建分支，请创建后重试!");
         }
-        return branchList;
+        return { remote: remoteBranchList, local: localBranchList };
     }
     async handlerNotPushFile() {
         const notPushFile = await this.#gitStorage.getNotCommitFile();
@@ -78,7 +56,6 @@ class Checkout extends Inquirer {
             const commitPush = await this.handler(
                 alreadyStatusFileCheckout(notPushFile),
             );
-            console.log(commitPush);
             if (!commitPush) process.exit(0);
             await Push.start();
             await delay();
@@ -90,35 +67,32 @@ class Checkout extends Inquirer {
             this.#gitStorage = new GitStorage(process.cwd());
             this.#gitStorage.once("load:origin:end", async (originList) => {
                 await this.confirmOrigin(originList);
-                const branchList = await this.invalidBranch();
+                const { remote, local } = await this.invalidBranch();
+                const currentBranch = await this.#gitStorage.getCurrentBranch();
                 await this.handlerNotPushFile();
 
-                const { branch, type } = this.#config;
-                if (!branch) {
-                    this.#config.branch = await this.handler(
-                        inputCheckoutBranchName(),
+                if (!this.#config.targetBranch) {
+                    this.#config.targetBranch = await this.handler(
+                        checkoutBranchName(
+                            local
+                                .map((item) => {
+                                    return {
+                                        label: `${item}${item === currentBranch ? "(当前分支)" : ""}`,
+                                        value: item,
+                                    };
+                                })
+                                .concat(
+                                    remote.map((item) => {
+                                        return {
+                                            label: `remote/${this.#config.origin}/${item}`,
+                                            value: item,
+                                        };
+                                    }),
+                                ),
+                        ),
                     );
                 }
-
-                if (!type || !this.commitType.includes(type)) {
-                    this.#config.type = await this.handler(
-                        chooseOperateType(commitTypeDict, type),
-                    );
-                }
-
-                const nowBranchName = await this.#gitStorage.getNowBranchName();
-                this.#config.targetBranch = await this.handler(
-                    chooseTargetBranch(branchList, nowBranchName),
-                );
-
-                let username = await this.#gitStorage.getGitUserName();
-                if (!username) {
-                    username = await this.handler(inputGitUserName());
-                    await this.#gitStorage.setUserName(username);
-                }
-                this.#config.username = username;
-
-                resolve(this.#config);
+                return resolve(this.#config);
             });
         });
     }

@@ -4,12 +4,12 @@ const Config = require("../command/config");
 const Exec = require("../command/exec");
 const Init = require("../command/init");
 const Template = require("../command/template");
-const Create = require("../command/create");
 const Install = require("../command/install");
 const UnInstall = require("../command/uninstall");
 const Push = require("../command/push");
 const Run = require("../command/Run");
 const Branch = require("../command/branch");
+const Checkout = require("../command/checkout");
 
 const commandConfig = () => {
     const {
@@ -195,6 +195,11 @@ const commandConfig = () => {
             command: "branch",
             description: "对项目分支进行管理",
             children: [
+                {
+                    command: "checkout [branchName]",
+                    description: "切换分支",
+                    action: (...rest) => Checkout.start(...rest),
+                },
                 {
                     command: "add [branchName]",
                     description: "新增一个分支",

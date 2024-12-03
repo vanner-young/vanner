@@ -367,6 +367,18 @@ export const inputCheckoutBranchName = (message) => {
     };
 };
 
+export const checkoutBranchName = (branchList) => {
+    return {
+        name: "checkoutBranchName",
+        type: "search",
+        message: "请在下方列表中选择需要切换的分支：",
+        choices: branchList.map((item) => ({
+            name: item.label,
+            value: item.value,
+        })),
+    };
+};
+
 export const chooseTargetBranch = (branchList, nowBranchName) => {
     return {
         name: "chooseTargetBranch",

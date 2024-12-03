@@ -60,13 +60,13 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.3";
+var version = "1.0.6";
 var description = "";
-var main$1 = "lib/index.js";
+var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
 var author = "vanner <1157875374@qq.com>";
 var bin = {
-	vanner: "lib/index.js",
+	vanner: "bundle/index.js",
 	registry: "https://registry.npmjs.org/"
 };
 var publishConfig = {
@@ -295,11 +295,16 @@ function requireCommon () {
 		/**
 		 * 判断一个数据的类型是否为指定的类型
 		 * @param { unknown } value 需要判断类型的数据
-		 * @param { string } type 期望的数据类型
+		 * @param { string | Array } type 期望的数据类型
 		 * @return { boolean } 是否为期望的类型
 		 * **/
 		const isType = (value, type) => {
-		    return getType(value) === type.toLocaleLowerCase();
+		    const valueType = getType(value);
+		    if (valueType === null)
+		        throw new Error('invalid value...');
+		    if (typeof type === 'string')
+		        return valueType === type.toLocaleLowerCase();
+		    return type.map((item) => item.toLocaleLowerCase()).includes(valueType);
 		};
 		/**
 		 * 异步或同步延迟等待一段时间
@@ -359,6 +364,14 @@ function requireCommon () {
 		            loading = false;
 		        }, delay);
 		    };
+		};
+		/**
+		 * 查看属性是否存在(原型链方式判断)
+		 * @param { object } value 需要判断的值
+		 * @param { string } attr key 值
+		 * **/
+		const hasProperty = (value, attr) => {
+		    return Reflect.has(value, attr);
 		};
 
 		/**
@@ -449,29 +462,42 @@ function requireCommon () {
 		 * 拷贝整个目录及其子路径至指定的目录
 		 * @param { string } origin 源路径
 		 * @param { string } targetPath 目标路径
-		 * @param { boolean } cover 是否覆盖
-		 * @param { (sourcePath: string, targetPath: string) => boolean | undefined } filterCb 自定义判断函数
+		 * @param { ((sourcePath: string, targetPath: string) => boolean) | boolean } cover 是否覆盖
+		 * @param { ((sourcePath: string, targetPath: string) => boolean) | boolean } ignore 是否忽略
 		 * **/
-		const copyDirectory = (origin, targetPath, cover = true, filterCb) => {
-		    if (cover)
-		        dropCleanFolder(targetPath);
+		const copyDirectory = async (origin, targetPath, cover = true, ignore = false) => {
+		    const originStat = fs.statSync(origin).isDirectory();
+		    if (!originStat)
+		        throw new Error('origin or target is not directory');
 		    if (!fs.existsSync(targetPath))
-		        fs.mkdirSync(targetPath, { recursive: true });
+		        createDir(targetPath);
 		    const entries = fs.readdirSync(origin, { withFileTypes: true });
 		    for (const entry of entries) {
-		        const sourcePath = path.resolve(origin, entry.name);
-		        const destPath = path.resolve(targetPath, entry.name);
-		        if (isType(filterCb, 'function') &&
-		            !filterCb(sourcePath, destPath)) {
+		        const sourceChildrenPath = path.resolve(origin, entry.name), destChildrenPath = path.resolve(targetPath, entry.name);
+		        // 是否忽略此路径的移动
+		        if (typeof ignore === 'function' &&
+		            isType(ignore, ['function', 'asyncfunction']) &&
+		            (await ignore(sourceChildrenPath, destChildrenPath))) {
 		            continue;
 		        }
-		        else {
-		            if (entry.isDirectory()) {
-		                copyDirectory(sourcePath, destPath, cover, filterCb);
+		        // 此路径是否覆盖, 覆盖时，只能文件不能目录
+		        let isCover = false;
+		        if (fs.existsSync(destChildrenPath) && !entry.isDirectory()) {
+		            if ((isType(cover, ['boolean']) && cover) ||
+		                (typeof cover === 'function' &&
+		                    (await cover(sourceChildrenPath, destChildrenPath)))) {
+		                isCover = true;
+		                fs.unlinkSync(destChildrenPath);
 		            }
 		            else {
-		                copyFile(sourcePath, destPath, cover);
+		                continue;
 		            }
+		        }
+		        if (entry.isDirectory()) {
+		            await copyDirectory(sourceChildrenPath, destChildrenPath, cover, ignore);
+		        }
+		        else {
+		            copyFile(sourceChildrenPath, destChildrenPath, isCover);
 		        }
 		    }
 		};
@@ -939,6 +965,7 @@ function requireCommon () {
 		exports.getReferToAppData = getReferToAppData;
 		exports.getSystemInfo = getSystemInfo;
 		exports.getType = getType;
+		exports.hasProperty = hasProperty;
 		exports.intersectionArrayList = intersectionArrayList;
 		exports.isActiveProcessByName = isActiveProcessByName;
 		exports.isActiveProcessByPid = isActiveProcessByPid;
@@ -23107,6 +23134,7 @@ function requireLib$7 () {
 	}
 
 	class RegisterCommand extends SingleCommandRegister {
+	    program;
 	    #commandOption;
 	    #singleRegister = new Map([
 	        [this.usage, "usage"],
@@ -23116,7 +23144,6 @@ function requireLib$7 () {
 	        [this.option, "option"],
 	        [this.action, "action"],
 	    ]);
-	    program;
 	    constructor(props) {
 	        if (!props.commandOption)
 	            throw new Error("missing register command for commandOption...");
@@ -43363,6 +43390,18 @@ const inputCheckoutBranchName = (message) => {
     };
 };
 
+const checkoutBranchName = (branchList) => {
+    return {
+        name: "checkoutBranchName",
+        type: "search",
+        message: "请在下方列表中选择需要切换的分支：",
+        choices: branchList.map((item) => ({
+            name: item.label,
+            value: item.value,
+        })),
+    };
+};
+
 const chooseTargetBranch = (branchList, nowBranchName) => {
     return {
         name: "chooseTargetBranch",
@@ -43571,6 +43610,7 @@ var question = /*#__PURE__*/Object.freeze({
 	alreadyStatusFileCheckout: alreadyStatusFileCheckout,
 	associationStorage: associationStorage,
 	checkoutBranch: checkoutBranch,
+	checkoutBranchName: checkoutBranchName,
 	chooseCommitFile: chooseCommitFile,
 	chooseCommitOrigin: chooseCommitOrigin,
 	chooseCreateTemplateName: chooseCreateTemplateName,
@@ -45197,88 +45237,6 @@ function requireTemplate () {
 	return template;
 }
 
-var create;
-var hasRequiredCreate;
-
-function requireCreate () {
-	if (hasRequiredCreate) return create;
-	hasRequiredCreate = 1;
-	const fs = require$$0$6;
-	const path = require$$1$3;
-	const Inquirer = requireLib$4();
-	const { basicCommon, platform } = requireLib$8();
-
-	const {
-	    createExistProject,
-	    chooseTemplateProject,
-	    chooseCreateTemplateName,
-	    inputProjectName,
-	} = require$$4;
-	const Template = requireTemplate();
-	const { CUSTOMER_TEMPLATE_PATH } = requireConstance();
-
-	class Create extends Inquirer {
-	    #templateDir;
-	    #projectName;
-	    #templateList = CUSTOMER_TEMPLATE_PATH;
-
-	    async start(name, option) {
-	        if (option.template === "emplate")
-	            return console.log(`error: unknown option '-template'`);
-
-	        this.#projectName = name;
-	        this.#templateList = Template.getTemplateList();
-	        if (!this.#templateList.length)
-	            return console.log(
-	                `当前系统暂已无项目模板数据，可使用 ${platform.getProcessEnv("app_name")} template add <git remote> 进行添加`,
-	            );
-	        this.selectCustomerProject(option.template);
-	    }
-	    async createFolder() {
-	        const basicPath = process.cwd();
-	        if (!this.#projectName) {
-	            this.#projectName = await this.handler(inputProjectName());
-	        }
-
-	        const projectPath = path.resolve(basicPath, this.#projectName);
-	        if (fs.existsSync(projectPath)) {
-	            const { cover } = await this.handler(
-	                createExistProject(this.#projectName),
-	            );
-	            if (!cover) return;
-	        }
-	        basicCommon.createDir(projectPath, true);
-	        return projectPath;
-	    }
-	    async selectCustomerProject(template = false) {
-	        if (!template) {
-	            template = await this.handler(
-	                chooseCreateTemplateName(this.#templateList),
-	            );
-	        }
-	        if (!this.#templateList.includes(template))
-	            template = await this.handler(
-	                chooseTemplateProject(
-	                    template &&
-	                        `${template} 不存在当前的系统的项目模板中，可选择以下项目模板`,
-	                    this.#templateList,
-	                ),
-	            );
-	        this.createCustomerProject(template);
-	    }
-	    async createCustomerProject(template) {
-	        const projectPath = await this.createFolder();
-	        requireInit().createProject(
-	            path.resolve(this.#templateDir, template),
-	            projectPath,
-	        );
-	    }
-	}
-
-	create = new Create();
-	return create;
-}
-
 var lib;
 var hasRequiredLib$1;
 
@@ -45296,12 +45254,17 @@ function requireLib$1 () {
 	        packageList: [],
 	        registry: null,
 	        packageCli: null,
+	        type: { D: false },
 	    };
-	    constructor({ packageList, registry, cwd, packageCli }) {
+	    constructor({ packageList, registry, cwd, packageCli, type }) {
 	        this.#packageConfig.cwd = cwd;
-	        this.#packageConfig.packageCli = packageCli;
 	        this.#packageConfig.registry = registry;
+	        this.#packageConfig.packageCli = packageCli;
 	        this.#packageConfig.packageList = packageList;
+	        this.#packageConfig.type = {
+	            ...this.#packageConfig.type,
+	            ...type,
+	        };
 	    }
 	    async invalidProject(cb) {
 	        const { cwd, packageCli } = this.#packageConfig;
@@ -45321,6 +45284,10 @@ function requireLib$1 () {
 	        }
 	        cb();
 	    }
+	    parserInstallType() {
+	        const { D } = this.#packageConfig.type;
+	        return D ? "-D" : "";
+	    }
 	    async confirmRegistry() {
 	        const result = await basicCommon.execCommand(
 	            `${this.#packageConfig.packageCli} config get registry`,
@@ -45330,7 +45297,11 @@ function requireLib$1 () {
 	            timeout: Number(platform.getProcessEnv("request_timeout")) || 1000,
 	        });
 	        if (isResponse) return result;
-	        else return this.#packageConfig.registry;
+
+	        console.log(
+	            `registry is timeout... checkout npm mirror：${this.#packageConfig.registry}...`,
+	        );
+	        return this.#packageConfig.registry;
 	    }
 	    async initAction() {
 	        const registry = await this.confirmRegistry();
@@ -45349,12 +45320,13 @@ function requireLib$1 () {
 	            this.type === "install"
 	                ? platform.installDependencies
 	                : platform.uninstallDependencies;
-
+	        const installTypeStr = this.parserInstallType();
 	        handler(
 	            this.#packageConfig.packageCli,
 	            this.#packageConfig.cwd,
 	            packageList || [],
 	            registry,
+	            installTypeStr,
 	        );
 	    }
 	    action(type) {
@@ -45387,14 +45359,16 @@ function requireInstall () {
 
 	class Install {
 	    async start(packageList, option) {
-	        const execPath = option.dir
-	            ? option.dir
-	            : await basicCommon.findParentFile(process.cwd(), "package.json");
+	        const execPath = await basicCommon.findParentFile(
+	            process.cwd(),
+	            "package.json",
+	        );
 
 	        new Package({
 	            packageList,
 	            cwd: execPath,
-	            packageCli: option.cli || platform.getPackageCli(execPath),
+	            type: option,
+	            packageCli: platform.getPackageCli(execPath),
 	            registry: platform.getProcessEnv("default_registry"),
 	        }).action();
 	    }
@@ -45514,6 +45488,116 @@ function requireRun () {
 	return Run_1;
 }
 
+var checkout;
+var hasRequiredCheckout;
+
+function requireCheckout () {
+	if (hasRequiredCheckout) return checkout;
+	hasRequiredCheckout = 1;
+	const { delay } = requireLib$8();
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { commitTypeDict } = requireConstance();
+
+	const {
+	    chooseCommitOrigin,
+	    checkoutBranchName,
+	    alreadyStatusFileCheckout,
+	} = require$$4;
+	const Push = requirePush();
+
+	class Checkout extends Inquirer {
+	    #config = {
+	        origin: "",
+	        targetBranch: "",
+	    };
+	    #gitStorage;
+	    get commitType() {
+	        return Object.keys(commitTypeDict);
+	    }
+	    start(branchName) {
+	        this.#config.targetBranch = branchName;
+	        this.chooseOption().then(async () => {
+	            const { targetBranch } = this.#config;
+	            this.#gitStorage.checkout(targetBranch);
+	        });
+	    }
+	    async confirmOrigin(originList) {
+	        if (originList.length > 1) {
+	            this.#config.origin = await this.handler(
+	                chooseCommitOrigin(
+	                    originList.map((item) => ({
+	                        name: `${item.origin}  ${item.remote}`,
+	                        value: item.origin,
+	                    })),
+	                ),
+	            );
+	        } else {
+	            this.#config.origin = originList.at(0).origin;
+	        }
+	    }
+	    async invalidBranch() {
+	        const localBranchList = await this.#gitStorage.getBranchLocal();
+	        const remoteBranchList = await this.#gitStorage.getBranchRemote(
+	            this.#config.origin,
+	        );
+	        if (![...localBranchList, ...remoteBranchList].length) {
+	            throw new Error("当前项目源还未创建分支，请创建后重试!");
+	        }
+	        return { remote: remoteBranchList, local: localBranchList };
+	    }
+	    async handlerNotPushFile() {
+	        const notPushFile = await this.#gitStorage.getNotCommitFile();
+	        if (notPushFile.length) {
+	            const commitPush = await this.handler(
+	                alreadyStatusFileCheckout(notPushFile),
+	            );
+	            if (!commitPush) process.exit(0);
+	            await Push.start();
+	            await delay();
+	            console.log("暂存区代码提交完成！\n");
+	        }
+	    }
+	    chooseOption() {
+	        return new Promise((resolve) => {
+	            this.#gitStorage = new GitStorage(process.cwd());
+	            this.#gitStorage.once("load:origin:end", async (originList) => {
+	                await this.confirmOrigin(originList);
+	                const { remote, local } = await this.invalidBranch();
+	                const currentBranch = await this.#gitStorage.getCurrentBranch();
+	                await this.handlerNotPushFile();
+
+	                if (!this.#config.targetBranch) {
+	                    this.#config.targetBranch = await this.handler(
+	                        checkoutBranchName(
+	                            local
+	                                .map((item) => {
+	                                    return {
+	                                        label: `${item}${item === currentBranch ? "(当前分支)" : ""}`,
+	                                        value: item,
+	                                    };
+	                                })
+	                                .concat(
+	                                    remote.map((item) => {
+	                                        return {
+	                                            label: `remote/${this.#config.origin}/${item}`,
+	                                            value: item,
+	                                        };
+	                                    }),
+	                                ),
+	                        ),
+	                    );
+	                }
+	                return resolve(this.#config);
+	            });
+	        });
+	    }
+	}
+
+	checkout = new Checkout();
+	return checkout;
+}
+
 var command$1;
 var hasRequiredCommand$1;
 
@@ -45526,12 +45610,12 @@ function requireCommand$1 () {
 	const Exec = requireExec();
 	const Init = requireInit();
 	const Template = requireTemplate();
-	requireCreate();
 	const Install = requireInstall();
 	const UnInstall = requireUninstall();
 	const Push = requirePush();
 	const Run = requireRun();
 	const Branch = requireBranch();
+	const Checkout = requireCheckout();
 
 	const commandConfig = () => {
 	    const {
@@ -45622,12 +45706,8 @@ function requireCommand$1 () {
 	            description: "安装一个Npm包",
 	            option: [
 	                {
-	                    command: "--cli [name]",
-	                    description: "使用的包管理器名称",
-	                },
-	                {
-	                    command: "--dir [path]",
-	                    description: "执行安装包时的命令工作目录",
+	                    command: "-D",
+	                    description: "开发依赖安装",
 	                },
 	            ],
 	            action: Install,
@@ -45721,6 +45801,11 @@ function requireCommand$1 () {
 	            command: "branch",
 	            description: "对项目分支进行管理",
 	            children: [
+	                {
+	                    command: "checkout [branchName]",
+	                    description: "切换分支",
+	                    action: (...rest) => Checkout.start(...rest),
+	                },
 	                {
 	                    command: "add [branchName]",
 	                    description: "新增一个分支",
