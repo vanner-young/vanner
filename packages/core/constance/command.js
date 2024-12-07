@@ -109,12 +109,6 @@ const commandConfig = () => {
         {
             command: "uninstall <package@version...>",
             description: "删除一个已经安装的Npm包",
-            option: [
-                {
-                    command: "--cli [name]",
-                    description: "使用的包管理器名称",
-                },
-            ],
             action: UnInstall,
         },
         {

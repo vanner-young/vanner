@@ -48,13 +48,20 @@ class Package {
             `${this.#packageConfig.packageCli} config get registry`,
             { cwd: this.#packageConfig.cwd },
         );
+
         const isResponse = await platform.responseUrl(result.trim(), {
             timeout: Number(platform.getProcessEnv("request_timeout")) || 1000,
         });
-        if (isResponse) return result;
+        if (isResponse) {
+            console.log(
+                "local registry connect success... use the registry is：",
+                result,
+            );
+            return result;
+        }
 
-        console.log(
-            `registry is timeout... checkout npm mirror：${this.#packageConfig.registry}...`,
+        console.warn(
+            `local registry is timeout... checkout npm mirror：${this.#packageConfig.registry}...`,
         );
         return this.#packageConfig.registry;
     }

@@ -98,31 +98,17 @@ class Init extends Inquirer {
     }
     createProject(originPath, projectName) {
         const app_name = platform.getProcessEnv("app_name");
-        basicCommon.copyDirectory(
-            originPath,
-            projectName,
-            true,
-            (sourcePath) => !sourcePath.includes(".git"),
+        basicCommon.copyDirectory(originPath, projectName, true, (originPath) =>
+            originPath.includes(".git"),
         );
         this.handler(isInstallDependencies()).then(
             async (installDependencies) => {
-                if (installDependencies) {
-                    await platform.installDependencies(
-                        app_name,
-                        path.resolve(process.cwd(), projectName),
-                        [],
-                        "",
-                        `--dir ${path.resolve(process.cwd(), projectName)}`,
-                    );
-                }
+                if (installDependencies)
+                    await platform.installDependencies(app_name, projectName);
 
                 const associationGit = await this.handler(associationStorage());
                 if (associationGit)
-                    await Branch.addOrigin(
-                        "origin",
-                        null,
-                        path.resolve(process.cwd(), projectName),
-                    );
+                    await Branch.addOrigin("origin", null, projectName);
 
                 console.log("\n执行以下命令运行项目");
                 console.log(`1. cd ${path.basename(projectName)}`);

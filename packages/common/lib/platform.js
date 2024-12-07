@@ -95,7 +95,8 @@ const installDependencies = (
             : "",
         registryStr = registry ? ` --registry ${registry}` : "",
         packageCliStr =
-            (packageCli === "pnpm" ? ` -w` : "") + ` ${commandPadStr}`;
+            (packageCli === "pnpm" ? ` -w` : "") +
+            (commandPadStr ? ` ${commandPadStr}` : "");
 
     return mvCommon.execCommand(
         `${packageCli} ${!dependencies.length ? `install` : ["yarn", "pnpm"].includes(packageCli) ? "add" : "install"}${dependenciesStr}${packageCliStr}${registryStr}`,
