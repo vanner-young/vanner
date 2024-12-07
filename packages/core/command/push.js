@@ -1,0 +1,198 @@
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { basicCommon, platform } = require("@vanner/common");
+
+const {
+    commitType,
+    chooseCommitOrigin,
+    commitMessage,
+    commitAction,
+    chooseCommitFile,
+    alreadyStatusFile,
+    alreadyCommitFile,
+    pushOrigin,
+    onlyPushLocalFile,
+} = require("../constance/question");
+const { commitTypeDict } = require("../constance");
+
+class Commit extends Inquirer {
+    #gitStorage;
+    #config = {
+        type: "",
+        file: "",
+        branch: "",
+        message: "",
+        origin: "",
+    };
+    diffFile = [];
+    statusFile = [];
+    push = false;
+    onlyPush = false;
+    commitAll = false;
+
+    async start(source = {}) {
+        return new Promise((resolve) => {
+            this.chooseOption(source).then(async (config) => {
+                if (!basicCommon.isType(config, "object")) {
+                    return console.log("提交失败，请重试!");
+                }
+                const { type, file, origin, branch, message } = config;
+                if (!this.push && !this.onlyPush) {
+                    const confirm = await this.handler(
+                        commitAction({
+                            ...config,
+                            file: `\n${file
+                                .split(" ")
+                                .map((item, index) => ` ${index + 1}. ${item}`)
+                                .join("\n")}`,
+                            message: message
+                                .split(";")
+                                .filter((item) => item.trim())
+                                .join("\n"),
+                        }),
+                    );
+                    if (!confirm) return;
+                    this.#gitStorage.addFile(this.commitAll ? "." : file);
+                    this.#gitStorage.commit(`${type}: ${message}`);
+
+                    await basicCommon.sleep(1000);
+                    if (source.notPushOrigin) return resolve(true);
+                    if (!(await this.handler(pushOrigin()))) return;
+                }
+                this.#gitStorage.push(origin, branch, {
+                    stdio: ["inherit", "inherit", "pipe"],
+                });
+                resolve(this.#config);
+            });
+        });
+    }
+
+    async chooseType({ type } = {}) {
+        if (type) {
+            const typeExists = Object.keys(commitTypeDict).includes(
+                type.toLocaleLowerCase(),
+            );
+            if (typeExists) return type;
+        }
+        return await this.handler(
+            commitType(
+                type &&
+                    `本次输入的提交类型 ${type} 不合法，请重新选择本地代码的提交类型`,
+                Object.entries(commitTypeDict).map(([key, value]) => ({
+                    name: `${key}: ${value}`,
+                    value: key,
+                })),
+                platform.getProcessEnv("default_commit_type"),
+            ),
+        );
+    }
+
+    async chooseCommitFile({ file }) {
+        if (Array.isArray(file) && file?.length)
+            return (this.#config.file = file.join(" "));
+
+        if (this.diffFile.length) {
+            const commitFiles = await this.handler(
+                chooseCommitFile(this.diffFile),
+            );
+            if (commitFiles.length === this.diffFile.length) {
+                this.commitAll = true;
+            }
+            this.#config.file = commitFiles.join(" ");
+        } else {
+            const isReady = await this.handler(
+                alreadyStatusFile(this.statusFile),
+            );
+            if (isReady) this.#config.file = this.statusFile.join(" ");
+        }
+    }
+
+    chooseOption(source) {
+        return new Promise((resolve) => {
+            this.#gitStorage = new GitStorage(process.cwd());
+            let { branch, origin, message, onlyPush } = source;
+            this.#gitStorage.once("load:origin:end", async (originList) => {
+                if (!onlyPush) {
+                    this.diffFile = await this.#gitStorage.diffFile();
+                    if (!this.diffFile.length) {
+                        this.statusFile = await this.#gitStorage.status();
+                        if (!this.statusFile.length) {
+                            const notPushFile =
+                                await this.#gitStorage.getCommitNotPushFileList();
+                            if (!notPushFile.length) {
+                                return console.log(
+                                    "当前路径下暂无变更的文件, 无需提交",
+                                );
+                            } else {
+                                const pushFile = await this.handler(
+                                    alreadyCommitFile(notPushFile),
+                                );
+                                if (!pushFile) return;
+                                this.push = true;
+                            }
+                        }
+                    }
+                }
+
+                if (!originList || !originList.length)
+                    return console.log("当前地址不存在提交源，请创建后重试!");
+
+                if (!origin || !originList.includes(origin)) {
+                    if (originList.length > 1) {
+                        origin = await this.handler(
+                            chooseCommitOrigin(
+                                origin && "当前指定的源不存在，请重新选择源:",
+                                originList.map((item) => ({
+                                    name: `${item.origin}  ${item.remote}`,
+                                    value: item.origin,
+                                })),
+                            ),
+                        );
+                    } else {
+                        origin = originList.at(0).origin;
+                    }
+                }
+
+                if (!branch) {
+                    const branchList =
+                        await this.#gitStorage.getBranchRemote(origin);
+                    if (!branchList.length)
+                        return console.log(
+                            "当前项目源还未创建分支，请创建后重试!",
+                        );
+
+                    branch = await this.#gitStorage.getCurrentBranch();
+                }
+
+                this.#config.origin = origin;
+                this.#config.branch = branch;
+                this.onlyPush = onlyPush;
+
+                if (this.onlyPush) {
+                    const notPushFile =
+                        await this.#gitStorage.getCommitNotPushFileList();
+
+                    if (!notPushFile.length)
+                        return console.log("当前分支不存在已提交的本地文件");
+                    if (!(await this.handler(onlyPushLocalFile()))) return;
+                }
+
+                if (!this.push && !this.onlyPush) {
+                    this.#config.type = await this.chooseType(source);
+                    await this.chooseCommitFile(source);
+                    if (!this.#config.file.trim()) return;
+
+                    if (message) this.#config.message = message;
+                    else this.#config.message = await this.commitMessage();
+                }
+                resolve(this.#config);
+            });
+        });
+    }
+
+    async commitMessage() {
+        return await this.handler(commitMessage());
+    }
+}
+
+module.exports = new Commit();

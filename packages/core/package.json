@@ -1,0 +1,20 @@
+{
+    "name": "@vanner/core",
+    "version": "0.0.1",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@vanner/common": "workspace:^",
+        "@vanner/gitStorage": "workspace:^",
+        "@vanner/inquirer": "workspace:^",
+        "@vanner/package": "workspace:^",
+        "@vanner/registerCommand": "workspace:^",
+        "@vanner/config": "workspace:^"
+    }
+}

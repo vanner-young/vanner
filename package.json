@@ -1,0 +1,50 @@
+{
+    "name": "vanner",
+    "version": "1.0.8",
+    "description": "",
+    "main": "bundle/index.js",
+    "repository": "https://gitee.com/memory_s/mv-cli.git",
+    "author": "vanner <1157875374@qq.com>",
+    "bin": {
+        "vanner": "bundle/index.js",
+        "registry": "https://registry.npmjs.org/"
+    },
+    "publishConfig": {
+        "access": "public",
+        "registry": "https://registry.npmjs.org/"
+    },
+    "files": [
+        "bundle/**/*",
+        "README.md"
+    ],
+    "license": "MIT",
+    "scripts": {
+        "build": "rollup --config script/rollup.config.cjs",
+        "format": "prettier ./packages/** --write",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "engines": {
+        "node": ">18.19.1",
+        "npm": ">10.2.4"
+    },
+    "keywords": [
+        "cli",
+        "commander",
+        "template",
+        "git",
+        "manager"
+    ],
+    "workspaces": [
+        "packages/**/*"
+    ],
+    "dependencies": {
+        "@rollup/plugin-commonjs": "^28.0.1",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^15.3.0",
+        "@rollup/plugin-typescript": "^12.1.1",
+        "rollup": "^4.24.2"
+    },
+    "devDependencies": {
+        "prettier": "^3.3.3"
+    }
+}
