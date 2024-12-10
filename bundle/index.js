@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.8";
+var version = "1.0.9";
 var description = "";
 var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
@@ -19119,13 +19119,21 @@ function requirePlatform () {
 	};
 
 	/**
+	 * 获取支持的脚手架列表
+	 * **/
+	const getSupportCliList = () => {
+	    const keys = [];
+	    for (const item of mvCommon.packageMangerViewer.keys()) {
+	        keys.push(item);
+	    }
+	    return keys;
+	};
+
+	/**
 	 * 检测当前的脚手架是否符合要求
 	 * **/
 	const verifyPackageCliName = (name) => {
-	    return [
-	        ...mvCommon.packageMangerViewer.keys().toArray(),
-	        getProcessEnv("app_name"),
-	    ].includes(name);
+	    return [...getSupportCliList(), getProcessEnv("app_name")].includes(name);
 	};
 
 	/**
@@ -19188,6 +19196,7 @@ function requirePlatform () {
 	    getTemplateList,
 	    getTemplatePathByName,
 	    isValidGitUrl,
+	    getSupportCliList,
 	};
 	return platform;
 }
@@ -45275,7 +45284,7 @@ function requireLib$1 () {
 
 	        if (!platform.verifyPackageCliName(packageCli))
 	            throw new Error(
-	                `包管理器无效, 仅支持${basicCommon.packageMangerViewer.keys().toArray().join("、")}, 当前使用的为:${packageCli}`,
+	                `包管理器无效, 仅支持${platform.getSupportCliList().join("、")}, 当前使用的为:${packageCli}`,
 	            );
 
 	        if (this.#packageConfig.registry) {

@@ -234,13 +234,21 @@ const dfsParser = (dict, result) => {
 };
 
 /**
+ * 获取支持的脚手架列表
+ * **/
+const getSupportCliList = () => {
+    const keys = [];
+    for (const item of mvCommon.packageMangerViewer.keys()) {
+        keys.push(item);
+    }
+    return keys;
+};
+
+/**
  * 检测当前的脚手架是否符合要求
  * **/
 const verifyPackageCliName = (name) => {
-    return [
-        ...mvCommon.packageMangerViewer.keys().toArray(),
-        getProcessEnv("app_name"),
-    ].includes(name);
+    return [...getSupportCliList(), getProcessEnv("app_name")].includes(name);
 };
 
 /**
@@ -303,4 +311,5 @@ module.exports = {
     getTemplateList,
     getTemplatePathByName,
     isValidGitUrl,
+    getSupportCliList,
 };

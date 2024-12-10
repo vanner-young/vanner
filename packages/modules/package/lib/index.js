@@ -28,7 +28,7 @@ class Package {
 
         if (!platform.verifyPackageCliName(packageCli))
             throw new Error(
-                `包管理器无效, 仅支持${basicCommon.packageMangerViewer.keys().toArray().join("、")}, 当前使用的为:${packageCli}`,
+                `包管理器无效, 仅支持${platform.getSupportCliList().join("、")}, 当前使用的为:${packageCli}`,
             );
 
         if (this.#packageConfig.registry) {
