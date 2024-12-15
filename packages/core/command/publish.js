@@ -26,20 +26,12 @@ class Publish extends Inquirer {
         this.#branchName = Config.getConfigResult("default_main_branch_name");
         this.verify()
             .then(async () => {
-                // 将当前代码进行提交
                 const publish = await this.handlerBranchPush();
                 if (!publish) return;
-
-                // 写入 version, 提交tag 信息
                 this.#version = await Version.start();
-                await this.#gitStorage.sendTag(
-                    this.#origin,
-                    this.#version,
-                    `发布${this.#origin}版本`,
-                );
-
-                // 推送至 npm
+                await this.createTag();
                 await this.publishNpm();
+                console.log("vanner: publish is successfully...");
             })
             .catch((e) => console.log(e.message || e));
     }
@@ -77,6 +69,21 @@ class Publish extends Inquirer {
             });
         });
     }
+    async createTag() {
+        const result = await basicCommon.execCommand(
+            `git tag --list ${this.#version}`,
+            {
+                cwd: this.#cwd,
+            },
+        );
+        if (!result.trim()) {
+            await this.#gitStorage.sendTag(
+                this.#origin,
+                this.#version,
+                `发布${this.#origin}版本`,
+            );
+        }
+    }
     async publishNpm() {
         if (this.#config.npm || Config.getConfigResult("default_publish_npm")) {
             await basicCommon.execCommand("npm publish", {
@@ -90,12 +97,13 @@ class Publish extends Inquirer {
             cwd: this.#cwd,
             stdio: "inherit",
         });
-        console.log("vanner: publish successfully！");
     }
     async handlerBranchPush() {
         let publish = true;
         const notPushFile = await this.#gitStorage.getCommitNotPushFileList();
-        if (!notPushFile.length) {
+        const notCommitFile = await this.#gitStorage.getNotCommitFile();
+        const fileList = [...notPushFile, ...notCommitFile];
+        if (fileList.length) {
             console.log(
                 "当前分支存在变动文件，请先提交代码后，在基于此分支发布版本：\n",
             );

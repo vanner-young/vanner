@@ -1,6 +1,6 @@
 {
     "name": "vanner",
-    "version": "1.0.10",
+    "version": "1.0.12",
     "description": "",
     "main": "lib/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
