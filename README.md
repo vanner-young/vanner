@@ -97,6 +97,8 @@ default_registry=https://registry.npmmirror.com/  ## vanner 发现当本地代�
 default_package_cli=npm ## vanner install 时，会自动判断当前项目使用的 package cli，当 npm、yarn、pnpm 均未能检测到时，兜底使用的 package cli 名称
 default_commit_type=fix ## vanner push 时，默认选择的本次代码提交类型
 default_exec_file=index.js ## vanner exec 时，默认会执行一个文件的文件名称
+default_publish_npm: true ## publish 时是否发布至 npm
+default_main_branch_name: "master" ## 默认的主分支名称，用于放置被删除的保护分支以及publish的主分支判定
 ```
 
 4. 执行一个JavaScript文件(vanner exec --help)

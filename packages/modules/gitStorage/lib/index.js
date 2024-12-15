@@ -304,8 +304,8 @@ class GitStorage extends EventEmitter {
             .split("\n")
             .map((item) => item.replace("* ", "").trim());
     }
-    async getBranchLocalAndRemoteList() {
-        const remoteBranch = await this.getBranchRemote();
+    async getBranchLocalAndRemoteList(origin = "") {
+        const remoteBranch = await this.getBranchRemote(origin);
         const localBranch = await this.getBranchLocal();
         return basicCommon.unionArrayList(remoteBranch, localBranch);
     }
@@ -392,6 +392,12 @@ class GitStorage extends EventEmitter {
         return await basicCommon.execCommand(
             `git rev-parse --abbrev-ref HEAD`,
             { stdio: ["ignore", "pipe", "ignore"] },
+        );
+    }
+
+    async sendTag(origin, tag, message = "") {
+        return await basicCommon.execCommand(
+            `git tag -a ${tag} -m ${message} && git push ${origin} ${tag}`,
         );
     }
 }

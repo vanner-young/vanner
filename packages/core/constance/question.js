@@ -575,3 +575,25 @@ export const associationStorage = () => {
         message: "是否需要关联至Git仓库？",
     };
 };
+
+export const chooseVersion = (versionList, version) => {
+    return {
+        name: "version",
+        type: "search",
+        required: true,
+        message: "请选择新的项目的版本：",
+        choices: versionList.map((item) => ({
+            name: item === version ? `${version}（当前版本）` : item,
+            value: item,
+        })),
+    };
+};
+
+export const confirmEmptyPublish = () => {
+    return {
+        name: "emptyPublish",
+        type: "confirm",
+        required: true,
+        message: "当前分支无变动文件，确定要基于此分支发布新的版本吗？",
+    };
+};

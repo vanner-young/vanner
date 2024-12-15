@@ -39,7 +39,7 @@ class Branch extends Inquirer {
     };
     #delBranchSecure = {
         open: true,
-        notDelBranch: ["master"],
+        notDelBranch: [],
     };
     #addOriginConfig = {
         name: "",
@@ -61,6 +61,10 @@ class Branch extends Inquirer {
             const branch_secure = Config.getConfigResult("branch_secure");
             if (branch_secure === undefined)
                 throw new Error("invalid branch_secure...");
+
+            this.#delBranchSecure.notDelBranch = [
+                Config.getConfigResult("default_main_branch_name"),
+            ];
             this.#delBranchSecure.open = !!branch_secure;
             if (["addOrigin", "delOrigin"].includes(type))
                 return typeHandler.get(type).call(this, ...args);

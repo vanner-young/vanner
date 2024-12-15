@@ -22,6 +22,8 @@ const defaultConfigModuleContent = {
     default_package_cli: "npm", // 默认的包管理工具
     default_commit_type: "fix", // 提交代码时，默认选中的提交类别
     default_exec_file: "index.js", // 执行文件时，默认执行的文件名称
+    default_publish_npm: true, // publish 时是否发布至 npm
+    default_main_branch_name: "master", // 默认的主分支名称
 };
 
 // git 提交类型列表

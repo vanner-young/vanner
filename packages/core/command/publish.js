@@ -1,0 +1,127 @@
+const fs = require("fs");
+const path = require("path");
+const Version = require("./version");
+const Inquirer = require("@vanner/inquirer");
+const GitStorage = require("@vanner/gitStorage");
+const { platform, basicCommon } = require("@vanner/common");
+
+const Push = require("./push");
+const Config = require("./config");
+const {
+    chooseCommitOrigin,
+    confirmEmptyPublish,
+} = require("../constance/question");
+
+class Publish extends Inquirer {
+    #gitStorage = null;
+    #origin = null;
+    #cwd = null;
+    #version = null;
+    #config = {};
+    #branchName = null;
+    afterExecFileName = "vanner.publish.js";
+
+    async start(source) {
+        this.#config = source;
+        this.#branchName = Config.getConfigResult("default_main_branch_name");
+        this.verify()
+            .then(async () => {
+                // 将当前代码进行提交
+                const publish = await this.handlerBranchPush();
+                if (!publish) return;
+
+                // 写入 version, 提交tag 信息
+                this.#version = await Version.start();
+                await this.#gitStorage.sendTag(
+                    this.#origin,
+                    this.#version,
+                    `发布${this.#origin}版本`,
+                );
+
+                // 推送至 npm
+                await this.publishNpm();
+            })
+            .catch((e) => console.log(e.message || e));
+    }
+    verify() {
+        return new Promise(async (resolve, reject) => {
+            this.#cwd = await platform.findProjectParentExecCwd();
+            if (!this.#cwd)
+                return reject(
+                    "当前路径及其父级不存在可执行的项目，请切换后重试！",
+                );
+
+            this.#gitStorage = new GitStorage(this.#cwd);
+            this.#gitStorage.once("load:origin:end", async (originList) => {
+                try {
+                    await this.confirmOrigin(originList);
+                    const branchList =
+                        await this.#gitStorage.getBranchLocalAndRemoteList(
+                            this.#origin,
+                        );
+                    if (!branchList.includes(this.#branchName))
+                        throw new Error(
+                            `当前项目中不存在 ${this.#branchName} 主分支，请创建后重试！`,
+                        );
+
+                    const nowBranch = await this.#gitStorage.getCurrentBranch();
+                    if (nowBranch !== this.#branchName)
+                        throw new Error(
+                            `请切换至 ${this.#branchName} 主分支后执行此命令！`,
+                        );
+
+                    resolve(branchList);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+    }
+    async publishNpm() {
+        if (this.#config.npm || Config.getConfigResult("default_publish_npm")) {
+            await basicCommon.execCommand("npm publish", {
+                cwd: this.#cwd,
+                stdio: "inherit",
+            });
+        }
+        const vannerFilePath = path.resolve(this.#cwd, this.afterExecFileName);
+        if (!fs.existsSync(vannerFilePath)) return;
+        await basicCommon.execCommand(`node ${this.afterExecFileName}`, {
+            cwd: this.#cwd,
+            stdio: "inherit",
+        });
+        console.log("vanner: publish successfully！");
+    }
+    async handlerBranchPush() {
+        let publish = true;
+        const notPushFile = await this.#gitStorage.getCommitNotPushFileList();
+        if (!notPushFile.length) {
+            console.log(
+                "当前分支存在变动文件，请先提交代码后，在基于此分支发布版本：\n",
+            );
+            await Push.start({
+                branch: this.#branchName,
+                origin: this.#origin,
+            });
+        } else {
+            publish = await this.handler(confirmEmptyPublish());
+        }
+        return publish;
+    }
+    async confirmOrigin(originList) {
+        if (originList.length > 1) {
+            this.#origin = await this.handler(
+                chooseCommitOrigin(
+                    originList.map((item) => ({
+                        name: `${item.origin}  ${item.remote}`,
+                        value: item.origin,
+                    })),
+                ),
+            );
+        } else {
+            this.#origin = originList.at(0).origin;
+        }
+    }
+}
+
+module.exports = new Publish();

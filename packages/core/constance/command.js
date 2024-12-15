@@ -10,6 +10,8 @@ const Push = require("../command/push");
 const Run = require("../command/Run");
 const Branch = require("../command/branch");
 const Checkout = require("../command/checkout");
+const Version = require("../command/version");
+const Publish = require("../command/publish");
 
 const commandConfig = () => {
     const {
@@ -225,6 +227,24 @@ const commandConfig = () => {
                     action: (...rest) => Branch.start("delOrigin", ...rest),
                 },
             ],
+        },
+        {
+            command: "version",
+            description: "迭代当前项目的版本号",
+            action: Version,
+        },
+        {
+            command: "publish",
+            description:
+                "迭代版本号后，将项目上传至Git并可选择的将项目发布至Npm",
+            option: [
+                {
+                    command: "-n, --npm",
+                    description:
+                        "携带此参数或 default_publish_npm 配置值为true时，则会在分支操作后，将此包发布至 npm ",
+                },
+            ],
+            action: Publish,
         },
     ];
 };
