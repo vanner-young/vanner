@@ -10,13 +10,13 @@ var require$$3$1 = require('node:child_process');
 var require$$0$4 = require('util');
 var require$$1$2 = require('stream');
 var require$$3$2 = require('http');
-var require$$4$2 = require('https');
+var require$$4$1 = require('https');
 var require$$0$5 = require('url');
-var require$$4$3 = require('assert');
+var require$$4$2 = require('assert');
 var require$$7$1 = require('zlib');
 var require$$9 = require('events');
 var require$$0$7 = require('node:events');
-var require$$4$4 = require('node:process');
+var require$$4$3 = require('node:process');
 var require$$0$8 = require('node:async_hooks');
 var require$$0$9 = require('node:tty');
 var require$$0$a = require('tty');
@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version = "1.0.9";
+var version$1 = "1.0.14";
 var description = "";
 var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
@@ -109,7 +109,7 @@ var devDependencies = {
 };
 var require$$0$2 = {
 	name: name,
-	version: version,
+	version: version$1,
 	description: description,
 	main: main$1,
 	repository: repository,
@@ -12752,7 +12752,7 @@ function requireForm_data () {
 	var util = require$$0$4;
 	var path = require$$1$3;
 	var http = require$$3$2;
-	var https = require$$4$2;
+	var https = require$$4$1;
 	var parseUrl = require$$0$5.parse;
 	var fs = require$$0$6;
 	var Stream = require$$1$2.Stream;
@@ -13403,9 +13403,9 @@ function requireFollowRedirects () {
 	var url = require$$0$5;
 	var URL = url.URL;
 	var http = require$$3$2;
-	var https = require$$4$2;
+	var https = require$$4$1;
 	var Writable = require$$1$2.Writable;
-	var assert = require$$4$3;
+	var assert = require$$4$2;
 	var debug = requireDebug();
 
 	// Preventive platform detection
@@ -14100,7 +14100,7 @@ function requireAxios () {
 	const url = require$$0$5;
 	const proxyFromEnv = requireProxyFromEnv();
 	const http = require$$3$2;
-	const https = require$$4$2;
+	const https = require$$4$1;
 	const util = require$$0$4;
 	const followRedirects = requireFollowRedirects();
 	const zlib = require$$7$1;
@@ -19292,6 +19292,8 @@ function requireConstance () {
 	    default_package_cli: "npm", // 默认的包管理工具
 	    default_commit_type: "fix", // 提交代码时，默认选中的提交类别
 	    default_exec_file: "index.js", // 执行文件时，默认执行的文件名称
+	    default_publish_npm: true, // publish 时是否发布至 npm
+	    default_main_branch_name: "master", // 默认的主分支名称
 	};
 
 	// git 提交类型列表
@@ -20571,7 +20573,7 @@ function requireCommand$2 () {
 	const childProcess = require$$3$1;
 	const path = require$$1$1;
 	const fs = require$$0$3;
-	const process = require$$4$4;
+	const process = require$$4$3;
 
 	const { Argument, humanReadableArgName } = requireArgument();
 	const { CommanderError } = requireError();
@@ -23660,7 +23662,7 @@ function requireCommonjs () {
 		// process.env dot-notation access prints:
 		// Property 'TERM' comes from an index signature, so it must be accessed with ['TERM'].ts(4111)
 		/* eslint dot-notation: ["off"] */
-		const node_process_1 = __importDefault(require$$4$4);
+		const node_process_1 = __importDefault(require$$4$3);
 		// Ported from is-unicode-supported
 		function isUnicodeSupported() {
 		    if (node_process_1.default.platform !== 'win32') {
@@ -36119,7 +36121,7 @@ var gbChars = [
 	39394,
 	189000
 ];
-var require$$4$1 = {
+var require$$4 = {
 	uChars: uChars,
 	gbChars: gbChars
 };
@@ -39846,7 +39848,7 @@ function requireDbcsData () {
 	    'gb18030': {
 	        type: '_dbcs',
 	        table: function() { return require$$2.concat(require$$3) },
-	        gb18030: function() { return require$$4$1 },
+	        gb18030: function() { return require$$4 },
 	        encodeSkipVals: [0x80],
 	        encodeAdd: {'€': 0xA2E3},
 	    },
@@ -43624,6 +43626,28 @@ const associationStorage = () => {
     };
 };
 
+const chooseVersion = (versionList, version) => {
+    return {
+        name: "version",
+        type: "search",
+        required: true,
+        message: "请选择迭代的项目的版本：",
+        choices: versionList.map((item) => ({
+            name: item === version ? `${version}（当前版本）` : item,
+            value: item,
+        })),
+    };
+};
+
+const confirmEmptyPublish = () => {
+    return {
+        name: "emptyPublish",
+        type: "confirm",
+        required: true,
+        message: "当前分支无变动文件，确定要基于此分支发布新的版本吗？",
+    };
+};
+
 var question = /*#__PURE__*/Object.freeze({
 	__proto__: null,
 	addOriginBranch: addOriginBranch,
@@ -43647,12 +43671,14 @@ var question = /*#__PURE__*/Object.freeze({
 	chooseTargetBranch: chooseTargetBranch,
 	chooseTemplateList: chooseTemplateList,
 	chooseTemplateProject: chooseTemplateProject,
+	chooseVersion: chooseVersion,
 	cloneStorageCheckoutBranch: cloneStorageCheckoutBranch,
 	commitAction: commitAction,
 	commitBranch: commitBranch,
 	commitMessage: commitMessage,
 	commitType: commitType,
 	confirmCreateProject: confirmCreateProject,
+	confirmEmptyPublish: confirmEmptyPublish,
 	createExistProject: createExistProject,
 	createProjectQuestion: createProjectQuestion,
 	createTemplateType: createTemplateType,
@@ -43682,7 +43708,7 @@ var question = /*#__PURE__*/Object.freeze({
 	waningSyncRemoteBranchMerge: waningSyncRemoteBranchMerge
 });
 
-var require$$4 = /*@__PURE__*/getAugmentedNamespace(question);
+var require$$8 = /*@__PURE__*/getAugmentedNamespace(question);
 
 var config;
 var hasRequiredConfig;
@@ -43696,7 +43722,7 @@ function requireConfig () {
 	const { getProcessEnv } = requirePlatform();
 
 	const { defaultConfigModuleContent } = requireConstance();
-	const { resetConfigFile } = require$$4;
+	const { resetConfigFile } = require$$8;
 
 	class Config extends ConfigModule {
 	    #inquirer;
@@ -44162,8 +44188,8 @@ function requireLib$2 () {
 	            .split("\n")
 	            .map((item) => item.replace("* ", "").trim());
 	    }
-	    async getBranchLocalAndRemoteList() {
-	        const remoteBranch = await this.getBranchRemote();
+	    async getBranchLocalAndRemoteList(origin = "") {
+	        const remoteBranch = await this.getBranchRemote(origin);
 	        const localBranch = await this.getBranchLocal();
 	        return basicCommon.unionArrayList(remoteBranch, localBranch);
 	    }
@@ -44252,6 +44278,12 @@ function requireLib$2 () {
 	            { stdio: ["ignore", "pipe", "ignore"] },
 	        );
 	    }
+
+	    async sendTag(origin, tag, message = "") {
+	        return await basicCommon.execCommand(
+	            `git tag -a ${tag} -m ${message} && git push ${origin} ${tag}`,
+	        );
+	    }
 	}
 
 	lib$1 = GitStorage;
@@ -44278,7 +44310,7 @@ function requirePush () {
 	    alreadyCommitFile,
 	    pushOrigin,
 	    onlyPushLocalFile,
-	} = require$$4;
+	} = require$$8;
 	const { commitTypeDict } = requireConstance();
 
 	class Commit extends Inquirer {
@@ -44304,26 +44336,34 @@ function requirePush () {
 	                }
 	                const { type, file, origin, branch, message } = config;
 	                if (!this.push && !this.onlyPush) {
-	                    const confirm = await this.handler(
-	                        commitAction({
-	                            ...config,
-	                            file: `\n${file
-	                                .split(" ")
-	                                .map((item, index) => ` ${index + 1}. ${item}`)
-	                                .join("\n")}`,
-	                            message: message
-	                                .split(";")
-	                                .filter((item) => item.trim())
-	                                .join("\n"),
-	                        }),
-	                    );
+	                    const confirm =
+	                        source.pushOrigin ||
+	                        (await this.handler(
+	                            commitAction({
+	                                ...config,
+	                                file: `\n${file
+	                                    .split(" ")
+	                                    .map(
+	                                        (item, index) =>
+	                                            ` ${index + 1}. ${item}`,
+	                                    )
+	                                    .join("\n")}`,
+	                                message: message
+	                                    .split(";")
+	                                    .filter((item) => item.trim())
+	                                    .join("\n"),
+	                            }),
+	                        ));
 	                    if (!confirm) return;
+
 	                    this.#gitStorage.addFile(this.commitAll ? "." : file);
 	                    this.#gitStorage.commit(`${type}: ${message}`);
 
-	                    await basicCommon.sleep(1000);
-	                    if (source.notPushOrigin) return resolve(true);
-	                    if (!(await this.handler(pushOrigin()))) return;
+	                    if (!source.pushOrigin) {
+	                        await basicCommon.sleep(1000);
+	                        if (source.notPushOrigin) return resolve(true);
+	                        if (!(await this.handler(pushOrigin()))) return;
+	                    }
 	                }
 	                this.#gitStorage.push(origin, branch, {
 	                    stdio: ["inherit", "inherit", "pipe"],
@@ -44498,7 +44538,7 @@ function requireBranch () {
 	    syncRemoteBranch,
 	    checkoutBranch,
 	    waningSyncRemoteBranchMerge,
-	} = require$$4;
+	} = require$$8;
 	const Push = requirePush();
 
 	class Branch extends Inquirer {
@@ -44512,7 +44552,7 @@ function requireBranch () {
 	    };
 	    #delBranchSecure = {
 	        open: true,
-	        notDelBranch: ["master"],
+	        notDelBranch: [],
 	    };
 	    #addOriginConfig = {
 	        name: "",
@@ -44534,6 +44574,10 @@ function requireBranch () {
 	            const branch_secure = Config.getConfigResult("branch_secure");
 	            if (branch_secure === undefined)
 	                throw new Error("invalid branch_secure...");
+
+	            this.#delBranchSecure.notDelBranch = [
+	                Config.getConfigResult("default_main_branch_name"),
+	            ];
 	            this.#delBranchSecure.open = !!branch_secure;
 	            if (["addOrigin", "delOrigin"].includes(type))
 	                return typeHandler.get(type).call(this, ...args);
@@ -44901,7 +44945,7 @@ function requireInit () {
 	    createTemplateType,
 	    chooseSingleTemplate,
 	    associationStorage,
-	} = require$$4;
+	} = require$$8;
 	const { INIT_PROJECT_ADDRESS, initProjectDict } = requireConstance();
 	const Branch = requireBranch();
 
@@ -45042,7 +45086,7 @@ function requireTemplate () {
 	    inputTemplateUrl,
 	    chooseTemplateList,
 	    inputProjectName,
-	} = require$$4;
+	} = require$$8;
 
 	class Template extends Inquirer {
 	    #gitStorage;
@@ -45437,7 +45481,7 @@ function requireRun () {
 	const path = require$$1$3;
 	const Inquirer = requireLib$4();
 	const { filterEmptyArray, basicCommon } = requireLib$8();
-	const { chooseRunCommand } = require$$4;
+	const { chooseRunCommand } = require$$8;
 
 	class Run extends Inquirer {
 	    #config = {
@@ -45521,7 +45565,7 @@ function requireCheckout () {
 	    chooseCommitOrigin,
 	    checkoutBranchName,
 	    alreadyStatusFileCheckout,
-	} = require$$4;
+	} = require$$8;
 	const Push = requirePush();
 
 	class Checkout extends Inquirer {
@@ -45616,6 +45660,236 @@ function requireCheckout () {
 	return checkout;
 }
 
+var version;
+var hasRequiredVersion;
+
+function requireVersion () {
+	if (hasRequiredVersion) return version;
+	hasRequiredVersion = 1;
+	const fs = require$$0$6;
+	const path = require$$1$3;
+	const Inquirer = requireLib$4();
+	const { platform } = requireLib$8();
+
+	const { chooseVersion } = require$$8;
+
+	class Version extends Inquirer {
+	    #cwd = null;
+
+	    generatorVersionList(version) {
+	        if (!version) {
+	            version = "0.0.0";
+	            console.warn(
+	                "当前项目中未存在version版本，将默认重置为：",
+	                version,
+	            );
+	        }
+
+	        const spt = version.indexOf("-");
+	        if (spt !== -1) version = version.slice(0, spt);
+	        version = version.trim();
+
+	        const splitVersion = version.split(".");
+	        const versionList = [];
+	        for (let i = splitVersion.length - 1; i > -1; i--) {
+	            const item = splitVersion[i];
+	            const newV = Number(item) + 1;
+
+	            const prefix = splitVersion.slice(0, i).join("."),
+	                suffix = splitVersion.slice(i + 1).join(".");
+
+	            const newVersion = `${prefix ? prefix + "." : ""}${newV}${suffix ? "." + suffix : ""}`;
+	            versionList.push(newVersion, `${newVersion}-beat`);
+	        }
+	        versionList.push(version);
+	        return versionList;
+	    }
+
+	    async start() {
+	        this.#cwd = await platform.findProjectParentExecCwd();
+	        if (!this.#cwd)
+	            throw new Error(
+	                "当前路径及其父级不存在可执行的项目，请切换后重试！",
+	            );
+
+	        const packagePath = path.resolve(this.#cwd, "package.json");
+	        const packageContent = JSON.parse(
+	                fs.readFileSync(packagePath, { encoding: "utf-8" }),
+	            ),
+	            version = packageContent.version;
+
+	        const versionResult = this.generatorVersionList(version);
+	        const versionValue = await this.handler(
+	            chooseVersion(versionResult, version),
+	        );
+
+	        if (version === versionValue) return version;
+	        packageContent.version = versionValue;
+	        fs.writeFileSync(packagePath, JSON.stringify(packageContent, null, 4), {
+	            encoding: "utf-8",
+	        });
+
+	        return packageContent.version;
+	    }
+	}
+
+	version = new Version();
+	return version;
+}
+
+var publish;
+var hasRequiredPublish;
+
+function requirePublish () {
+	if (hasRequiredPublish) return publish;
+	hasRequiredPublish = 1;
+	const fs = require$$0$6;
+	const path = require$$1$3;
+	const Version = requireVersion();
+	const Inquirer = requireLib$4();
+	const GitStorage = requireLib$2();
+	const { platform, basicCommon } = requireLib$8();
+
+	const Push = requirePush();
+	const Config = requireConfig();
+	const {
+	    chooseCommitOrigin,
+	    confirmEmptyPublish,
+	} = require$$8;
+
+	class Publish extends Inquirer {
+	    #gitStorage = null;
+	    #origin = null;
+	    #cwd = null;
+	    #version = null;
+	    #config = {};
+	    #branchName = null;
+	    afterExecFileName = "vanner.publish.js";
+
+	    async start(source) {
+	        this.#config = source;
+	        this.#branchName = Config.getConfigResult("default_main_branch_name");
+	        this.verify().then(async () => {
+	            const publish = await this.handlerBranchPush();
+	            if (!publish) return;
+
+	            await this.createTag();
+	            await this.publishNpm();
+	            console.log("vanner: publish is successfully...");
+	        });
+	    }
+	    verify() {
+	        return new Promise(async (resolve) => {
+	            this.#cwd = await platform.findProjectParentExecCwd();
+	            if (!this.#cwd)
+	                throw new Error(
+	                    "当前路径及其父级不存在可执行的项目，请切换后重试！",
+	                );
+
+	            this.#gitStorage = new GitStorage(this.#cwd);
+	            this.#gitStorage.once("load:origin:end", async (originList) => {
+	                await this.confirmOrigin(originList);
+	                const branchList =
+	                    await this.#gitStorage.getBranchLocalAndRemoteList(
+	                        this.#origin,
+	                    );
+	                if (!branchList.includes(this.#branchName))
+	                    throw new Error(
+	                        `当前项目中不存在 ${this.#branchName} 主分支，请创建后重试！`,
+	                    );
+
+	                const nowBranch = await this.#gitStorage.getCurrentBranch();
+	                if (nowBranch !== this.#branchName)
+	                    throw new Error(
+	                        `请切换至 ${this.#branchName} 主分支后执行此命令！`,
+	                    );
+
+	                resolve(branchList);
+	            });
+	        });
+	    }
+	    async createTag() {
+	        const result = await basicCommon.execCommand(
+	            `git tag --list ${this.#version}`,
+	            {
+	                cwd: this.#cwd,
+	            },
+	        );
+	        if (!result.trim()) {
+	            await this.#gitStorage.sendTag(
+	                this.#origin,
+	                this.#version,
+	                `发布${this.#origin}版本`,
+	            );
+	        }
+	    }
+	    async publishNpm() {
+	        if (this.#config.npm || Config.getConfigResult("default_publish_npm")) {
+	            await basicCommon.execCommand("npm publish", {
+	                cwd: this.#cwd,
+	                stdio: "inherit",
+	            });
+	        }
+	        const vannerFilePath = path.resolve(this.#cwd, this.afterExecFileName);
+	        if (!fs.existsSync(vannerFilePath)) return;
+	        await basicCommon.execCommand(`node ${this.afterExecFileName}`, {
+	            cwd: this.#cwd,
+	            stdio: "inherit",
+	        });
+	        console.log("vanner: publish successfully！");
+	    }
+	    async pushPackageJson() {
+	        await Push.start({
+	            type: "fix",
+	            origin: this.#origin,
+	            branch: this.#branchName,
+	            message: `迭代 ${this.#version} 版本号`,
+	            file: ["package.json"],
+	            pushOrigin: true,
+	        });
+	    }
+	    async handlerBranchPush() {
+	        let publish = true;
+	        const notPushFile = await this.#gitStorage.getCommitNotPushFileList();
+	        const notCommitFile = await this.#gitStorage.getNotCommitFile();
+	        const fileList = [...notPushFile, ...notCommitFile];
+	        if (!fileList.length)
+	            publish = await this.handler(confirmEmptyPublish());
+	        if (!publish) return;
+
+	        this.#version = await Version.start();
+	        await this.pushPackageJson();
+	        if (fileList.length) {
+	            console.log(
+	                "当前项目中存在未提交的文件，请提交后在根据指引发布版本！\n",
+	            );
+	            await Push.start({
+	                branch: this.#branchName,
+	                origin: this.#origin,
+	            });
+	        }
+	        return true;
+	    }
+	    async confirmOrigin(originList) {
+	        if (originList.length > 1) {
+	            this.#origin = await this.handler(
+	                chooseCommitOrigin(
+	                    originList.map((item) => ({
+	                        name: `${item.origin}  ${item.remote}`,
+	                        value: item.origin,
+	                    })),
+	                ),
+	            );
+	        } else {
+	            this.#origin = originList.at(0).origin;
+	        }
+	    }
+	}
+
+	publish = new Publish();
+	return publish;
+}
+
 var command$1;
 var hasRequiredCommand$1;
 
@@ -45634,6 +45908,8 @@ function requireCommand$1 () {
 	const Run = requireRun();
 	const Branch = requireBranch();
 	const Checkout = requireCheckout();
+	const Version = requireVersion();
+	const Publish = requirePublish();
 
 	const commandConfig = () => {
 	    const {
@@ -45849,6 +46125,24 @@ function requireCommand$1 () {
 	                    action: (...rest) => Branch.start("delOrigin", ...rest),
 	                },
 	            ],
+	        },
+	        {
+	            command: "version",
+	            description: "迭代当前项目的版本号",
+	            action: Version,
+	        },
+	        {
+	            command: "publish",
+	            description:
+	                "迭代版本号后，将项目上传至Git并可选择的将项目发布至Npm",
+	            option: [
+	                {
+	                    command: "-n, --npm",
+	                    description:
+	                        "携带此参数或 default_publish_npm 配置值为true时，则会在分支操作后，将此包发布至 npm ",
+	                },
+	            ],
+	            action: Publish,
 	        },
 	    ];
 	};

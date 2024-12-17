@@ -38,26 +38,34 @@ class Commit extends Inquirer {
                 }
                 const { type, file, origin, branch, message } = config;
                 if (!this.push && !this.onlyPush) {
-                    const confirm = await this.handler(
-                        commitAction({
-                            ...config,
-                            file: `\n${file
-                                .split(" ")
-                                .map((item, index) => ` ${index + 1}. ${item}`)
-                                .join("\n")}`,
-                            message: message
-                                .split(";")
-                                .filter((item) => item.trim())
-                                .join("\n"),
-                        }),
-                    );
+                    const confirm =
+                        source.pushOrigin ||
+                        (await this.handler(
+                            commitAction({
+                                ...config,
+                                file: `\n${file
+                                    .split(" ")
+                                    .map(
+                                        (item, index) =>
+                                            ` ${index + 1}. ${item}`,
+                                    )
+                                    .join("\n")}`,
+                                message: message
+                                    .split(";")
+                                    .filter((item) => item.trim())
+                                    .join("\n"),
+                            }),
+                        ));
                     if (!confirm) return;
+
                     this.#gitStorage.addFile(this.commitAll ? "." : file);
                     this.#gitStorage.commit(`${type}: ${message}`);
 
-                    await basicCommon.sleep(1000);
-                    if (source.notPushOrigin) return resolve(true);
-                    if (!(await this.handler(pushOrigin()))) return;
+                    if (!source.pushOrigin) {
+                        await basicCommon.sleep(1000);
+                        if (source.notPushOrigin) return resolve(true);
+                        if (!(await this.handler(pushOrigin()))) return;
+                    }
                 }
                 this.#gitStorage.push(origin, branch, {
                     stdio: ["inherit", "inherit", "pipe"],

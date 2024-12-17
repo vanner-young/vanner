@@ -6,6 +6,8 @@ const { platform } = require("@vanner/common");
 const { chooseVersion } = require("../constance/question");
 
 class Version extends Inquirer {
+    #cwd = null;
+
     generatorVersionList(version) {
         if (!version) {
             version = "0.0.0";
@@ -36,13 +38,13 @@ class Version extends Inquirer {
     }
 
     async start() {
-        const cwd = await platform.findProjectParentExecCwd();
-        if (!cwd)
+        this.#cwd = await platform.findProjectParentExecCwd();
+        if (!this.#cwd)
             throw new Error(
                 "当前路径及其父级不存在可执行的项目，请切换后重试！",
             );
 
-        const packagePath = path.resolve(cwd, "package.json");
+        const packagePath = path.resolve(this.#cwd, "package.json");
         const packageContent = JSON.parse(
                 fs.readFileSync(packagePath, { encoding: "utf-8" }),
             ),
@@ -58,6 +60,7 @@ class Version extends Inquirer {
         fs.writeFileSync(packagePath, JSON.stringify(packageContent, null, 4), {
             encoding: "utf-8",
         });
+
         return packageContent.version;
     }
 }

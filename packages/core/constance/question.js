@@ -581,7 +581,7 @@ export const chooseVersion = (versionList, version) => {
         name: "version",
         type: "search",
         required: true,
-        message: "请选择新的项目的版本：",
+        message: "请选择迭代的项目的版本：",
         choices: versionList.map((item) => ({
             name: item === version ? `${version}（当前版本）` : item,
             value: item,
