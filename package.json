@@ -1,12 +1,12 @@
 {
     "name": "vanner",
-    "version": "1.0.12",
+    "version": "1.0.14",
     "description": "",
-    "main": "lib/index.js",
+    "main": "bundle/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
     "author": "vanner <1157875374@qq.com>",
     "bin": {
-        "vanner": "lib/index.js",
+        "vanner": "bundle/index.js",
         "registry": "https://registry.npmjs.org/"
     },
     "publishConfig": {
