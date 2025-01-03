@@ -19171,7 +19171,8 @@ function requirePlatform () {
 	 * 判断一个地址是不是git地址
 	 * **/
 	const isValidGitUrl = (url) => {
-	    return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
+	    return url.includes(".git") && url.length > 10;
+	    // return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
 	};
 
 	platform = {
@@ -43048,56 +43049,58 @@ function requireLib$3 () {
 	return lib$2;
 }
 
-const createProjectQuestion = () => [
-    {
-        name: "type",
-        type: "search",
-        required: true,
-        message: "请选择项目模板：",
-        choices: [
-            {
-                name: "vue 项目",
-                value: "vue",
-            },
-            {
-                name: "react 项目",
-                value: "react",
-            },
-        ],
-    },
-    {
-        name: "buildTools",
-        type: "search",
-        required: true,
-        message: "请选择项目构建工具：",
-        choices: [
-            {
-                name: "webpack",
-                value: "webpack",
-            },
-            {
-                name: "vite",
-                value: "vite",
-            },
-        ],
-    },
-    {
-        name: "language",
-        type: "search",
-        required: true,
-        message: "请选择使用的开发语言：",
-        choices: [
-            {
-                name: "TypeScript",
-                value: "typeScript",
-            },
-            {
-                name: "JavaScript",
-                value: "javaScript",
-            },
-        ],
-    },
-];
+const createProjectQuestion = () => {
+    return [
+        {
+            name: "type",
+            type: "search",
+            required: true,
+            message: "请选择项目模板：",
+            choices: [
+                {
+                    name: "vue 项目",
+                    value: "vue",
+                },
+                {
+                    name: "react 项目",
+                    value: "react",
+                },
+            ],
+        },
+        {
+            name: "buildTools",
+            type: "search",
+            required: true,
+            message: "请选择项目构建工具：",
+            choices: [
+                {
+                    name: "webpack",
+                    value: "webpack",
+                },
+                {
+                    name: "vite",
+                    value: "vite",
+                },
+            ],
+        },
+        {
+            name: "language",
+            type: "search",
+            required: true,
+            message: "请选择使用的开发语言：",
+            choices: [
+                {
+                    name: "TypeScript",
+                    value: "typeScript",
+                },
+                {
+                    name: "JavaScript",
+                    value: "javaScript",
+                },
+            ],
+        },
+    ];
+};
 
 const isInstallDependencies = () => {
     return {

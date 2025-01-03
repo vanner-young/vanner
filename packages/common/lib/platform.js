@@ -286,7 +286,8 @@ const getTemplatePathByName = (name) => {
  * 判断一个地址是不是git地址
  * **/
 const isValidGitUrl = (url) => {
-    return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
+    return url.includes(".git") && url.length > 10;
+    // return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
 };
 
 module.exports = {
