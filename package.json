@@ -1,6 +1,6 @@
 {
     "name": "vanner",
-    "version": "1.0.15",
+    "version": "1.0.16",
     "description": "",
     "main": "bundle/index.js",
     "repository": "https://gitee.com/memory_s/mv-cli.git",
@@ -21,7 +21,7 @@
     "scripts": {
         "build": "rollup --config script/rollup.config.cjs",
         "format": "prettier ./packages/** --write",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "prepublishOnly": "npm run build"
     },
     "engines": {
         "node": ">18.19.1",
