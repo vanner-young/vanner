@@ -36,6 +36,12 @@ class Init extends Inquirer {
                     return this.createOfficialTemplate();
                 });
             } else {
+                const templateList = platform.getTemplateList();
+                if (!templateList?.length)
+                    return console.log(
+                        "当前项目暂无可用的自定义模板，请使用 vanner template add 命令添加模板后重试！",
+                    );
+
                 this.handler(
                     chooseSingleTemplate(platform.getTemplateList()),
                 ).then(({ chooseSingleTemplate }) => {
@@ -86,7 +92,9 @@ class Init extends Inquirer {
                 buildTools,
                 projectName: this.#config.projectName,
             }),
-        ).then(() => {
+        ).then((res) => {
+            if (!res) return;
+
             this.createProject(
                 path.resolve(
                     path.resolve(this.#gitStorage.storagePath, buildTools),

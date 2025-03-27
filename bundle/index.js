@@ -60,7 +60,7 @@ function getAugmentedNamespace(n) {
 var lib$8 = {};
 
 var name = "vanner";
-var version$1 = "1.0.14";
+var version$1 = "1.0.16";
 var description = "";
 var main$1 = "bundle/index.js";
 var repository = "https://gitee.com/memory_s/mv-cli.git";
@@ -81,7 +81,7 @@ var license = "MIT";
 var scripts = {
 	build: "rollup --config script/rollup.config.cjs",
 	format: "prettier ./packages/** --write",
-	test: "echo \"Error: no test specified\" && exit 1"
+	prepublishOnly: "npm run build"
 };
 var engines = {
 	node: ">18.19.1",
@@ -44974,6 +44974,12 @@ function requireInit () {
 	                    return this.createOfficialTemplate();
 	                });
 	            } else {
+	                const templateList = platform.getTemplateList();
+	                if (!templateList?.length)
+	                    return console.log(
+	                        "当前项目暂无可用的自定义模板，请使用 vanner template add 命令添加模板后重试！",
+	                    );
+
 	                this.handler(
 	                    chooseSingleTemplate(platform.getTemplateList()),
 	                ).then(({ chooseSingleTemplate }) => {
@@ -45024,7 +45030,9 @@ function requireInit () {
 	                buildTools,
 	                projectName: this.#config.projectName,
 	            }),
-	        ).then(() => {
+	        ).then((res) => {
+	            if (!res) return;
+
 	            this.createProject(
 	                path.resolve(
 	                    path.resolve(this.#gitStorage.storagePath, buildTools),
