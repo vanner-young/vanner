@@ -1,7 +1,6 @@
 import { getRuntimeConfig } from "@vanner/common";
 import { Config } from "@core/module/config";
-import { Install } from "@core/module/install";
-import type { IndexType } from "mv-common/pkg/type";
+import { AddPackage } from "@/packages/core/src/module/add";
 
 /**
  * 命令注册配置选项
@@ -50,11 +49,11 @@ export const registerCommandOption = () => {
             ],
         },
         {
-            command: "install [package@version...]",
+            command: "add [package@version...]",
             description: "安装一个Npm包",
             allowUnknownOption: true,
-            action: (packages: Array<string>, options: IndexType<boolean>) => {
-                new Install().start(packages, options);
+            action: (packages: Array<string>) => {
+                new AddPackage().start(packages);
             },
         },
         {

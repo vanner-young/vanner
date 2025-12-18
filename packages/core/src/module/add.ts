@@ -4,7 +4,7 @@ import { findParentFile } from "mv-common/pkg/node/m.file";
 import { Packages } from "@vanner/module";
 import { getPackageMangerName } from "@vanner/common";
 
-export class Install {
+export class AddPackage {
     #config: Config;
 
     constructor() {
@@ -31,19 +31,6 @@ export class Install {
                 packages.splice(index, 2);
             }
         }
-
-        // 处理依赖之前的旗帜选项
-        const flags = [];
-        for (let index = 0; index < packages.length; index++) {
-            const arg = packages[index];
-            if (arg?.startsWith("-")) {
-                flags.push(arg);
-                packages.splice(index, 1);
-                index--;
-            } else {
-            }
-        }
-        console.log(packages, flags);
 
         new Packages({
             packages,
