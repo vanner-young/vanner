@@ -2,13 +2,13 @@
 
 #### 介绍
 
-一款便捷的项目开发与模板及系统管理工具，目前仅支持Windows系统
+一款便捷的项目开发与模板及系统管理工具，目前仅支持 Windows 系统
 
 #### 贡献
 
 1.  Fork 本仓库
 2.  新建 feat/xxx 分支
-3.  Push代码，并提交 Merge Request, 作者欢迎各位为此开源工具贡献一份力量~
+3.  Push 代码，并提交 Merge Request, 作者欢迎各位为此开源工具贡献一份力量~
 
 #### 安装
 
@@ -101,7 +101,7 @@ default_publish_npm: true ## publish 时是否发布至 npm
 default_main_branch_name: "master" ## 默认的主分支名称，用于放置被删除的保护分支以及publish的主分支判定
 ```
 
-4. 执行一个JavaScript文件(vanner exec --help)
+4. 执行一个 JavaScript 文件(vanner exec --help)
 
 ```sh
 vanner exec --help
@@ -136,7 +136,7 @@ Options:
 ## vanner run xxx(xxx 表示命令名称，与 package.json 下的 scripts 命令对应)
 ```
 
-6. 安装一个Npm包(vanner install --help)
+6. 安装一个 Npm 包(vanner install --help)
 
 ```sh
 vanner install --help
@@ -154,7 +154,7 @@ Options:
 ## 按照 package.json 安装全部的包：vanner install
 ```
 
-7. 删除一个已经安装的Npm包(vanner uninstall --help)
+7. 删除一个已经安装的 Npm 包(vanner uninstall --help)
 
 ```sh
 vanner uninstall --help
@@ -208,7 +208,7 @@ Commands:
 更详细的使用，可输入："vanner template (list|add|del...) --help" 来查看
 ```
 
-10. 提交本地代码至Git仓库(vanner push --help)
+10. 提交本地代码至 Git 仓库(vanner push --help)
 
 ```sh
 vanner push --help

@@ -1,50 +1,28 @@
 {
     "name": "vanner",
-    "version": "1.0.16",
-    "description": "",
-    "main": "bundle/index.js",
-    "repository": "https://gitee.com/memory_s/mv-cli.git",
-    "author": "vanner <1157875374@qq.com>",
+    "version": "0.0.1",
+    "description": "command cli",
+    "module": "src/main.ts",
+    "type": "module",
     "bin": {
-        "vanner": "bundle/index.js",
-        "registry": "https://registry.npmjs.org/"
+        "vanner": "src/main.ts"
     },
-    "publishConfig": {
-        "access": "public",
-        "registry": "https://registry.npmjs.org/"
-    },
-    "files": [
-        "bundle/**/*",
-        "README.md"
-    ],
-    "license": "MIT",
-    "scripts": {
-        "build": "rollup --config script/rollup.config.cjs",
-        "format": "prettier ./packages/** --write",
-        "prepublishOnly": "npm run build"
-    },
-    "engines": {
-        "node": ">18.19.1",
-        "npm": ">10.2.4"
-    },
-    "keywords": [
-        "cli",
-        "commander",
-        "template",
-        "git",
-        "manager"
-    ],
     "workspaces": [
-        "packages/**/*"
+        "packages/*"
     ],
-    "dependencies": {
-        "@rollup/plugin-commonjs": "^28.0.1",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^15.3.0",
-        "@rollup/plugin-typescript": "^12.1.1",
-        "rollup": "^4.24.2"
-    },
     "devDependencies": {
-        "prettier": "^3.3.3"
+        "@types/bun": "latest",
+        "@vanner/core": "workspace:*"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    },
+    "dependencies": {
+        "@inquirer/prompts": "^8.1.0",
+        "commander": "^14.0.2",
+        "dotenv": "^17.2.3",
+        "ini": "^6.0.0",
+        "minimist": "^1.2.8",
+        "mv-common": "^1.2.4"
     }
 }

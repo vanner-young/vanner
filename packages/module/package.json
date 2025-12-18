@@ -1,0 +1,8 @@
+{
+    "name": "@vanner/module",
+    "version": "0.0.1",
+    "main": "./main.ts",
+    "dependencies": {
+        "@vanner/common": "workspace:*"
+    }
+}
