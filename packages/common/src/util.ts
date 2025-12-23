@@ -1,9 +1,5 @@
-import * as path from "node:path";
-import { existsSync } from "node:fs";
 import { isType } from "mv-common/pkg/index";
-import { execCommand } from "mv-common/pkg/node/m.process"
 import type { IndexType } from "mv-common/pkg/type";
-import { package_manger_view } from "@core/constance"
 
 /**
  * 过滤掉一个对象上的指定数据
@@ -52,38 +48,3 @@ export const getFileExtension = (filename: string) => {
     const match = filename.match(/\.([^.]+)$/);
     if (match?.[1]) return match[1];
 };
-
-/**
- * 获取当前项目的包版本管理器, 目前支持 yarn|npm|pnpm|bun
- * @param { string } targetPath 目标路径
- * **/
-export const getPackageMangerName = (
-    targetPath: string = process.cwd()
-): string | void => {
-    for (const [key, value] of package_manger_view) {
-        if (existsSync(path.resolve(targetPath, value))) {
-            return key;
-        }
-    }
-};
-
-/**
- * 在某个路径下执行依赖的安装
- * **/
-export const installDependencies = async (cli: string, cwd: string, dep: Array<string>, mirror?: string, commandPad?: string) => {
-    let command = cli
-    const isAllInstall = !dep.length
-    const depCommand = isAllInstall ? "" : dep.join(" ")  
-    const mirrorCommand = mirror ? `--registry ${mirror}` : ""
-    const installCommand = ['pnpm', 'yarn', 'bun'].includes(cli) ? 'add' : 'install'
-
-    command = `${cli} ${isAllInstall ? 'install' : `${installCommand} ${depCommand}`} ${mirrorCommand} ${commandPad}`
-    console.log('exec command:', command)
-};
-
-/**
- * 在某个路径下执行依赖的删除
- * **/
-export const uninstallDependencies = async () => {
-    
-}

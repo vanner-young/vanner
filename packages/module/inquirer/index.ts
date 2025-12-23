@@ -56,10 +56,10 @@ export class Inquirer {
             });
         }, options);
     }
-    handler(options: unknown) {
+    handler<T>(options: unknown): Promise<T> {
         return arrayExecSyncHandler((item: any) => {
             const handler = (this as any)[item.type];
             return handler(filterObject(item, ["type"]));
-        }, options);
+        }, options) as Promise<T>;
     }
 }

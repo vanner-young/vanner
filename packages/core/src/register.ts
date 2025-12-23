@@ -21,7 +21,7 @@ export class SingleCommandRegister {
     }
 
     allowUnknownOption(program: Command): Command {
-        return program.allowUnknownOption()
+        return program.allowUnknownOption();
     }
 
     option(
@@ -72,7 +72,7 @@ export class RegisterCommand extends SingleCommandRegister {
         [this.description, "description"],
         [this.option, "option"],
         [this.action, "action"],
-        [this.allowUnknownOption, 'allowUnknownOption']
+        [this.allowUnknownOption, "allowUnknownOption"],
     ]);
     constructor(props: { commandOption: () => Array<any> }) {
         super();

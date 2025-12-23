@@ -1,6 +1,6 @@
 import { isEmptyJSON } from "mv-common/pkg/index";
-import { RegisterCommand } from "@core/lib/register";
-import { registerCommandOption } from "@core/lib/command";
+import { RegisterCommand } from "@core/register";
+import { registerCommandOption } from "@core/constance/command";
 import { getRuntimeConfig } from "@vanner/common";
 
 export class BaseCommand extends RegisterCommand {

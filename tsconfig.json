@@ -28,7 +28,9 @@
         "noPropertyAccessFromIndexSignature": false,
         "paths": {
             "@/*": ["./*"],
-            "@core/*": ["./packages/core/src/*"]
+            "@core/*": ["./packages/core/src/*"],
+            "@common/*": ["./packages/common/src/*"],
+            "@module/*": ["./packages/module/*"]
         }
     }
 }

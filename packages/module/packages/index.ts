@@ -1,41 +1,77 @@
-import { installDependencies } from "@vanner/common"
+import { execCommand } from "mv-common/pkg/node/m.process";
 
 export interface PackageProps {
-    cwd: string 
-    packages: Array<string> 
-    mirrorRegistry: string 
-    toolCli: string,
-    isMirrorAction: boolean
+    cwd: string;
+    toolCli: string;
+    packages: Array<string>;
+    isMirrorAction?: boolean;
+    mirrorRegistry?: string;
 }
 
-export type ExecType = 'install' | 'uninstall'
+export type ExecType = "install" | "uninstall";
 
 export class Packages {
-    #type: ExecType = 'install'
+    #type: ExecType = "install";
     #config = {
-        packages: [], // 需要安装的包
         cwd: process.cwd(), // 执行目录
-        mirrorRegistry: '',// 代理镜像
-        toolCli: '', // 包管理工具
+        toolCli: "", // 包管理工具
+        packages: [], // 需要安装的包
+        mirrorRegistry: "", // 代理镜像
         isMirrorAction: false, // 安装包时，是否需要使用代理镜像
-    }
+    };
     constructor(options: PackageProps) {
-        Object.assign(this.#config, options)
+        Object.assign(this.#config, options);
     }
-    async initAction() {
-        const { cwd, packages, mirrorRegistry, toolCli, isMirrorAction } = this.#config
-        await installDependencies(toolCli, cwd, packages, isMirrorAction ? mirrorRegistry : '', '').catch(e => {
-            throw new Error('安装依赖失败' + `${ packages.length ? `：${packages.join('、')}` : '' }` )
-        })
+
+    /**
+     * 在某个路径下执行依赖的安装
+     * **/
+    async installDependencies() {
+        const { cwd, toolCli, packages, isMirrorAction, mirrorRegistry } =
+            this.#config;
+
+        const isAllInstall = !packages;
+        const depCommand = isAllInstall ? "" : packages.join(" ");
+        const mirrorCommand = isMirrorAction
+            ? `--registry ${mirrorRegistry}`
+            : "";
+        const installCommand = ["pnpm", "yarn", "bun"].includes(toolCli)
+            ? "add"
+            : "install";
+
+        const command = `${toolCli} ${
+            isAllInstall ? "install" : `${installCommand} ${depCommand}`
+        } ${mirrorCommand}`;
+        await execCommand(command, {
+            cwd,
+            stdio: "inherit",
+        });
     }
-    uninstallAction() {
-    }
-    action(type: ExecType) {
+
+    /**
+     * 在某个路径下执行依赖的删除
+     * **/
+    uninstallDependencies = async () => {
+        const { cwd, packages, toolCli } = this.#config;
+
+        const depCommand = packages.join(" ");
+        const uninstallCommand = ["pnpm", "yarn", "bun"].includes(toolCli)
+            ? "remove"
+            : "uninstall";
+
+        const command = `${toolCli} ${uninstallCommand} ${depCommand}`;
+        await execCommand(command, {
+            cwd,
+            stdio: "inherit",
+        });
+    };
+
+    async action(type: ExecType) {
         this.#type = type;
-        if (this.#type === 'install') {
-            this.initAction()
+        if (this.#type === "install") {
+            await this.installDependencies();
         } else {
-            this.uninstallAction()
+            await this.uninstallDependencies();
         }
     }
 }

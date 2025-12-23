@@ -1,8 +1,7 @@
-import { Config } from "@core/module/config";
-import { findParentFile } from "mv-common/pkg/node/m.file";
+import { Config } from "@core/command/config";
 
 import { Packages } from "@vanner/module";
-import { getPackageMangerName } from "@vanner/common";
+import { PjPkg } from "@core/module/pjPkj";
 
 export class AddPackage {
     #config: Config;
@@ -11,13 +10,15 @@ export class AddPackage {
         this.#config = new Config();
     }
 
+    async verify() {
+        const cwd = await PjPkg.getCwd(); // 获取当前执行路径
+        const cli = await PjPkg.getPkg(cwd); // 获取包管理器
+        return { cwd, cli };
+    }
+
     async start(packages: Array<string>) {
         packages = Array.from(new Set([...packages]));
-        const cwd = await findParentFile(process.cwd(), "package.json");
-        if (!cwd) throw new Error("当前目录及父级目录不是一个可执行目录！");
-
-        const cli = getPackageMangerName(cwd);
-        if (!cli) throw new Error("当前项目下不存在有效的包管理器！");
+        const { cwd, cli } = await this.verify();
 
         // 自行输入镜像权重大于配置镜像
         let mirror = this.#config.get("mirror_registry");

@@ -1,8 +1,5 @@
-import {
-    Config as ConfigModule,
-    Inquirer,
-    questionForResetConfig,
-} from "@vanner/module";
+import { Config as ConfigModule, Inquirer } from "@vanner/module";
+import { qsForResetConfig } from "@core/constance/quetion";
 import { config_default_option } from "@core/constance";
 import { config_tool_file_path } from "@core/constance";
 import type { IndexType } from "mv-common/pkg/type";
@@ -80,9 +77,7 @@ export class Config extends ConfigModule {
         this.delete(key);
     }
     async resetConfig() {
-        const resetConfig = await this.#inquirer.handler(
-            questionForResetConfig()
-        );
+        const resetConfig = await this.#inquirer.handler(qsForResetConfig());
         if (!resetConfig) return;
         this.reset();
 
