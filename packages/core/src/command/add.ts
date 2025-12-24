@@ -1,4 +1,4 @@
-import { Config } from "@core/command/config";
+import { Config } from "@core/module/config";
 
 import { Packages } from "@vanner/module";
 import { PjPkg } from "@core/module/pjPkj";

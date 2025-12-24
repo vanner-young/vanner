@@ -7,7 +7,8 @@ import { isValidUrl } from "mv-common/pkg/index";
 export const support_node_version = 20;
 
 // 命令行工具简介
-export const app_description = "一款可定制、可扩展、便捷式的项目工作命令行工具";
+export const app_description =
+    "一款可对项目、依赖、仓库、模板进行便捷式的命令行工具";
 
 // 支持的包管理器对照表
 export const package_manger_view = {
@@ -50,22 +51,22 @@ export const app_cache_path = () =>
 export const config_cache_dir = () =>
     path.resolve(app_cache_path(), ".Cache/config");
 
-// 配置文件缓存路径 - 工具配置文件
+// 配置文件缓存路径 - 工具配置
 export const config_tool_file_path = () =>
     path.resolve(config_cache_dir(), "config.ini");
 
-// 配置文件缓存路径 - 项目包管理器选择持久化
+// 配置文件缓存路径 - 项目包管理器选择
 export const config_pkg_manger_file_path = () =>
     path.resolve(config_cache_dir(), "pkg_manager.ini");
 
-// 用户自定义运行时文件路径
-export const config_user_runtime_path = () =>
-    path.resolve(app_cache_path(), ".Cache/runtime/customer.runtime.json");
+// 配置文件缓存路径 - 项目模板
+export const config_tl_file_path = () =>
+    path.resolve(config_cache_dir(), "tl.ini");
 
 // 默认工具配置参数信息
 export const config_default_option = {
     main_branch: {
-        value: "master/main",
+        value: "main/master",
         require: (val: string) =>
             !val.split("/").find((it) => !["main", "master"].includes(it)),
         error: "值只能设置为main/master",

@@ -19,3 +19,12 @@ export const hasGit = async (): Promise<boolean> => {
 
     return result.includes("git version");
 };
+
+/**
+ * 给定一个git地址，获取这个地址的项目名称
+ * @param { string } url git仓库地址
+ * **/
+export const getStorageProjectName = (url: string) => {
+    if (!isValidGitUrl(url)) return "";
+    return url.match(/[\/:]([^\/]+?)(?:\.git)?$/)?.[1]?.trim();
+};

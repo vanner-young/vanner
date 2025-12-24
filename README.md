@@ -2,7 +2,7 @@
 
 #### 介绍
 
-一款便捷的项目开发与模板及系统管理工具，目前仅支持 Windows 系统
+一款便捷的项目开发与模板及系统管理工具，目前支持 Windows|mac 系统
 
 #### 贡献
 
@@ -19,6 +19,8 @@ npm install -g vanner
 yarn global add vanner
 # pnpm
 pnpm add -g vanner
+# bun
+bun add -g vanner
 ```
 
 #### 使用说明
@@ -27,7 +29,7 @@ pnpm add -g vanner
 
 ```sh
 ## 1. 打开命令提示符，在命令行中输入,看到命令提示符中有版本号的输出，即表示此工具安装成功。
-vanner --version
+vanner -v
 
 ## 2. 可输入 vanner 或者 vanner --help 查看此工具的使用帮助
 vanner # 使用帮助列表
@@ -48,22 +50,23 @@ vanner --help || vanner
 
 :' 输出：
 
-一款便捷的项目开发管理工具
+一款可对项目、依赖、仓库、模板进行便捷式的命令行工具
 
 Options:
-  -V, --version                             output the version number
-  -h, --help                                display help for command
+  -V, --version             output the version number
+  -h, --help                display help for command
 
 Commands:
-  config                                    管理脚手架的配置信息
-  exec [options] [filename...]              可在当前目录或指定的目录下执行系统命令或JavaScript文件(.js|.mjs)
-  run [options] <command>                   运行当前项目下的项目命令
-  install [options] [package@version...]    安装一个Npm包
-  uninstall [options] <package@version...>  删除一个已经安装的Npm包
-  init                                      根据官方或自定义的模板初始化一个项目
-  template                                  管理脚手架自定义项目模板
-  push [options]                            提交本地代码至Git仓库
-  branch                                    对项目分支进行管理
+  config                    管理命令行工作的配置信息
+  add [package@version...]  在本地项目中安装一个或多个依赖包
+  del [package@version...]  在本地项目中删除一个或多个依赖包
+  run <command> [args...]   在本地项目中运行一个项目命令
+  ex <filename> [args...]   在当前的目录下使用(node/bun)执行一个文件（支持 .js/.ts/.html 文件）
+  push [options]            将本地代码提交至远程仓库
+  commit [options]          将代码提交至本地工作区
+  reset [options]           还原暂存区或已提交至本地的代码
+  tl                        管理项目模板，执行init时，可根据此模板创建项目（项目模板只能是一个git仓库）
+  init                      基于tl创建的模板仓库，创建一个项目
 '
 ```
 
@@ -80,132 +83,150 @@ Options:
   -h, --help         display help for command
 
 Commands:
-  list               获取脚手架配置列表
-  get <key>          获取脚手架的配置信息
-  set <key> [value]  设置脚手架的配置信息
-  delete <key>       删除脚手架配置信息
-  reset              重置脚手架配置信息
+  list               获取命令行配置列表
+  get <key>          获取命令行的配置信息
+  set <key> [value]  设置命令行的配置信息
+  del <key>          删除命令行配置信息
+  reset              重置命令行配置信息
   help [command]     display help for command
 '
 更详细的使用，可输入："vanner config (list|get|set...) --help" 来查看
 
 其中包含一些默认配置项加以说明（以下设置均为工具自带，且无法删除）:
-branch_secure=true  # 分支安全，当开启后，在使用 vanner branch del 命令的时候，master 分支将会收到保护
-init_storage_pull=false ## 开启后，在 vanner template | vanner init 的时候，会默认拉取一次官方的git仓库或模板仓库的代码
-request_timeout=3000 ## vanner install 在安装包时，会默认使用registry代理，当本地的代理不可用时，会使用镜像。 用于判断本地代理是否有效的超时时长，单位(MS)
-default_registry=https://registry.npmmirror.com/  ## vanner 发现当本地代理无法使用时，会使用此代理值
-default_package_cli=npm ## vanner install 时，会自动判断当前项目使用的 package cli，当 npm、yarn、pnpm 均未能检测到时，兜底使用的 package cli 名称
-default_commit_type=fix ## vanner push 时，默认选择的本次代码提交类型
-default_exec_file=index.js ## vanner exec 时，默认会执行一个文件的文件名称
-default_publish_npm: true ## publish 时是否发布至 npm
-default_main_branch_name: "master" ## 默认的主分支名称，用于放置被删除的保护分支以及publish的主分支判定
+main_branch        = main/master 【主分支名称，设置多个时，通过'/'隔开，用于tag标签】
+mirror_registry    = https://registry.npmmirror.com/ 【包管理器执行时的代理镜像】
+package_cli        = npm 【默认的包管理器名称（项目中的lock文件权重大于此值的设置）】
+unknown_pkg_ask    = true 【遇到未知包管理器时，是否询问用户（true：询问、false: （使用 package_cli 设置的值））】
+install_use_mirror = false 【装包时，默认是否使用 mirror_registry的值作为安装镜像（用户在命令行中输入的 --registry 权重大于当前值的设置）】
+publish_npm        = false 【publish 时是否发布至 npm】
 ```
 
 4. 执行一个 JavaScript 文件(vanner exec --help)
 
 ```sh
-vanner exec --help
+## ex 在执行 js 文件时，会采用nodejs，非js文件时，会采用 bun。支持 node|bun的全部命令行参数，args会全部传递给node|bun进行执行（vanner ex [...args]）
+vanner ex --help
 
 :' 输出：
 
-可在当前目录或指定的目录下执行系统命令或JavaScript文件
-
-Options:
-  -f, --file        当值存在时, 将采用Node执行一个JavaScript 文件
-  -d, --dir <path>  设置这条命令或执行文件的工作地址，默认为当前所在目录
-  -h, --help        display help for command
-'
-
-## 执行一条命令: vanner exec echo xxx (执行系统命令)
-## 执行一个文件： vanner exec xxx.js -f -d 2x(xxx.js 文件名称，可不传递，则默认采用 config 配置下的 default_exec_file来执行。-f 表示执行一个文件。-d 表示执行文件的地址。)
-```
-
-5. 执行一条项目(package.json -> scrips)的命令(vanner run --help)
-
-```sh
-vanner run --help
-
-:' 输出：
-
-运行当前项目下的项目命令
-
-Options:
-  --env <args...>  执行命令的额外参数
-  -h, --help       display help for command
-'
-## vanner run xxx(xxx 表示命令名称，与 package.json 下的 scripts 命令对应)
-```
-
-6. 安装一个 Npm 包(vanner install --help)
-
-```sh
-vanner install --help
-
-:' 输出：
-
-安装一个Npm包
-
-Options:
-  --cli [name]  使用的包管理器名称
-  --dir [path]  执行安装包时的命令工作目录
-  -h, --help    display help for command
-'
-## 安装一个指定的包：vanner install xxx@1.0.0(xxx 表示包名，1.0.0表示版本号，可不指定版本号)
-## 按照 package.json 安装全部的包：vanner install
-```
-
-7. 删除一个已经安装的 Npm 包(vanner uninstall --help)
-
-```sh
-vanner uninstall --help
-
-:' 输出：
-
-删除一个已经安装的Npm包
-
-Options:
-  --cli [name]  使用的包管理器名称
-  -h, --help    display help for command
-'
-## 卸载包时，输入包名进行卸载: vanner uninstall xxx(xxx 表示包名称)
-```
-
-8. 根据官方或自定义的模板初始化一个项目(vanner init --help)
-
-```sh
-vanner init --help
-
-:' 输出：
-
-根据官方或自定义的模板初始化一个项目
+在当前的目录下使用(node/bun)执行一个文件（支持 .js/.ts/.html 文件）
 
 Options:
   -h, --help  display help for command
 '
-## 可输入来初始化一个项目: vanner init xxx(xxx 表示项目名称)
+
+## 执行一个js 文件
+vanne ex index.js
+
+## 执行一个ts文件
+vanner ex index.ts
+
+## 执行一个html文件(-w 会在本地开启一个http服务，并在可在文件发生变化时，自动刷新)
+vanner ex index.html -w
 ```
 
-9. 管理脚手架自定义项目模板(vanner template --help)
+5. 执行一个命令(package.json -> scrips)的命令(vanner run --help)
 
 ```sh
-vanner template --help
+## run 在执行时，支持 node|bun的全部命令行参数，args会全部传递给node|bun进行执行（vanner run [...args]）
+vanner run --help
 
 :' 输出：
 
-管理脚手架自定义项目模板
+Usage: main run [options] <command> [args...]
+
+在本地项目中运行一个项目命令
 
 Options:
-  -h, --help                      display help for command
-
-Commands:
-  list                            获取自定义项目模板列表
-  add [gitRemote]                 添加一个自定义项目模板
-  del [options] [projectName...]  删除一个或全部的自定义项目模板
-  upd [options] [projectName...]  更新一个或全部的自定义项目模板
-  help [command]                  display help for command
+  -h, --help  display help for command
 '
 
-更详细的使用，可输入："vanner template (list|add|del...) --help" 来查看
+vanner run start
+## 或者
+vanner run dev
+```
+
+6. 安装一个 Npm 包(vanner add --help)
+
+```sh
+## add 在执行时，支持 node|bun的全部命令行参数，args会全部传递给node|bun进行执行（vanner run [...args]）
+vanner add --help
+
+:' 输出：
+
+在本地项目中安装一个或多个依赖包
+
+Options:
+  -h, --help  display help for command
+'
+vanner add lodash
+vanner add lodash@xxx xx@xxx -g
+vanner add xxx --save-dev
+```
+
+7. 删除一个已经安装的 Npm 包(vanner del --help)
+
+```sh
+## del 在执行时，支持 node|bun的全部命令行参数，args会全部传递给node|bun进行执行（vanner run [...args]）
+vanner del --help
+
+:' 输出：
+
+在本地项目中删除一个或多个依赖包
+
+Options:
+  -h, --help  display help for command
+'
+vanner del lodash
+vanner del lodash@xxx xx@xxx -g
+vanner del xxx --save-dev
+```
+
+8. 管理脚手架自定义项目模板(vanner tl --help)
+
+```sh
+## vanner 管理模板库，这个模板会在执行当前init命令时，被列出来供用户作为基准创建一个项目。
+vanner tl --help
+
+:' 输出：
+
+管理项目模板，执行init时，可根据此模板创建项目（项目模板只能是一个git仓库）
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  add             添加一个项目模板
+  del             删除一个项目模板
+  list            查看模板列表
+  help [command]  display help for command
+'
+
+## 根据指引来创建一个模板
+vanner tl add
+
+## 根据指引来创建一个或多个模板
+vanner tl del
+
+## 查看模板列表
+vanner tl list
+```
+
+9. 根据官方或自定义的模板初始化一个项目(vanner init --help)
+
+```sh
+## vanner 会在 tl 命令时，管理一个模板，这个模板会在执行当前init命令时，被列出来供用户作为基准创建一个项目。
+vanner init --help
+
+:' 输出：
+
+基于tl创建的模板仓库，创建一个项目
+
+Options:
+  -h, --help  display help for command
+'
+## 根据指引来创建一个项目
+vanner init
 ```
 
 10. 提交本地代码至 Git 仓库(vanner push --help)
@@ -215,43 +236,20 @@ vanner push --help
 
 :' 输出：
 
-提交本地代码至Git仓库
+将本地代码提交至远程仓库
 
 Options:
-  -t, --type <type>         提交类型：feat|fix等
-  -m, --message <message>   本次提交的消息内容
-  -f, --file <filename...>  本次提交的文件
-  -b, --branch <branch>     提交到Git分支的名称
-  -o, --origin <origin>     提交的远程源名称
-  --onlyPush                直接将暂存区的代码推送至远程分支
-  -h, --help                display help for command
+  -t --tag    推送时，是否添加tag(取package.json中的version字段)
+  -h, --help  display help for command
 '
 
-## 常用方式，输入以下命令即可。输入后跟随提示进行操作即可，也可按照上面的命令选项来减少提示步骤：
-## vanner push。
-```
+## 根据指引选择提交时的文件信息来推送远程仓库
+vanner push
 
-11. 对项目分支进行管理(vanner branch --help)
+## 推送时，如果需要创建标签并推送，可携带 -t 或 --tag 参数，作为标识。
+## 注意：只有在当前分支被包含在 "管理脚手架的配置信息" 参数中的 main_branch 才会推送。
 
-```sh
-vanner branch --help
-
-:' 输出：
-
-对项目分支进行管理
-
-Options:
-  -h, --help                  display help for command
-
-Commands:
-  add [branchName]            新增一个分支
-  del [branchName...]         删除一个分支
-  list                        查看分支列表
-  status                      查看当前所在分支的变动文件
-  addOrigin [name] [address]  为当前项目添加一个Git源
-  delOrigin                   在当前项目中，删除一个Git源
-  help [command]              display help for command
-'
-
-更详细的使用，可输入："vanner branch (list|add|del...) --help" 来查看
+vanner push -t
+# 或
+vanner push --tag
 ```

@@ -1,5 +1,5 @@
 import { PjGit } from "@core/module/pjGit";
-import { Config } from "@core/command/config";
+import { Config } from "@core/module/config";
 
 export class Push extends PjGit {
     public async verify() {

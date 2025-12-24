@@ -117,6 +117,12 @@ export class Config {
      * 字符串化参数配置
      * **/
     stringify() {
-        return ini.stringify(this.list()).trim();
+        return ini
+            .stringify(this.list(), {
+                align: true,
+                whitespace: true,
+                bracketedArray: false,
+            })
+            .trim();
     }
 }

@@ -7,7 +7,7 @@ import {
     getRuntimeFlag,
     RuntimeFlag,
 } from "@vanner/common";
-import { Config } from "@core/command/config";
+import { Config } from "@core/module/config";
 
 export class CommanderCore {
     public start(): void {
@@ -30,7 +30,7 @@ export class CommanderCore {
         const git = getRuntimeFlag(RuntimeFlag.git);
         if (!git)
             console.warn(
-                "\n当前系统未安装git, 相关git操作将无法使用，请根据此链接进行安装：https://git-scm.com/ \n"
+                "\n当前系统未安装git, 相关git操作将无法使用，请根据此链接进行安装：https://git-scm.com \n"
             );
     }
 

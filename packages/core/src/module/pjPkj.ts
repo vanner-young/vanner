@@ -1,4 +1,4 @@
-import { Config } from "@core/command/config";
+import { Config } from "@core/module/config";
 import { qsForAskWhatPkgManger } from "@core/constance/quetion";
 import {
     config_pkg_manger_file_path,

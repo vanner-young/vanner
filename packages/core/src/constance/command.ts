@@ -8,6 +8,8 @@ import { ExecFile } from "@core/command/ex";
 import { Push } from "@core/command/push";
 import { Commit } from "@core/command/commit";
 import { Reset } from "@core/command/reset";
+import { Tl } from "@core/command/tl";
+import { Init } from "@core/command/init";
 
 /**
  * 命令注册配置选项
@@ -50,7 +52,7 @@ export const registerCommandOption = () => {
                     command: "reset",
                     description: "重置命令行配置信息",
                     action: () => {
-                        new Config().resetConfig();
+                        new Config().start("reset");
                     },
                 },
             ],
@@ -121,11 +123,46 @@ export const registerCommandOption = () => {
             option: [
                 {
                     command: "-c --commit",
-                    description: "是否将最近一次提交至本地的代码回退暂存区",
+                    description: "将最近一次提交至本地的代码回退至暂存区",
                 },
             ],
             action: (option: { commit: boolean }) => {
                 new Reset().start(option);
+            },
+        },
+        {
+            command: "tl",
+            description:
+                "管理项目模板，执行init时，可根据此模板创建项目（项目模板只能是一个git仓库）",
+            children: [
+                {
+                    command: "add",
+                    description: "添加一个项目模板",
+                    action: () => {
+                        new Tl().addTl();
+                    },
+                },
+                {
+                    command: "del",
+                    description: "删除一个项目模板",
+                    action: () => {
+                        new Tl().delTl();
+                    },
+                },
+                {
+                    command: "list",
+                    description: "查看模板列表",
+                    action: () => {
+                        new Tl().listTl();
+                    },
+                },
+            ],
+        },
+        {
+            command: "init",
+            description: "基于tl创建的模板仓库，创建一个项目",
+            action: () => {
+                new Init().start();
             },
         },
         {

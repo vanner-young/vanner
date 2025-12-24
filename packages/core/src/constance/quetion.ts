@@ -130,6 +130,7 @@ export const qsForTempStorageFile = (files: Array<string>) => {
 
 /**
  * 选择需要回退的文件
+ * @param { Array<string> } files 需要回退的文件列表
  * **/
 export const qsForResetStorageFile = (files: Array<string>) => {
     return {
@@ -141,6 +142,66 @@ export const qsForResetStorageFile = (files: Array<string>) => {
         choices: files.map((item) => ({
             name: item,
             value: item,
+        })),
+    };
+};
+
+/**
+ * 模板名称及git仓库地址
+ * **/
+export const qsForAskTlNameAndUrl = () => {
+    return {
+        name: "nameAndUrl",
+        type: "input",
+        message: "请输入模板名称及git仓库地址（中间使用一个空格隔开）：\n",
+        require: true,
+        default: "",
+    };
+};
+
+/**
+ * 输入模板描述
+ * **/
+export const qsForAskTlDes = () => {
+    return {
+        name: "nameAndUrl",
+        type: "input",
+        message: "请输入此模板的描述信息。（使用init命令时，会显示此信息）：\n",
+        require: true,
+        default: "",
+    };
+};
+
+/**
+ * 选择一个或多个模板仓库
+ * **/
+export const qsForAskTlStorage = (
+    storages: Array<{ name: string; value: string; text: string }>
+) => {
+    return {
+        name: "tlStorage",
+        type: "checkbox",
+        message: "请选择一个模板仓库： (输入I/A可对文件进行全选或反选)",
+        choices: storages.map((item) => ({
+            name: item.text,
+            value: item.name,
+        })),
+    };
+};
+
+/**
+ * 选择一个模板仓库
+ * **/
+export const qsForAskSingleStorage = (
+    storages: Array<{ name: string; value: string; text: string }>
+) => {
+    return {
+        name: "singleStorage",
+        type: "search",
+        message: "请选择仅一个模板仓库： ",
+        choices: storages.map((item) => ({
+            name: item.text,
+            value: item.name,
         })),
     };
 };
