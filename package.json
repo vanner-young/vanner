@@ -5,7 +5,7 @@
     "module": "bundle/main.js",
     "type": "module",
     "license": "MIT",
-    "repository": "https://gitee.com/memory_s/vanner.git",
+    "repository": "https://github.com/vanner-young/vanner.git",
     "author": "vanneryoung@gmail.com",
     "bin": {
         "vanner": "bundle/main.js"
@@ -29,7 +29,8 @@
         "dos"
     ],
     "scripts": {
-        "build": "bun run bun.build.ts"
+        "build": "bun run bun.build.ts",
+        "prepublishOnly": "bun run build"
     },
     "workspaces": [
         "packages/*"
