@@ -1,6 +1,6 @@
 {
     "name": "vanner",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "command cli",
     "module": "bundle/main.js",
     "type": "module",
