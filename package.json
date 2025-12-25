@@ -1,6 +1,6 @@
 {
     "name": "vanner",
-    "version": "2.3.0",
+    "version": "2.3.1-beat",
     "description": "command cli",
     "module": "bundle/main.js",
     "type": "module",
@@ -8,7 +8,7 @@
     "repository": "https://github.com/vanner-young/vanner.git",
     "author": "vanneryoung@gmail.com",
     "bin": {
-        "vanner": "src/main.ts"
+        "vanner": "bundle/main.js"
     },
     "publishConfig": {
         "access": "public",
