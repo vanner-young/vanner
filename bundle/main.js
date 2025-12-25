@@ -3542,7 +3542,7 @@ import { resolve as resolve5 } from "path";
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
 // package.json
-var version = "2.0.0";
+var version = "2.1.0";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.process.js
 import fs from "fs";
@@ -4004,6 +4004,7 @@ var execProjectCommandInCwd = async (cli, cwd, command) => {
   const runStr = ["bun", "npm"].includes(cli) ? "run" : "";
   command = `${cli} ${runStr}${runStr ? " " : ""}${command}`;
   await execCommand(command, {
+    stdio: "inherit",
     cwd
   });
 };
@@ -6359,7 +6360,7 @@ class Packages {
     const isAllInstall = !packages;
     const depCommand = isAllInstall ? "" : packages.join(" ");
     const mirrorCommand = isMirrorAction ? `--registry ${mirrorRegistry}` : "";
-    const installCommand = ["pnpm", "yarn", "bun"].includes(toolCli) ? "add" : "install";
+    const installCommand = ["pnpm", "yarn"].includes(toolCli) ? "add" : "install";
     const command = `${toolCli} ${isAllInstall ? "install" : `${installCommand} ${depCommand}`} ${mirrorCommand}`;
     await execCommand(command, {
       cwd,

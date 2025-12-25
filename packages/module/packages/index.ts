@@ -35,7 +35,7 @@ export class Packages {
         const mirrorCommand = isMirrorAction
             ? `--registry ${mirrorRegistry}`
             : "";
-        const installCommand = ["pnpm", "yarn", "bun"].includes(toolCli)
+        const installCommand = ["pnpm", "yarn"].includes(toolCli)
             ? "add"
             : "install";
 

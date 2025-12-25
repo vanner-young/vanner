@@ -14,7 +14,6 @@ import { commit_type_list } from "@core/constance";
 import { IgnoreFlag } from "@core/constance/runtime";
 import { getRuntimeFlag, RuntimeFlag, searchCwdPath } from "@vanner/common";
 import { Config } from "@core/module/config";
-import { execCommand } from "mv-common";
 
 export class PjGit extends Git {
     #inquirer: Inquirer;

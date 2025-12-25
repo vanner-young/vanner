@@ -93,6 +93,7 @@ export const execProjectCommandInCwd = async (
 
     command = `${cli} ${runStr}${runStr ? " " : ""}${command}`;
     await execCommand(command, {
+        stdio: "inherit",
         cwd,
     });
 };
