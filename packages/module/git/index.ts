@@ -1,22 +1,28 @@
-import { GitInfo } from "./gitInfo";
-import { GitCommit, type CommitProps } from "./commit";
-import { Remote } from "./remote";
+import { GitSync } from "@module/git/sync";
+import { GitRemote } from "@module/git/remote";
+import { GitInfo } from "@module/git/gitInfo";
+import { GitCommit, type CommitProps } from "@module/git/commit";
 
 import { execCommand } from "mv-common/pkg/node/m.process";
 import { getStorageProjectName } from "@vanner/common";
 
-export { GitInfo, GitCommit, Remote };
+export { GitInfo, GitCommit, GitRemote, GitSync };
 export { type CommitProps };
 
 export class Git extends GitInfo {
-    public async initGit() {
+    async initGit() {
         await execCommand("git init", {
             stdio: "inherit",
         });
     }
 
-    public async clone(url: string, cwd?: string) {
-        await execCommand(`git clone ${url}`, {
+    /**
+     * 克隆一个项目至本地
+     * @param { string } url 仓库地址
+     * @param { string } cwd 工作目录
+     * **/
+    async clone(url: string, cwd?: string) {
+        return await execCommand(`git clone ${url}`, {
             stdio: "inherit",
             cwd: cwd || process.cwd(),
         });
@@ -24,27 +30,22 @@ export class Git extends GitInfo {
 
     /**
      * 将已经提交至本地文件提交至远程
+     * @param { CommitProps } props 推送仓库仓库的参数：远程地址名称、分支
      * **/
-    public async pushRemote(props: CommitProps & { tag?: string }) {
+    async pushRemote(props: CommitProps) {
         const commit = new GitCommit(props);
         await commit.pushFileToRemote();
-        if (props.tag)
-            await commit.releaseTag({
-                remote: props.remote as string,
-                tag: props.tag,
-            });
     }
 
     /**
      * 变更文件直接推送至远程
      * @param { object } props 推送的远程地址、分支、文件列表、提交信息
      * **/
-    public async commitPushRemote(
+    async commitPushRemote(
         props: CommitProps & {
             type: string;
             file: Array<string>;
             msg: string;
-            tag?: string;
         }
     ) {
         const commit = new GitCommit({
@@ -54,18 +55,13 @@ export class Git extends GitInfo {
         await commit.addDiffFile(props.file);
         await commit.commitFileToLocal(props.type, props.msg);
         await commit.pushFileToRemote();
-        if (props.tag)
-            await commit.releaseTag({
-                remote: props.remote as string,
-                tag: props.tag,
-            });
     }
 
     /**
      * 提交文件至本地
      * @param { object } props 提交的文件、提交信息
      * **/
-    public async commitToLocal(props: {
+    async commitToLocal(props: {
         file: Array<string>;
         type: string;
         msg: string;
@@ -78,12 +74,9 @@ export class Git extends GitInfo {
     /**
      * 克隆一个项目至本地
      * **/
-    public async cloneGitProject(url: string, cwd: string) {
-        const pjName = getStorageProjectName(url);
-        if (!pjName)
-            throw new Error("git 仓库地址无效，无法获取到指定的git项目名称~");
-
+    async cloneGitProject(url: string, cwd: string) {
         await this.clone(url, cwd);
-        console.log(`项目初始化成功！，请进入：${pjName} 目录进行操作。`);
+
+        return getStorageProjectName(url);
     }
 }

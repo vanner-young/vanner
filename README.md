@@ -101,7 +101,7 @@ mirror_registry    = https://registry.npmmirror.com/ 【包管理器执行时的
 package_cli        = npm 【默认的包管理器名称（项目中的lock文件权重大于此值的设置）】
 unknown_pkg_ask    = true 【遇到未知包管理器时，是否询问用户（true：询问、false: （使用 package_cli 设置的值））】
 install_use_mirror = false 【装包时，默认是否使用 mirror_registry的值作为安装镜像（用户在命令行中输入的 --registry 权重大于当前值的设置）】
-publish_npm        = false 【publish 时是否发布至 npm】
+tag_security       = true 【在打标签时，是否开启对 main_branch 的验证（当前分支属于main_branch的值）】
 ```
 
 4. 执行一个 JavaScript 文件(vanner exec --help)
@@ -250,9 +250,63 @@ Options:
 vanner push
 
 ## 推送时，如果需要创建标签并推送，可携带 -t 或 --tag 参数，作为标识。
-## 注意：只有在当前分支被包含在 "管理脚手架的配置信息" 参数中的 main_branch 才会推送。
+## 注意：只有在当前分支被包含在 "管理脚手架的配置信息" 参数中的 main_branch 才会推送。（tag_security用于控制是否需要着这条规则）
 
 vanner push -t
 # 或
 vanner push --tag
+```
+
+11. 管理当前仓库的标签版本信息(vanner tag --help)
+
+```sh
+vanner tag --help
+
+:' 输出：
+
+仓库版本号管理
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  add             基于当前分支创建一个tag（会根据配置参数中的 tag_security 及 main_branch两个值来前置校验当前分支）
+  list            查看当前仓库的版本号列表
+  help [command]  display help for command
+'
+
+## 基于当前分支创建一个tag（会根据配置参数中的 tag_security 及 main_branch两个值来前置校验当前分支）
+vanner tag add
+
+查看当前仓库的版本号列表
+vanner tag list
+```
+
+11. 管理当前仓库的远程提交源信息(vanner remote --help)
+
+```sh
+vanner remote --help
+
+:' 输出：
+
+仓库远程地址管理
+
+Options:
+  -h, --help      display help for command
+
+Commands:
+  add             给当前项目仓库添加一个远程地址，如果还未初始化git仓库，则初始化仓库后添加远程地址
+  del             删除当前项目仓库的远程地址
+  list            查看当前项目仓库的远程地址
+  help [command]  display help for command
+'
+
+## 根据操作指引添加一个远程地址（在无git的项目同步代码非常有用）
+vanner remote add
+
+## 根据操作删除一个远程地址
+vanner remote del
+
+## 查看远程指引的列表（提示：在当前仓库无远程地址时，输出值为空）
+vanner remote list
 ```

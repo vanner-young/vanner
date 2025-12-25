@@ -2,12 +2,13 @@
  * 获取Git的项目信息
  * **/
 import { execCommand } from "mv-common/pkg/node/m.process";
+import { GitRemote } from "@module/git/remote";
 
 export class GitInfo {
     /**
      * 查看git环境是否存在
      * **/
-    public async env() {
+    async env() {
         const source = await execCommand(
             `git rev-parse --is-inside-work-tree`,
             {
@@ -20,13 +21,9 @@ export class GitInfo {
     /**
      * 查看git远程提交地址
      * **/
-    public async remote(): Promise<Array<{ origin: string; remote: string }>> {
-        const source = await execCommand("git remote -v");
-        let pushOriginList = source
-            .split("\n")
-            .filter((item) => item && item.endsWith("(push)"));
-
-        return pushOriginList.map((item) => {
+    async remote(): Promise<Array<{ origin: string; remote: string }>> {
+        let { push } = await GitRemote.listRemote();
+        return push.map((item) => {
             const [origin, remote] = item.split("\t").filter((item) => item);
             const [remoteUrl] = remote!.split(" ").filter((item) => item);
             return { origin: origin as string, remote: remoteUrl as string };
@@ -36,7 +33,7 @@ export class GitInfo {
     /**
      * 获取当前所在的分支
      * **/
-    public async currentBranch(): Promise<string> {
+    async currentBranch(): Promise<string> {
         const source = await execCommand("git branch --show-current");
         return (source && source.replaceAll("\n", "")) || "";
     }
@@ -45,7 +42,7 @@ export class GitInfo {
      * 查看项目git分支列表
      * @param { boolean } remote 是否需要获取远程分支
      * **/
-    public async branchList(remote: boolean): Promise<Array<string>> {
+    async branchList(remote: boolean): Promise<Array<string>> {
         let branchList = [];
 
         if (remote) {
@@ -66,7 +63,7 @@ export class GitInfo {
     /**
      * 获取当前本地分支中，暂存区和工作区内的文件变更
      * **/
-    public async getWorkspaceAndTempStorageFile(): Promise<Array<string>> {
+    async getWorkspaceAndTempStorageFile(): Promise<Array<string>> {
         const files = await execCommand("git status -s");
         const result = files
             .split("\n")
@@ -84,7 +81,7 @@ export class GitInfo {
     /**
      * 获取暂存区内的文件变更
      * **/
-    public async getTempStorageFile(): Promise<Array<string>> {
+    async getTempStorageFile(): Promise<Array<string>> {
         const files = await execCommand("git diff --cached --name-only");
         return files
             .split("\n")
@@ -95,7 +92,7 @@ export class GitInfo {
     /**
      * 获取当前工作区内文件变更
      * **/
-    public async getWorkspaceFile(): Promise<Array<string>> {
+    async getWorkspaceFile(): Promise<Array<string>> {
         const workspace = await execCommand("git diff --name-only");
         const unTrack = await execCommand(
             "git ls-files --others --exclude-standard"
@@ -108,7 +105,7 @@ export class GitInfo {
     /**
      * 查看当前分支中，已提交至本地但还未提交至远程的变更文件
      * **/
-    public async getNotPushRemoteFile() {
+    async getNotPushRemoteFile() {
         const conteString = await execCommand(
             `git log --branches --not --remotes --name-only`
         );
@@ -125,7 +122,7 @@ export class GitInfo {
     /**
      * 查看git的提交日志
      * **/
-    public async showGitLog() {
+    async showGitLog() {
         execCommand("git log", {
             stdio: "inherit",
         });

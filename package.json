@@ -29,7 +29,7 @@
         "dos"
     ],
     "scripts": {
-        "build": "bun run bun.build.ts",
+        "build": "bun exec 'NODE_ENV=production bun run bun.build.ts'",
         "prepublishOnly": "bun run build"
     },
     "workspaces": [

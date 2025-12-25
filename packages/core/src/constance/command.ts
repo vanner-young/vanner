@@ -10,6 +10,8 @@ import { Commit } from "@core/command/commit";
 import { Reset } from "@core/command/reset";
 import { Tl } from "@core/command/tl";
 import { Init } from "@core/command/init";
+import { Tag } from "@core/command/tag";
+import { Remote } from "@core/command/remote";
 
 /**
  * 命令注册配置选项
@@ -129,6 +131,55 @@ export const registerCommandOption = () => {
             action: (option: { commit: boolean }) => {
                 new Reset().start(option);
             },
+        },
+        {
+            command: "tag",
+            description: "仓库版本号管理",
+            children: [
+                {
+                    command: "add",
+                    description:
+                        "基于当前分支创建一个tag（会根据配置参数中的 tag_security 及 main_branch两个值来前置校验当前分支）",
+                    action: () => {
+                        new Tag().add();
+                    },
+                },
+                {
+                    command: "list",
+                    description: "查看当前仓库的版本号列表",
+                    action: () => {
+                        new Tag().list();
+                    },
+                },
+            ],
+        },
+        {
+            command: "remote",
+            description: "仓库远程地址管理",
+            children: [
+                {
+                    command: "add",
+                    description:
+                        "给当前项目仓库添加一个远程地址，如果还未初始化git仓库，则初始化仓库后添加远程地址",
+                    action: () => {
+                        new Remote().add();
+                    },
+                },
+                {
+                    command: "del",
+                    description: "删除当前项目仓库的远程地址",
+                    action: () => {
+                        new Remote().del();
+                    },
+                },
+                {
+                    command: "list",
+                    description: "查看当前项目仓库的远程地址",
+                    action: () => {
+                        new Remote().list();
+                    },
+                },
+            ],
         },
         {
             command: "tl",

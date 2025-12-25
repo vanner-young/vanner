@@ -9,7 +9,7 @@ export class ExecFile {
      * 确定需要执行文件的解释器（当运行js使用node，反之使用bun）
      * @param { string } suffix 文件后缀
      * **/
-    public async getRuntimeCli(suffix: string) {
+    async getRuntimeCli(suffix: string) {
         let cli = getRuntimeFlag(RuntimeFlag.cli);
         if (!cli) {
             if (suffix === ".js") return "node";
@@ -25,7 +25,7 @@ export class ExecFile {
         return cli;
     }
 
-    public async verifyFileName(suffix: string) {
+    async verifyFileName(suffix: string) {
         if (!suffix) {
             throw new Error(
                 "命令输入错误或无法识别需要执行的文件类型，请确认命令输入或文件名称是否正确"
@@ -46,7 +46,7 @@ export class ExecFile {
      * @param { string } cli 运行时
      * @param { string } command 需要执行的命令
      * **/
-    public async runFileInCwd(cli: string, command: string) {
+    async runFileInCwd(cli: string, command: string) {
         const runStr = ["bun"].includes(cli) ? "run" : "";
 
         command = `${cli} ${runStr}${runStr ? " " : ""}${command}`;
@@ -56,7 +56,7 @@ export class ExecFile {
         });
     }
 
-    public async start(filename: string, args: Array<string>) {
+    async start(filename: string, args: Array<string>) {
         const suffix = extname(filename);
 
         await this.verifyFileName(suffix);

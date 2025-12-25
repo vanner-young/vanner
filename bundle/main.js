@@ -3480,9 +3480,64 @@ var require_lib = __commonJS((exports, module) => {
   module.exports = MuteStream;
 });
 
+// node_modules/.bun/@mtool+error-catch@0.0.1/node_modules/@mtool/error-catch/bundle/process.js
+var require_process = __commonJS((exports, module) => {
+  var __defProp2 = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames2 = Object.getOwnPropertyNames;
+  var __hasOwnProp2 = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp2(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames2(from))
+        if (!__hasOwnProp2.call(to, key) && key !== except)
+          __defProp2(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp2({}, "__esModule", { value: true }), mod);
+  var process_exports = {};
+  __export(process_exports, {
+    ProcessErrorCatch: () => ProcessErrorCatch
+  });
+  module.exports = __toCommonJS(process_exports);
+  var ProcessErrorCatch = class {
+    cb = undefined;
+    constructor() {
+      this.unExceptionRegister = this.unExceptionRegister.bind(this);
+      this.unhandledRejectionRegister = this.unhandledRejectionRegister.bind(this);
+    }
+    unExceptionRegister(...args) {
+      if (this.cb)
+        this.cb("uncaughtException", ...args);
+    }
+    unhandledRejectionRegister(...args) {
+      if (this.cb)
+        this.cb("unhandledRejection", ...args);
+    }
+    listen(cb) {
+      if (!process) {
+        console.error("the node runtime env un support error catch...");
+        return;
+      }
+      if (!cb) {
+        console.warn("error cache need callback handler...");
+      }
+      this.cb = cb;
+      process.off("uncaughtException", this.unExceptionRegister);
+      process.off("uncaughtException", this.unhandledRejectionRegister);
+      process.on("uncaughtException", this.unExceptionRegister);
+      process.on("unhandledRejection", this.unhandledRejectionRegister);
+    }
+  };
+});
+
 // src/main.ts
 var import_dotenv = __toESM(require_main(), 1);
-import * as path5 from "path";
+import { resolve as resolve5 } from "path";
 
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
@@ -3592,7 +3647,9 @@ var app_config = {
   app_description
 };
 var support_package_manger_name = Object.keys(package_manger_view);
-var app_cache_path = () => path2.resolve(getAppData(), process.env.APP_NAME);
+var app_cache_path = () => {
+  return path2.resolve(getAppData(), process.env.APP_NAME);
+};
 var config_cache_dir = () => path2.resolve(app_cache_path(), ".Cache/config");
 var config_tool_file_path = () => path2.resolve(config_cache_dir(), "config.ini");
 var config_pkg_manger_file_path = () => path2.resolve(config_cache_dir(), "pkg_manager.ini");
@@ -3628,11 +3685,11 @@ var config_default_option = {
     error: `\u53EA\u80FD\u8BBE\u7F6E\u4E3A\uFF1A${["true", "false"].join("\u3001")} \u7684\u4E00\u79CD`,
     description: "\u88C5\u5305\u65F6\uFF0C\u9ED8\u8BA4\u662F\u5426\u4F7F\u7528 mirror_registry\u7684\u503C\u4F5C\u4E3A\u5B89\u88C5\u955C\u50CF\uFF08\u7528\u6237\u5728\u547D\u4EE4\u884C\u4E2D\u8F93\u5165\u7684 --registry \u6743\u91CD\u5927\u4E8E\u5F53\u524D\u503C\u7684\u8BBE\u7F6E\uFF09"
   },
-  publish_npm: {
-    value: false,
+  tag_security: {
+    value: true,
     require: (val) => ["true", "false"].includes(val),
     error: `\u53EA\u80FD\u8BBE\u7F6E\u4E3A\uFF1A${["true", "false"].join("\u3001")} \u7684\u4E00\u79CD`,
-    description: "publish \u65F6\u662F\u5426\u53D1\u5E03\u81F3 npm"
+    description: "\u5728\u6253\u6807\u7B7E\u65F6\uFF0C\u662F\u5426\u5F00\u542F\u5BF9 main_branch \u7684\u9A8C\u8BC1\uFF08\u5F53\u524D\u5206\u652F\u5C5E\u4E8Emain_branch\u7684\u503C\uFF09"
   }
 };
 
@@ -6328,6 +6385,56 @@ class Packages {
     }
   }
 }
+// packages/module/git/sync.ts
+class GitSync {
+  static async syncAll(cwd) {
+    await execCommand(`git fetch --all`, {
+      cwd: cwd || process.cwd(),
+      stdio: "inherit"
+    });
+  }
+  static async syncTag() {
+    await execCommand("git fetch --tags", {
+      stdio: "inherit"
+    });
+  }
+}
+
+// packages/module/git/remote.ts
+class GitRemote {
+  static async addRemote(name, url) {
+    await execCommand(`git remote add ${name} ${url}`, {
+      stdio: "inherit"
+    });
+    await GitSync.syncAll();
+  }
+  static async delRemote(name) {
+    await execCommand(`git remote remove ${name}`, {
+      stdio: "inherit"
+    });
+  }
+  static async listRemote() {
+    const origin = await execCommand("git remote -v");
+    const list = origin.split(`
+`);
+    const push = [], fetch = [];
+    for (const item of list) {
+      if (!item)
+        continue;
+      if (item.endsWith("(push)")) {
+        push.push(item);
+      } else if (item.endsWith("(fetch)")) {
+        fetch.push(item);
+      }
+    }
+    return {
+      origin,
+      push,
+      fetch
+    };
+  }
+}
+
 // packages/module/git/gitInfo.ts
 class GitInfo {
   async env() {
@@ -6337,10 +6444,8 @@ class GitInfo {
     return source === "true";
   }
   async remote() {
-    const source = await execCommand("git remote -v");
-    let pushOriginList = source.split(`
-`).filter((item) => item && item.endsWith("(push)"));
-    return pushOriginList.map((item) => {
+    let { push } = await GitRemote.listRemote();
+    return push.map((item) => {
       const [origin, remote] = item.split("\t").filter((item2) => item2);
       const [remoteUrl] = remote.split(" ").filter((item2) => item2);
       return { origin, remote: remoteUrl };
@@ -6448,20 +6553,25 @@ class GitCommit {
       stdio: "inherit"
     });
   }
+  async tags() {
+    await GitSync.syncTag();
+    const tagStr = await execCommand("git tag", {
+      stdio: ["ignore", "pipe", "ignore"]
+    });
+    return tagStr.split(`
+`).filter((t) => t).map((t) => t.trim().replace(/\s+/g, ""));
+  }
   async releaseTag(option) {
+    const tagVersion = `v${option.tag}`;
+    const tags = await this.tags();
+    if (tags.includes(tagVersion))
+      throw new Error(`\u6807\u7B7E\uFF1A${tagVersion} \u5DF2\u5B58\u5728\u5F53\u524D\u4ED3\u5E93\u6807\u7B7E\u5217\u8868\uFF0C\u63A8\u9001\u5931\u8D25~`);
     await execCommand(`git tag -a v${option.tag} -m "Release version ${option.tag}"`, {
       stdio: "inherit"
     });
-    await execCommand(`git push ${option.remote} v${option.tag}`, {
+    await execCommand(`git push ${option.remote} ${tagVersion}`, {
       stdio: "inherit"
     });
-  }
-}
-
-// packages/module/git/remote.ts
-class Remote {
-  static async addRemote(name, url) {
-    return await execCommand(`git remote add ${name} ${url}`);
   }
 }
 
@@ -6473,7 +6583,7 @@ class Git extends GitInfo {
     });
   }
   async clone(url, cwd) {
-    await execCommand(`git clone ${url}`, {
+    return await execCommand(`git clone ${url}`, {
       stdio: "inherit",
       cwd: cwd || process.cwd()
     });
@@ -6481,11 +6591,6 @@ class Git extends GitInfo {
   async pushRemote(props) {
     const commit = new GitCommit(props);
     await commit.pushFileToRemote();
-    if (props.tag)
-      await commit.releaseTag({
-        remote: props.remote,
-        tag: props.tag
-      });
   }
   async commitPushRemote(props) {
     const commit = new GitCommit({
@@ -6495,11 +6600,6 @@ class Git extends GitInfo {
     await commit.addDiffFile(props.file);
     await commit.commitFileToLocal(props.type, props.msg);
     await commit.pushFileToRemote();
-    if (props.tag)
-      await commit.releaseTag({
-        remote: props.remote,
-        tag: props.tag
-      });
   }
   async commitToLocal(props) {
     const commit = new GitCommit;
@@ -6507,11 +6607,8 @@ class Git extends GitInfo {
     await commit.commitFileToLocal(props.type, props.msg);
   }
   async cloneGitProject(url, cwd) {
-    const pjName = getStorageProjectName(url);
-    if (!pjName)
-      throw new Error("git \u4ED3\u5E93\u5730\u5740\u65E0\u6548\uFF0C\u65E0\u6CD5\u83B7\u53D6\u5230\u6307\u5B9A\u7684git\u9879\u76EE\u540D\u79F0~");
     await this.clone(url, cwd);
-    console.log(`\u9879\u76EE\u521D\u59CB\u5316\u6210\u529F\uFF01\uFF0C\u8BF7\u8FDB\u5165\uFF1A${pjName} \u76EE\u5F55\u8FDB\u884C\u64CD\u4F5C\u3002`);
+    return getStorageProjectName(url);
   }
 }
 // packages/core/src/constance/quetion.ts
@@ -6546,21 +6643,22 @@ var qsForAskInitStorage = () => {
     message: "\u5F53\u524D\u5DE5\u4F5C\u76EE\u5F55\u8FD8\u672A\u521D\u59CB\u5316git\uFF0C\u662F\u5426\u9700\u8981\u521D\u59CB\u5316\uFF1F"
   };
 };
-var qsForAddStorageRemote = (message) => {
+var qsForAddStorageRemote = () => {
   return {
     name: "addStorageRemote",
     type: "input",
-    message
+    message: `\u8BF7\u8F93\u5165\u8FDC\u7A0B\u4ED3\u5E93\u5730\u5740\u4FE1\u606F\uFF1A(\u540D\u79F0\u548C\u5730\u5740\u4F7F\u7528\u4EC5\u4E00\u4E2A\u7A7A\u683C\u9694\u5F00)<remote-name> <remote-url>\uFF1A
+`
   };
 };
-var qsForChooseRemote = (branchList) => {
+var qsForChooseRemote = (remotes) => {
   return {
     name: "chooseStorageRemote",
     type: "search",
     require: true,
     default: false,
-    message: "\u5F53\u524D\u9879\u76EE\u4E0B\u5B58\u5728\u591A\u4E2A\u8FDC\u7A0B\u5730\u5740\uFF0C\u8BF7\u9009\u62E9\u4E00\u4E2A\uFF1A",
-    choices: branchList.map((it) => ({ name: it, value: it }))
+    message: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u8FDC\u7A0B\u5730\u5740\u540D\u79F0\uFF1A",
+    choices: remotes.map((it) => ({ name: it, value: it }))
   };
 };
 var qsForPushType = (types) => {
@@ -6641,6 +6739,7 @@ var qsForAskTlStorage = (storages) => {
     name: "tlStorage",
     type: "checkbox",
     message: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u6A21\u677F\u4ED3\u5E93\uFF1A (\u8F93\u5165I/A\u53EF\u5BF9\u6587\u4EF6\u8FDB\u884C\u5168\u9009\u6216\u53CD\u9009)",
+    required: true,
     choices: storages.map((item) => ({
       name: item.text,
       value: item.name
@@ -6927,11 +7026,13 @@ class PjGit extends Git {
     super();
     this.#inquirer = new Inquirer;
   }
-  async confirmGitEnv() {
+  async confirmGitEnv(tipsInit = true) {
     const git3 = getRuntimeFlag("RUNTIME_GIT" /* git */);
     if (!Number(git3))
-      throw new Error("\u5F53\u524D\u7CFB\u7EDF\u672A\u5B89\u88C5git\uFF0C\u8BF7\u5B89\u88C5\u540E\u91CD\u8BD5~");
+      throw new Error("\u5F53\u524D\u7CFB\u7EDF\u672A\u5B58\u5728git\uFF0C\u8BF7\u6839\u636E\u6B64\u94FE\u63A5\u8FDB\u884C\u5B89\u88C5\u540E\u91CD\u8BD5\uFF1Ahttps://git-scm.com");
     const hasGit2 = await this.env();
+    if (!tipsInit)
+      return hasGit2;
     if (!hasGit2) {
       const init = await this.#inquirer.handler(qsForAskInitStorage());
       if (init)
@@ -6943,13 +7044,8 @@ class PjGit extends Git {
     let remote = "";
     const remoteList = await this.remote();
     if (remoteList.length <= 0) {
-      const originRemote = await this.#inquirer.handler(qsForAddStorageRemote(`\u5F53\u524D\u4ED3\u5E93\u4E2D\u4E0D\u5B58\u5728\u8FDC\u7A0B\u5730\u5740\uFF0C\u8BF7\u6DFB\u52A0\uFF1A(\u540D\u79F0\u548C\u5730\u5740\u4F7F\u7528\u4EC5\u4E00\u4E2A\u7A7A\u683C\u9694\u5F00)<remote-name> <remote-url>
-`));
-      const [name, url] = originRemote.split(" ");
-      if (!name?.trim() || !isValidGitUrl(url)) {
-        throw new Error("\u8FDC\u7A0B\u5730\u5740\u540D\u79F0\u6216\u5730\u5740\u65E0\u6548\uFF0C\u8BF7\u91CD\u8BD5\uFF01");
-      }
-      await Remote.addRemote(name, url);
+      const { name, url } = await this.confirmRemoteInfo();
+      await GitRemote.addRemote(name, url);
       throw new Error(IgnoreFlag);
     } else {
       if (remoteList.length > 1) {
@@ -6959,6 +7055,12 @@ class PjGit extends Git {
       }
     }
     return remote;
+  }
+  async chooseStorageSingleRemote() {
+    const remotes = await this.remote();
+    if (!remotes.length)
+      throw new Error("\u5F53\u524D\u4ED3\u5E93\u6682\u65E0\u8FDC\u7A0B\u5730\u5740~");
+    return await this.#inquirer.handler(qsForChooseRemote(remotes.map((it) => it.origin)));
   }
   async confirmBranch() {
     const branch = await this.currentBranch();
@@ -7001,7 +7103,7 @@ class PjGit extends Git {
   }
   async resetTempOrCommitAction(type) {
     const commit = new GitCommit;
-    if (type === "local") {
+    if (type === "workspace") {
       const tempFiles = await this.getTempStorageFile();
       if (!tempFiles.length)
         throw new Error("\u5F53\u524D\u6682\u5B58\u533A\u65E0\u53EF\u64A4\u56DE\u7684\u6587\u4EF6~");
@@ -7012,10 +7114,41 @@ class PjGit extends Git {
     }
   }
   async confirmTagVersion() {
+    const config2 = new Config2;
+    const tagSecurity = config2.get("tag_security");
+    if (tagSecurity) {
+      const currentBranch = await this.currentBranch();
+      const mainBranch = config2.get("main_branch").split("/");
+      if (!mainBranch.includes(currentBranch)) {
+        throw new Error("\u5F53\u524D\u4ED3\u5E93\u5206\u652F\u4E0D\u5C5E\u4E8E\u4E3B\u5206\u652F\uFF0C\u65E0\u6CD5\u53D1\u5E03tag\u7248\u672C~");
+      }
+    }
     const cwd = await searchCwdPath(".git");
     const pg = resolve3(cwd, "package.json");
     const res = await import(pg);
     return res.version;
+  }
+  async releaseTag(remote = "", tag = "") {
+    if (!remote)
+      remote = await this.confirmGitRemote();
+    if (!tag)
+      tag = await this.confirmTagVersion();
+    await new GitCommit().releaseTag({ remote, tag });
+  }
+  async tags(output = false) {
+    const tags = await new GitCommit().tags();
+    if (output)
+      console.log(tags.join(`
+`));
+    return tags;
+  }
+  async confirmRemoteInfo() {
+    const originRemote = await this.#inquirer.handler(qsForAddStorageRemote());
+    const [name, url] = originRemote.split(" ");
+    if (!name?.trim() || !url?.trim() || !isValidGitUrl(url)) {
+      throw new Error("\u8FDC\u7A0B\u5730\u5740\u540D\u79F0\u6216\u5730\u5740\u65E0\u6548\uFF0C\u8BF7\u91CD\u8BD5\uFF01");
+    }
+    return { name, url };
   }
 }
 
@@ -7032,16 +7165,8 @@ class Push extends PjGit {
     const options = await this.confirmPushFile();
     if (!options || !remote || !branch)
       return;
-    let version2 = "";
-    if (option.tag) {
-      const config2 = new Config2;
-      const mainBranch = config2.get("main_branch").split("/");
-      if (mainBranch.includes(branch)) {
-        version2 = await this.confirmTagVersion();
-      }
-    }
     if (options.type === "remote") {
-      await this.pushRemote({ remote, branch, tag: version2 });
+      await this.pushRemote({ remote, branch });
     } else {
       const { type, msg } = await this.confirmPushType();
       await this.commitPushRemote({
@@ -7049,10 +7174,12 @@ class Push extends PjGit {
         branch,
         type,
         msg,
-        file: options.file,
-        tag: version2
+        file: options.file
       });
     }
+    if (!option.tag)
+      return;
+    await this.releaseTag(remote);
   }
 }
 
@@ -7080,7 +7207,7 @@ class Reset extends PjGit {
   }
   async start(option) {
     await this.verify();
-    this.resetTempOrCommitAction(option.commit ? "commit" : "local");
+    this.resetTempOrCommitAction(option.commit ? "commit" : "workspace");
   }
 }
 
@@ -7137,9 +7264,6 @@ class Template {
 
 // packages/core/src/command/tl.ts
 class Tl extends Template {
-  constructor() {
-    super();
-  }
   async addTl() {
     const list = await this.config.list();
     const { name, url, des } = await this.add(list);
@@ -7156,12 +7280,13 @@ class Tl extends Template {
     const list = await this.config.list();
     if (!Object.keys(list).length)
       throw new Error("\u6A21\u677F\u5217\u8868\u4E3A\u7A7A\uFF0C\u8BF7\u5148\u6DFB\u52A0~");
-    this.delete();
+    await this.delete();
     this.listTl();
   }
 }
 
 // packages/core/src/command/init.ts
+import { resolve as resolve4 } from "path";
 class Init {
   #tl;
   #inquirer;
@@ -7177,14 +7302,57 @@ class Init {
   }
   async cloneProject(url) {
     const git3 = new Git;
-    await git3.cloneGitProject(url, process.cwd());
+    const folderName = await git3.cloneGitProject(url, process.cwd());
+    if (folderName)
+      await GitSync.syncAll(resolve4(process.cwd(), folderName));
   }
   async start() {
-    const hasGit2 = getRuntimeFlag("RUNTIME_GIT" /* git */);
-    if (!hasGit2)
-      throw new Error("\u5F53\u524D\u7CFB\u7EDF\u672A\u5B58\u5728git\uFF0C\u8BF7\u6839\u636E\u6B64\u94FE\u63A5\u8FDB\u884C\u5B89\u88C5\u540E\u91CD\u8BD5\uFF1Ahttps://git-scm.com");
+    const pjGit = new PjGit;
+    await pjGit.confirmGitEnv(false);
     const url = await this.getGitUrl();
     await this.cloneProject(url);
+  }
+}
+
+// packages/core/src/command/tag.ts
+class Tag extends PjGit {
+  async add() {
+    await this.confirmGitEnv();
+    await this.releaseTag();
+  }
+  async list() {
+    await this.confirmGitEnv();
+    await this.tags(true);
+  }
+}
+
+// packages/core/src/command/remote.ts
+class Remote extends PjGit {
+  async add() {
+    await this.confirmGitEnv();
+    const { name, url } = await this.confirmRemoteInfo();
+    const remotes = await this.remote();
+    for (const remote of remotes) {
+      if (remote.origin === name)
+        throw new Error("\u5F53\u524D\u6E90\u540D\u79F0\u5DF2\u5B58\u5728\uFF0C\u8BF7\u91CD\u8BD5~");
+      else if (remote.remote === url)
+        throw new Error("\u5F53\u524D\u6E90\u5730\u5740\u5DF2\u5B58\u5728\uFF0C\u8BF7\u91CD\u8BD5~");
+    }
+    await GitRemote.addRemote(name, url);
+    await this.list();
+  }
+  async del() {
+    await this.confirmGitEnv();
+    const remote = await this.chooseStorageSingleRemote();
+    await GitRemote.delRemote(remote);
+    await this.list();
+  }
+  async list() {
+    await this.confirmGitEnv();
+    const { push } = await GitRemote.listRemote();
+    if (push.length)
+      console.log(push.join(`
+`));
   }
 }
 
@@ -7304,6 +7472,53 @@ var registerCommandOption = () => {
       }
     },
     {
+      command: "tag",
+      description: "\u4ED3\u5E93\u7248\u672C\u53F7\u7BA1\u7406",
+      children: [
+        {
+          command: "add",
+          description: "\u57FA\u4E8E\u5F53\u524D\u5206\u652F\u521B\u5EFA\u4E00\u4E2Atag\uFF08\u4F1A\u6839\u636E\u914D\u7F6E\u53C2\u6570\u4E2D\u7684 tag_security \u53CA main_branch\u4E24\u4E2A\u503C\u6765\u524D\u7F6E\u6821\u9A8C\u5F53\u524D\u5206\u652F\uFF09",
+          action: () => {
+            new Tag().add();
+          }
+        },
+        {
+          command: "list",
+          description: "\u67E5\u770B\u5F53\u524D\u4ED3\u5E93\u7684\u7248\u672C\u53F7\u5217\u8868",
+          action: () => {
+            new Tag().list();
+          }
+        }
+      ]
+    },
+    {
+      command: "remote",
+      description: "\u4ED3\u5E93\u8FDC\u7A0B\u5730\u5740\u7BA1\u7406",
+      children: [
+        {
+          command: "add",
+          description: "\u7ED9\u5F53\u524D\u9879\u76EE\u4ED3\u5E93\u6DFB\u52A0\u4E00\u4E2A\u8FDC\u7A0B\u5730\u5740\uFF0C\u5982\u679C\u8FD8\u672A\u521D\u59CB\u5316git\u4ED3\u5E93\uFF0C\u5219\u521D\u59CB\u5316\u4ED3\u5E93\u540E\u6DFB\u52A0\u8FDC\u7A0B\u5730\u5740",
+          action: () => {
+            new Remote().add();
+          }
+        },
+        {
+          command: "del",
+          description: "\u5220\u9664\u5F53\u524D\u9879\u76EE\u4ED3\u5E93\u7684\u8FDC\u7A0B\u5730\u5740",
+          action: () => {
+            new Remote().del();
+          }
+        },
+        {
+          command: "list",
+          description: "\u67E5\u770B\u5F53\u524D\u9879\u76EE\u4ED3\u5E93\u7684\u8FDC\u7A0B\u5730\u5740",
+          action: () => {
+            new Remote().list();
+          }
+        }
+      ]
+    },
+    {
       command: "tl",
       description: "\u7BA1\u7406\u9879\u76EE\u6A21\u677F\uFF0C\u6267\u884Cinit\u65F6\uFF0C\u53EF\u6839\u636E\u6B64\u6A21\u677F\u521B\u5EFA\u9879\u76EE\uFF08\u9879\u76EE\u6A21\u677F\u53EA\u80FD\u662F\u4E00\u4E2Agit\u4ED3\u5E93\uFF09",
       children: [
@@ -7332,7 +7547,7 @@ var registerCommandOption = () => {
     },
     {
       command: "init",
-      description: "\u57FA\u4E8Etl\u521B\u5EFA\u7684\u6A21\u677F\u4ED3\u5E93\uFF0C\u521B\u5EFA\u4E00\u4E2A\u9879\u76EE\uFF08\u4F1A\u53D6 \u914D\u7F6E\u53C2\u6570 main_branch \u7684\u5206\u652F\u4EE3\u7801\uFF09",
+      description: "\u57FA\u4E8Etl\u521B\u5EFA\u7684\u6A21\u677F\u4ED3\u5E93\uFF0C\u521B\u5EFA\u4E00\u4E2A\u9879\u76EE",
       action: () => {
         new Init().start();
       }
@@ -7369,11 +7584,13 @@ class BaseCommand extends RegisterCommand {
 }
 
 // packages/core/src/index.ts
+var import_node = __toESM(require_process(), 1);
 class CommanderCore {
   start() {
     this.init().then(() => {
       new BaseCommand().start();
     }).catch((e) => {
+      console.log(e);
       throw new Error("\u547D\u4EE4\u884C\u5DE5\u5177\u521D\u59CB\u5316\u5931\u8D25~" + e.message || e);
     });
   }
@@ -7407,10 +7624,19 @@ class CommanderCore {
     createCacheDir();
     this.tipsSystemEnv();
     this.updateDefaultConfig();
+    const env = "production";
+    if (env === "production") {
+      new import_node.ProcessErrorCatch().listen((_, error) => {
+        const msg = error.message;
+        if (msg !== IgnoreFlag)
+          console.error(`${process.env.APP_NAME} error: ${msg}`);
+        process.exit(-1);
+      });
+    }
   }
 }
 
 // src/main.ts
 var __dirname = "F:\\vanner\\src";
-import_dotenv.default.config({ path: path5.resolve(__dirname, "../.env"), quiet: true });
+import_dotenv.config({ path: [resolve5(__dirname, "../.env")], quiet: true });
 new CommanderCore().start();

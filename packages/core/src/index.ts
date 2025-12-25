@@ -8,14 +8,17 @@ import {
     RuntimeFlag,
 } from "@vanner/common";
 import { Config } from "@core/module/config";
+import { ProcessErrorCatch } from "@mtool/error-catch/node";
+import { IgnoreFlag } from "@core/constance/runtime";
 
 export class CommanderCore {
-    public start(): void {
+    start(): void {
         this.init()
             .then(() => {
                 new BaseCommand().start();
             })
             .catch((e) => {
+                console.log(e);
                 throw new Error("命令行工具初始化失败~" + e.message || e);
             });
     }
@@ -55,5 +58,16 @@ export class CommanderCore {
         createCacheDir(); // 创建缓存目录
         this.tipsSystemEnv(); // 对系统中的工具环境进行提示
         this.updateDefaultConfig(); // 更新默认的配置
+
+        const env = process.env.NODE_ENV;
+        if (env === "production") {
+            // 全局错误处理
+            new ProcessErrorCatch().listen((_, error) => {
+                const msg = error.message;
+                if (msg !== IgnoreFlag)
+                    console.error(`${process.env.APP_NAME} error: ${msg}`);
+                process.exit(-1);
+            });
+        }
     }
 }

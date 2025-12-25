@@ -1,11 +1,11 @@
 import { PjGit } from "@core/module/pjGit";
 
 export class Commit extends PjGit {
-    public async verify() {
+    async verify() {
         await this.confirmGitEnv(); // 检测 git环境
     }
 
-    public async start(option: { amend: boolean }) {
+    async start(option: { amend: boolean }) {
         await this.verify();
         if (option.amend) return this.rewriteMsg();
 

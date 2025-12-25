@@ -44,8 +44,9 @@ export const app_config = {
 export const support_package_manger_name = Object.keys(package_manger_view);
 
 // 程序环境目录路径
-export const app_cache_path = () =>
-    path.resolve(getAppData(), process.env.APP_NAME as string);
+export const app_cache_path = () => {
+    return path.resolve(getAppData(), process.env.APP_NAME as string);
+};
 
 // 配置文件缓存目录
 export const config_cache_dir = () =>
@@ -98,10 +99,11 @@ export const config_default_option = {
         description:
             "装包时，默认是否使用 mirror_registry的值作为安装镜像（用户在命令行中输入的 --registry 权重大于当前值的设置）",
     },
-    publish_npm: {
-        value: false,
+    tag_security: {
+        value: true,
         require: (val: any) => ["true", "false"].includes(val),
         error: `只能设置为：${["true", "false"].join("、")} 的一种`,
-        description: "publish 时是否发布至 npm",
+        description:
+            "在打标签时，是否开启对 main_branch 的验证（当前分支属于main_branch的值）",
     },
 };

@@ -3,6 +3,7 @@
     "version": "0.0.1",
     "main": "./src/index.ts",
     "dependencies": {
+        "@mtool/error-catch": "^0.0.1",
         "@vanner/common": "workspace:*",
         "@vanner/module": "workspace:*"
     }

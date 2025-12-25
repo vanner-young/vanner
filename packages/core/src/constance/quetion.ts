@@ -53,25 +53,25 @@ export const qsForAskInitStorage = () => {
 /**
  * 当前项目仓库下不存在远程地址，是否需要添加
  * **/
-export const qsForAddStorageRemote = (message: string) => {
+export const qsForAddStorageRemote = () => {
     return {
         name: "addStorageRemote",
         type: "input",
-        message: message,
+        message: `请输入远程仓库地址信息：(名称和地址使用仅一个空格隔开)<remote-name> <remote-url>：\n`,
     };
 };
 
 /**
  * 当前项目仓库下存在多个远程地址, 选择一个
  * **/
-export const qsForChooseRemote = (branchList: Array<string>) => {
+export const qsForChooseRemote = (remotes: Array<string>) => {
     return {
         name: "chooseStorageRemote",
         type: "search",
         require: true,
         default: false,
-        message: "当前项目下存在多个远程地址，请选择一个：",
-        choices: branchList.map((it) => ({ name: it, value: it })),
+        message: "请选择一个远程地址名称：",
+        choices: remotes.map((it) => ({ name: it, value: it })),
     };
 };
 
@@ -182,6 +182,7 @@ export const qsForAskTlStorage = (
         name: "tlStorage",
         type: "checkbox",
         message: "请选择一个模板仓库： (输入I/A可对文件进行全选或反选)",
+        required: true,
         choices: storages.map((item) => ({
             name: item.text,
             value: item.name,
