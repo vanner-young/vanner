@@ -158,11 +158,11 @@ export const registerCommandOption = () => {
             description: "仓库远程地址管理",
             children: [
                 {
-                    command: "add",
+                    command: "push",
                     description:
                         "给当前项目仓库添加一个远程地址，如果还未初始化git仓库，则初始化仓库后添加远程地址",
                     action: () => {
-                        new Remote().add();
+                        new Remote().push();
                     },
                 },
                 {

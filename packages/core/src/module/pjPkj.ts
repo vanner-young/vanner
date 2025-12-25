@@ -42,6 +42,25 @@ export class PjPkg {
     }
 
     /**
+     * 选择当前已经系统支持的包管理器名称
+     * @param { string } defaultName 配置文件中设置的默认包管理器名称
+     * **/
+    static async choosePkjCliName(defaultName: string) {
+        let cli = "";
+        const cliList = PjPkg.getPackageName();
+
+        if (cliList.length === 1 && cliList[0]) {
+            cli = cliList[0];
+        } else {
+            const inquirer = new Inquirer();
+            cli = await inquirer.handler<string>(
+                qsForAskWhatPkgManger(cliList, defaultName)
+            );
+        }
+        return cli;
+    }
+
+    /**
      * 传递一个项目路径，获取这个路径下的包管理器
      * @param { string } cwd  项目路径
      * **/
@@ -57,19 +76,9 @@ export class PjPkg {
             if (!cli) {
                 const config = new Config();
                 if (config.get("unknown_pkg_ask")) {
-                    const cliList = PjPkg.getPackageName();
-
-                    if (cliList.length === 1 && cliList[0]) {
-                        cli = cliList[0];
-                    } else {
-                        const inquirer = new Inquirer();
-                        cli = await inquirer.handler<string>(
-                            qsForAskWhatPkgManger(
-                                cliList,
-                                config.get("package_cli")
-                            )
-                        );
-                    }
+                    cli = await this.choosePkjCliName(
+                        config.get("package_cli")
+                    );
 
                     // 记录至配置文件，下次不再询问
                     pkgMangerConfig.set(cwd, cli);

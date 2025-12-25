@@ -1,37 +1,17 @@
-import { Config } from "@core/module/config";
-
 import { Packages } from "@vanner/module";
-import { PjPkg } from "@core/module/pjPkj";
+import { Dependencies } from "@core/module/dependencies";
 
-export class AddPackage {
-    #config: Config;
-
-    constructor() {
-        this.#config = new Config();
-    }
-
-    async verify() {
-        const cwd = await PjPkg.getCwd(); // 获取当前执行路径
-        const cli = await PjPkg.getPkg(cwd); // 获取包管理器
-        return { cwd, cli };
-    }
-
+export class AddPackage extends Dependencies {
     async start(packages: Array<string>) {
         packages = Array.from(new Set([...packages]));
-        const { cwd, cli } = await this.verify();
+        const globalAction = this.isGlobalAction(packages);
 
-        // 自行输入镜像权重大于配置镜像
-        let mirror = this.#config.get("mirror_registry");
-        let isMirrorAction = this.#config.get("install_use_mirror");
-        if (packages.includes("--registry")) {
-            const index = packages.indexOf("--registry");
-            const newMirror = packages[index + 1];
-            if (newMirror) {
-                mirror = newMirror;
-                isMirrorAction = true;
-                packages.splice(index, 2);
-            }
+        if (globalAction && !this.hasDes(packages)) {
+            throw new Error("命令中请提供需要安装的依赖~");
         }
+
+        const { cwd, cli } = await this.confirmCwdAndCliInfo(globalAction);
+        const { mirror, isMirrorAction } = await this.confirmMirror(packages);
 
         new Packages({
             packages,

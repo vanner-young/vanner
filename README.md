@@ -295,7 +295,7 @@ Options:
   -h, --help      display help for command
 
 Commands:
-  add             给当前项目仓库添加一个远程地址，如果还未初始化git仓库，则初始化仓库后添加远程地址
+  push            给当前项目仓库添加一个远程地址，如果还未初始化git仓库，则初始化仓库后添加远程地址
   del             删除当前项目仓库的远程地址
   list            查看当前项目仓库的远程地址
   help [command]  display help for command

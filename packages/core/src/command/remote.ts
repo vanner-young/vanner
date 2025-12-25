@@ -2,7 +2,7 @@ import { PjGit } from "@core/module/pjGit";
 import { GitRemote } from "@vanner/module";
 
 export class Remote extends PjGit {
-    async add() {
+    async push() {
         await this.confirmGitEnv();
         const { name, url } = await this.confirmRemoteInfo();
         const remotes = await this.remote();

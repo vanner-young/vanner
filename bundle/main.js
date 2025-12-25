@@ -3542,7 +3542,7 @@ import { resolve as resolve5 } from "path";
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
 // package.json
-var version = "2.1.0";
+var version = "2.3.0";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.process.js
 import fs from "fs";
@@ -6859,6 +6859,17 @@ class PjPkg {
     }
     return cliList;
   }
+  static async choosePkjCliName(defaultName) {
+    let cli = "";
+    const cliList = PjPkg.getPackageName();
+    if (cliList.length === 1 && cliList[0]) {
+      cli = cliList[0];
+    } else {
+      const inquirer2 = new Inquirer;
+      cli = await inquirer2.handler(qsForAskWhatPkgManger(cliList, defaultName));
+    }
+    return cli;
+  }
   static async getPkg(cwd) {
     let cli = getPackageMangerName(cwd);
     if (!cli) {
@@ -6870,13 +6881,7 @@ class PjPkg {
       if (!cli) {
         const config2 = new Config2;
         if (config2.get("unknown_pkg_ask")) {
-          const cliList = PjPkg.getPackageName();
-          if (cliList.length === 1 && cliList[0]) {
-            cli = cliList[0];
-          } else {
-            const inquirer2 = new Inquirer;
-            cli = await inquirer2.handler(qsForAskWhatPkgManger(cliList, config2.get("package_cli")));
-          }
+          cli = await this.choosePkjCliName(config2.get("package_cli"));
           pkgMangerConfig.set(cwd, cli);
         }
       }
@@ -6897,20 +6902,32 @@ class PjPkg {
   }
 }
 
-// packages/core/src/command/add.ts
-class AddPackage {
-  #config;
-  constructor() {
-    this.#config = new Config2;
+// packages/core/src/module/dependencies.ts
+class Dependencies {
+  #config = new Config2;
+  hasDes(packages2) {
+    return !!packages2.find((it) => it?.trim() && !it.startsWith("-"));
   }
-  async verify() {
-    const cwd = await PjPkg.getCwd();
-    const cli = await PjPkg.getPkg(cwd);
+  isGlobalAction(packages2) {
+    return !!["-g", "--global"].find((flag) => packages2.includes(flag));
+  }
+  async confirmCwdAndCliInfo(isGlobalAction) {
+    let cwd, cli;
+    if (isGlobalAction) {
+      cwd = process.cwd();
+      const defaultCli = this.#config.get("package_cli");
+      const unknownPkgAsk = this.#config.get("unknown_pkg_ask");
+      if (!unknownPkgAsk)
+        cli = defaultCli;
+      else
+        cli = await PjPkg.choosePkjCliName(defaultCli);
+    } else {
+      cwd = await PjPkg.getCwd();
+      cli = await PjPkg.getPkg(cwd);
+    }
     return { cwd, cli };
   }
-  async start(packages2) {
-    packages2 = Array.from(new Set([...packages2]));
-    const { cwd, cli } = await this.verify();
+  async confirmMirror(packages2) {
     let mirror = this.#config.get("mirror_registry");
     let isMirrorAction = this.#config.get("install_use_mirror");
     if (packages2.includes("--registry")) {
@@ -6922,6 +6939,20 @@ class AddPackage {
         packages2.splice(index, 2);
       }
     }
+    return { isMirrorAction, mirror };
+  }
+}
+
+// packages/core/src/command/add.ts
+class AddPackage extends Dependencies {
+  async start(packages2) {
+    packages2 = Array.from(new Set([...packages2]));
+    const globalAction = this.isGlobalAction(packages2);
+    if (globalAction && !this.hasDes(packages2)) {
+      throw new Error("\u547D\u4EE4\u4E2D\u8BF7\u63D0\u4F9B\u9700\u8981\u5B89\u88C5\u7684\u4F9D\u8D56~");
+    }
+    const { cwd, cli } = await this.confirmCwdAndCliInfo(globalAction);
+    const { mirror, isMirrorAction } = await this.confirmMirror(packages2);
     new Packages({
       packages: packages2,
       cwd,
@@ -6933,18 +6964,13 @@ class AddPackage {
 }
 
 // packages/core/src/command/del.ts
-class DelPackage {
-  async verify() {
-    const cwd = await PjPkg.getCwd();
-    const cli = await PjPkg.getPkg(cwd);
-    return { cwd, cli };
-  }
+class DelPackage extends Dependencies {
   async start(packages2) {
     packages2 = Array.from(new Set([...packages2]));
-    const { cwd, cli } = await this.verify();
-    const emptyPkgs = !packages2.find((it) => it?.trim() && !it.startsWith("-"));
-    if (emptyPkgs)
-      throw new Error("\u547D\u4EE4\u4E2D\u8BF7\u63D0\u4F9B\u9700\u8981\u5378\u8F7D\u7684\u5305");
+    if (!this.hasDes(packages2))
+      throw new Error("\u547D\u4EE4\u4E2D\u8BF7\u63D0\u4F9B\u9700\u8981\u5378\u8F7D\u7684\u4F9D\u8D56~");
+    const globalAction = this.isGlobalAction(packages2);
+    const { cwd, cli } = await this.confirmCwdAndCliInfo(globalAction);
     new Packages({
       cwd,
       toolCli: cli,
@@ -7329,7 +7355,7 @@ class Tag extends PjGit {
 
 // packages/core/src/command/remote.ts
 class Remote extends PjGit {
-  async add() {
+  async push() {
     await this.confirmGitEnv();
     const { name, url } = await this.confirmRemoteInfo();
     const remotes = await this.remote();
@@ -7497,10 +7523,10 @@ var registerCommandOption = () => {
       description: "\u4ED3\u5E93\u8FDC\u7A0B\u5730\u5740\u7BA1\u7406",
       children: [
         {
-          command: "add",
+          command: "push",
           description: "\u7ED9\u5F53\u524D\u9879\u76EE\u4ED3\u5E93\u6DFB\u52A0\u4E00\u4E2A\u8FDC\u7A0B\u5730\u5740\uFF0C\u5982\u679C\u8FD8\u672A\u521D\u59CB\u5316git\u4ED3\u5E93\uFF0C\u5219\u521D\u59CB\u5316\u4ED3\u5E93\u540E\u6DFB\u52A0\u8FDC\u7A0B\u5730\u5740",
           action: () => {
-            new Remote().add();
+            new Remote().push();
           }
         },
         {
