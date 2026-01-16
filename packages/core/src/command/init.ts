@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import { Template } from "@core/module/template";
 import { Git, GitSync } from "@vanner/module";
 import { Inquirer } from "@/packages/module/inquirer";
-import { qsForAskSingleStorage } from "@core/constance/quetion";
+import { qsForAskSingleStorage } from "@core/constance/question";
 import { PjGit } from "@core/module/pjGit";
 
 export class Init {

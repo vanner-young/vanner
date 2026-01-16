@@ -4,7 +4,7 @@ import {
     qsForAskTlDes,
     qsForAskTlNameAndUrl,
     qsForAskTlStorage,
-} from "@core/constance/quetion";
+} from "@core/constance/question";
 import type { IndexType } from "mv-common/pkg/type";
 import { Config } from "@vanner/module";
 import { config_tl_file_path } from "@core/constance";

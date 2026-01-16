@@ -3537,12 +3537,12 @@ var require_process = __commonJS((exports, module) => {
 
 // src/main.ts
 var import_dotenv = __toESM(require_main(), 1);
-import { resolve as resolve5 } from "path";
+import { resolve as resolve6 } from "path";
 
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
 // package.json
-var version = "2.3.0";
+var version = "2.3.1-beat";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.process.js
 import fs from "fs";
@@ -3654,6 +3654,7 @@ var config_cache_dir = () => path2.resolve(app_cache_path(), ".Cache/config");
 var config_tool_file_path = () => path2.resolve(config_cache_dir(), "config.ini");
 var config_pkg_manger_file_path = () => path2.resolve(config_cache_dir(), "pkg_manager.ini");
 var config_tl_file_path = () => path2.resolve(config_cache_dir(), "tl.ini");
+var config_claude_file_path = () => path2.resolve(config_cache_dir(), "claude_model.ini");
 var config_default_option = {
   main_branch: {
     value: "main/master",
@@ -3692,6 +3693,44 @@ var config_default_option = {
     description: "\u5728\u6253\u6807\u7B7E\u65F6\uFF0C\u662F\u5426\u5F00\u542F\u5BF9 main_branch \u7684\u9A8C\u8BC1\uFF08\u5F53\u524D\u5206\u652F\u5C5E\u4E8Emain_branch\u7684\u503C\uFF09"
   }
 };
+var claudeModel = [
+  {
+    name: "qw(\u5343\u95EE\u6A21\u578B)",
+    value: "QW",
+    option: {
+      ANTHROPIC_BASE_URL: {
+        text: "BaseUrl",
+        value: "https://dashscope.aliyuncs.com/apps/anthropic"
+      },
+      ANTHROPIC_AUTH_TOKEN: {
+        text: "\u9A8C\u8BC1Token",
+        value: ""
+      },
+      ANTHROPIC_MODEL: {
+        text: "\u6A21\u578B\u540D\u79F0",
+        value: ""
+      }
+    }
+  },
+  {
+    name: "GLM(\u667A\u8C31)",
+    value: "GLM",
+    option: {
+      ANTHROPIC_BASE_URL: {
+        text: "BaseUrl",
+        value: "https://open.bigmodel.cn/api/anthropic"
+      },
+      ANTHROPIC_AUTH_TOKEN: {
+        text: "\u9A8C\u8BC1Token",
+        value: ""
+      },
+      ANTHROPIC_MODEL: {
+        text: "\u6A21\u578B\u540D\u79F0",
+        value: ""
+      }
+    }
+  }
+];
 
 // packages/core/src/command/main.ts
 var import_pkg3 = __toESM(require_mv_common(), 1);
@@ -3895,6 +3934,9 @@ var src = { exports: {} };
 var srcExports = src.exports;
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.file.js
+var exists = (filename, cwd = process.cwd()) => {
+  return fs2.existsSync(path3.resolve(cwd, filename));
+};
 var createDir = (targetPath, cover = false) => {
   if (fs2.existsSync(targetPath)) {
     if (!cover)
@@ -3918,6 +3960,13 @@ var readExistsFile = (targetPath, options = {}) => {
   if (!fs2.existsSync(targetPath))
     return "";
   return fs2.readFileSync(targetPath, options);
+};
+var copyFile = (sourcePath, targetPath, cover = false) => {
+  if (!fs2.existsSync(targetPath) || cover) {
+    fs2.copyFileSync(sourcePath, targetPath);
+    return { type: 1, sourcePath, targetPath };
+  }
+  return { type: 0, sourcePath, targetPath };
 };
 var isDriveDirectory = (targetPath) => {
   targetPath = path3.resolve(targetPath);
@@ -4046,6 +4095,9 @@ var checkSystem = async () => {
     throw new Error("\u672A\u68C0\u6D4B\u5230Node\u4E14Bun\u73AF\u5883\uFF0C\u81F3\u5C11\u5B89\u88C5\u4E00\u4E2A\uFF1ANode\u3001Bun");
   }
   setRuntimeFlag("RUNTIME_CLI" /* cli */, bunVer ? "bun" : "node");
+};
+var claudeEnv = async () => {
+  return await execCommand("claude -v");
 };
 var createCacheDir = () => {
   const appDataPath = getAppData();
@@ -6612,7 +6664,7 @@ class Git extends GitInfo {
     return getStorageProjectName(url);
   }
 }
-// packages/core/src/constance/quetion.ts
+// packages/core/src/constance/question.ts
 var qsForResetConfig = () => {
   return {
     name: "resetConfigFile",
@@ -6756,6 +6808,30 @@ var qsForAskSingleStorage = (storages) => {
       name: item.text,
       value: item.name
     }))
+  };
+};
+var qsForChooseClaudeModel = (model) => {
+  return {
+    name: "chooseClaudeModel",
+    type: "search",
+    message: "\u8BF7\u9009\u62E9\u4E00\u4E2A\u9700\u8981\u63A5\u5165\u7684\u81EA\u5B9A\u4E49\u6A21\u578B",
+    choices: model
+  };
+};
+var qsForGeneralAsk = (question) => {
+  return {
+    name: "generalAsk",
+    type: "input",
+    message: question,
+    require: true,
+    default: ""
+  };
+};
+var qsForUsePreClaudeOption = () => {
+  return {
+    name: "usePreClaudeOption",
+    type: "confirm",
+    message: "\u662F\u5426\u9700\u8981\u4F7F\u7528\u4E0A\u6B21\u8F93\u5165\u7684\u914D\u7F6E\u4FE1\u606F\uFF1F"
   };
 };
 
@@ -7383,6 +7459,67 @@ class Remote extends PjGit {
   }
 }
 
+// packages/core/src/command/claude.ts
+import { homedir } from "os";
+import { resolve as resolve5, dirname } from "path";
+class Claude extends Inquirer {
+  #config;
+  constructor() {
+    super();
+    this.#config = new Config({
+      sourcePath: config_claude_file_path(),
+      defaultContent: {}
+    });
+  }
+  async writeConfig(modelName, option) {
+    const configPath = resolve5(homedir(), ".claude", "settings.json");
+    if (exists(configPath)) {
+      copyFile(configPath, resolve5(dirname(configPath), `settings-back.json`), true);
+    }
+    const content = { env: option };
+    createFile(configPath, JSON.stringify(content, undefined, 2), true);
+    this.#config.set(modelName, JSON.stringify(option));
+  }
+  async confirmOption(modelName) {
+    const model = claudeModel.find((val) => val.value === modelName);
+    if (!model)
+      throw new Error("\u5207\u6362claude\u6A21\u578B\u5931\u8D25\uFF0C\u9700\u8981\u5207\u6362\u7684\u6A21\u578B\u4E0D\u652F\u6301");
+    let useCache = false;
+    let config2 = {};
+    const cacheConfig = this.#config.get(modelName);
+    if (cacheConfig)
+      useCache = await this.handler(qsForUsePreClaudeOption());
+    if (useCache) {
+      config2 = JSON.parse(cacheConfig);
+    } else {
+      const option = model?.option;
+      const keys = Object.keys(option);
+      for await (const key of keys) {
+        const val = option[key];
+        let value = val?.value;
+        if (!value) {
+          value = await this.handler(qsForGeneralAsk(`\u8BF7\u8F93\u5165\u5FC5\u8981\u7684\u914D\u7F6E\u5185\u5BB9\uFF08${val?.text}\uFF09:`));
+        }
+        config2[key] = value;
+      }
+    }
+    return config2;
+  }
+  async switch(modelName = "") {
+    if (!modelName) {
+      modelName = await this.handler(qsForChooseClaudeModel(claudeModel));
+    }
+    const option = await this.confirmOption(modelName);
+    await this.writeConfig(modelName, option);
+    return claudeModel.find((val) => val.value === modelName)?.name;
+  }
+  async start() {
+    await claudeEnv();
+    const modelName = await this.switch();
+    console.log(`${modelName} \u6A21\u578B\u5207\u6362\u6210\u529F\uFF0C\u8BF7\u91CD\u542F\u5DF2\u6253\u5F00\u7684claude\u7EC8\u7AEF\u540E\u8F93\u5165\uFF1A\u2018claude\u2019 \u547D\u4EE4\u9A8C\u8BC1~`);
+  }
+}
+
 // packages/core/src/constance/command.ts
 var registerCommandOption = () => {
   return [
@@ -7573,6 +7710,19 @@ var registerCommandOption = () => {
       ]
     },
     {
+      command: "claude",
+      description: "\u7BA1\u7406\u5F53\u524D\u7535\u8111\u7684claude agent\u529F\u80FD",
+      children: [
+        {
+          command: "model",
+          description: "\u7BA1\u7406 claude \u6A21\u578B\uFF0Cclaude \u672C\u8EAB\u4E0D\u5177\u5907\u76F4\u63A5\u5207\u6362\u81EA\u5B9A\u4E49\u63A5\u5165\u6A21\u578B\u7684\u529F\u80FD\u3002",
+          action: () => {
+            new Claude().start();
+          }
+        }
+      ]
+    },
+    {
       command: "init",
       description: "\u57FA\u4E8Etl\u521B\u5EFA\u7684\u6A21\u677F\u4ED3\u5E93\uFF0C\u521B\u5EFA\u4E00\u4E2A\u9879\u76EE",
       action: () => {
@@ -7665,5 +7815,5 @@ class CommanderCore {
 
 // src/main.ts
 var __dirname = "F:\\vanner\\src";
-import_dotenv.config({ path: [resolve5(__dirname, "../.env")], quiet: true });
+import_dotenv.config({ path: [resolve6(__dirname, "../.env")], quiet: true });
 new CommanderCore().start();

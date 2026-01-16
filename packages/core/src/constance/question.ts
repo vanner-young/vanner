@@ -206,3 +206,41 @@ export const qsForAskSingleStorage = (
         })),
     };
 };
+
+/**
+ * 选择一个需要接入claude的模型
+ * **/
+export const qsForChooseClaudeModel = (
+    model: Array<{ name: string; value: string }>
+) => {
+    return {
+        name: "chooseClaudeModel",
+        type: "search",
+        message: "请选择一个需要接入的自定义模型",
+        choices: model,
+    };
+};
+
+/**
+ * 通用的问题询问
+ * **/
+export const qsForGeneralAsk = (question: string) => {
+    return {
+        name: "generalAsk",
+        type: "input",
+        message: question,
+        require: true,
+        default: "",
+    };
+};
+
+/**
+ * 是否需要使用上次写入的claude模型配置信息
+ * **/
+export const qsForUsePreClaudeOption = () => {
+    return {
+        name: "usePreClaudeOption",
+        type: "confirm",
+        message: "是否需要使用上次输入的配置信息？",
+    };
+};

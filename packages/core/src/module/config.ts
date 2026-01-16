@@ -1,5 +1,5 @@
 import { Config as ConfigModule, Inquirer } from "@vanner/module";
-import { qsForResetConfig } from "@core/constance/quetion";
+import { qsForResetConfig } from "@core/constance/question";
 import { config_default_option } from "@core/constance";
 import { config_tool_file_path } from "@core/constance";
 import type { IndexType } from "mv-common/pkg/type";

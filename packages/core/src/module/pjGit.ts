@@ -8,7 +8,7 @@ import {
     qsForTempStorageFile,
     qsForAskInitStorage,
     qsForResetStorageFile,
-} from "@core/constance/quetion";
+} from "@core/constance/question";
 import { isValidGitUrl } from "@vanner/common";
 import { commit_type_list } from "@core/constance";
 import { IgnoreFlag } from "@core/constance/runtime";

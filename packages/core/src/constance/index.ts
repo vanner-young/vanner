@@ -64,6 +64,10 @@ export const config_pkg_manger_file_path = () =>
 export const config_tl_file_path = () =>
     path.resolve(config_cache_dir(), "tl.ini");
 
+// 配置文件缓存路径 - claude 模型参数配置
+export const config_claude_file_path = () =>
+    path.resolve(config_cache_dir(), "claude_model.ini");
+
 // 默认工具配置参数信息
 export const config_default_option = {
     main_branch: {
@@ -107,3 +111,43 @@ export const config_default_option = {
             "在打标签时，是否开启对 main_branch 的验证（当前分支属于main_branch的值）",
     },
 };
+
+// claude 自定义模型配置
+export const claudeModel = [
+    {
+        name: "qw(千问模型)",
+        value: "QW",
+        option: {
+            ANTHROPIC_BASE_URL: {
+                text: "BaseUrl",
+                value: "https://dashscope.aliyuncs.com/apps/anthropic",
+            },
+            ANTHROPIC_AUTH_TOKEN: {
+                text: "验证Token",
+                value: "",
+            },
+            ANTHROPIC_MODEL: {
+                text: "模型名称",
+                value: "",
+            },
+        },
+    },
+    {
+        name: "GLM(智谱)",
+        value: "GLM",
+        option: {
+            ANTHROPIC_BASE_URL: {
+                text: "BaseUrl",
+                value: "https://open.bigmodel.cn/api/anthropic",
+            },
+            ANTHROPIC_AUTH_TOKEN: {
+                text: "验证Token",
+                value: "",
+            },
+            ANTHROPIC_MODEL: {
+                text: "模型名称",
+                value: "",
+            },
+        },
+    },
+];

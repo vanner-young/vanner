@@ -3,7 +3,7 @@ import {
     execCommand,
     getSystemInfo,
 } from "mv-common/pkg/node/m.process";
-import { createDir } from "mv-common/pkg/node/m.file";
+import { createDir, exists } from "mv-common/pkg/node/m.file";
 import { app_cache_path } from "@core/constance";
 import { setRuntimeFlag, RuntimeFlag, hasGit } from "@common/index";
 
@@ -56,6 +56,13 @@ export const checkSystem = async () => {
     }
 
     setRuntimeFlag(RuntimeFlag.cli, bunVer ? "bun" : "node");
+};
+
+/**
+ * 检测当前系统的claude环境
+ * **/
+export const claudeEnv = async () => {
+    return await execCommand("claude -v");
 };
 
 /**

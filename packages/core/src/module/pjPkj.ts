@@ -1,5 +1,5 @@
 import { Config } from "@core/module/config";
-import { qsForAskWhatPkgManger } from "@core/constance/quetion";
+import { qsForAskWhatPkgManger } from "@core/constance/question";
 import {
     config_pkg_manger_file_path,
     support_package_manger_name,

@@ -12,6 +12,7 @@ import { Tl } from "@core/command/tl";
 import { Init } from "@core/command/init";
 import { Tag } from "@core/command/tag";
 import { Remote } from "@core/command/remote";
+import { Claude } from "@core/command/claude";
 
 /**
  * 命令注册配置选项
@@ -205,6 +206,20 @@ export const registerCommandOption = () => {
                     description: "查看模板列表",
                     action: () => {
                         new Tl().listTl();
+                    },
+                },
+            ],
+        },
+        {
+            command: "claude",
+            description: "管理当前电脑的claude agent功能",
+            children: [
+                {
+                    command: "model",
+                    description:
+                        "管理 claude 模型，claude 本身不具备直接切换自定义接入模型的功能。",
+                    action: () => {
+                        new Claude().start();
                     },
                 },
             ],
