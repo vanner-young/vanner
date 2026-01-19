@@ -17,14 +17,14 @@ export class Config extends ConfigModule {
                         ].value;
                     return config;
                 },
-                {} as IndexType<unknown>
+                {} as IndexType<unknown>,
             ),
         });
         this.#inquirer = new Inquirer();
     }
     async invalidSetContent(
         key: keyof typeof config_default_option,
-        value: string
+        value: string,
     ) {
         const keys = Object.keys(config_default_option);
         if (!keys.includes(key)) return;
@@ -45,7 +45,7 @@ export class Config extends ConfigModule {
                         config_default_option[
                             key as keyof typeof config_default_option
                         ]["description"]
-                    }】`
+                    }】`,
                 );
             }
         }
@@ -64,7 +64,7 @@ export class Config extends ConfigModule {
         }
         this.invalidSetContent(
             key as keyof typeof config_default_option,
-            value
+            value,
         ).then(() => {
             this.set(key, value);
         });

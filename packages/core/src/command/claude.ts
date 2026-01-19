@@ -6,7 +6,8 @@ import { Inquirer } from "@module/inquirer";
 import { getRuntimeConfig, RuntimeFlag } from "@common/runtime";
 import type { IndexType } from "mv-common/pkg/type";
 import { exists, copyFile, createFile } from "mv-common/pkg/node/m.file";
-import { claudeModel, config_claude_file_path } from "@core/constance/index";
+import { config_claude_file_path } from "@core/constance/index";
+import { claude_model } from "@core/constance/runtime";
 import {
     qsForGeneralAsk,
     qsForChooseClaudeModel,
@@ -29,15 +30,17 @@ export class Claude extends Inquirer {
 
     async switch(modelName = "") {
         if (!modelName) {
-            modelName = await this.handler(qsForChooseClaudeModel(claudeModel));
+            modelName = await this.handler(
+                qsForChooseClaudeModel(claude_model),
+            );
         }
         const option = await this.confirmOption(modelName);
         await this.writeConfig(modelName, option);
-        return claudeModel.find((val) => val.value === modelName)?.name;
+        return claude_model.find((val) => val.value === modelName)?.name;
     }
 
     async confirmOption(modelName: string) {
-        const model = claudeModel.find((val) => val.value === modelName);
+        const model = claude_model.find((val) => val.value === modelName);
         if (!model) throw new Error("切换claude模型失败，需要切换的模型不支持");
 
         let useCache = false;
@@ -47,7 +50,7 @@ export class Claude extends Inquirer {
         if (cacheConfig) {
             cacheConfig = JSON.parse(cacheConfig);
             const text = [];
-            for (const ml of claudeModel) {
+            for (const ml of claude_model) {
                 if (ml.value !== modelName) continue;
                 for (const key in cacheConfig) {
                     text.push(

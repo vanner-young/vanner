@@ -4,9 +4,16 @@ import { execCommand } from "mv-common/pkg/node/m.process";
  * 判断一个地址是不是git地址
  * @param { string } url git地址
  * **/
-export const isValidGitUrl = (url: string) => {
-    return url.includes(".git") && url.length > 10;
-    // return /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*(\.git)$/.test(url);
+export const isValidGitUrl = (url: string): boolean => {
+    if (!url || typeof url !== "string") {
+        return false;
+    }
+
+    const trimmedUrl = url.trim();
+    const gitUrlPattern =
+        /^(https?:\/\/|git@|ssh:\/\/)[^\s/$.?#].[^\s]*?(?:\.git)?$/i;
+
+    return gitUrlPattern.test(trimmedUrl);
 };
 
 /**

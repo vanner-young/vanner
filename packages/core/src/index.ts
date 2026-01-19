@@ -9,7 +9,7 @@ import {
 } from "@vanner/common";
 import { Config } from "@core/module/config";
 import { ProcessErrorCatch } from "@mtool/error-catch/node";
-import { IgnoreFlag } from "@core/constance/runtime";
+import { ignore_flag } from "@core/constance/runtime";
 
 export class CommanderCore {
     start(): void {
@@ -64,7 +64,7 @@ export class CommanderCore {
             // 全局错误处理
             new ProcessErrorCatch().listen((_, error) => {
                 const msg = error.message;
-                if (msg !== IgnoreFlag)
+                if (msg !== ignore_flag)
                     console.error(`${process.env.APP_NAME} error: ${msg}`);
                 process.exit(-1);
             });

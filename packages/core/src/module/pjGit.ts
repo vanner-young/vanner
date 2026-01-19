@@ -11,17 +11,12 @@ import {
 } from "@core/constance/question";
 import { isValidGitUrl } from "@vanner/common";
 import { commit_type_list } from "@core/constance";
-import { IgnoreFlag } from "@core/constance/runtime";
+import { ignore_flag } from "@core/constance/runtime";
 import { getRuntimeFlag, RuntimeFlag, searchCwdPath } from "@vanner/common";
 import { Config } from "@core/module/config";
 
 export class PjGit extends Git {
-    #inquirer: Inquirer;
-
-    constructor() {
-        super();
-        this.#inquirer = new Inquirer();
-    }
+    #inquirer: Inquirer = new Inquirer();
 
     /**
      * 确认git环境, 当不存在时，指引其初始化
@@ -39,7 +34,7 @@ export class PjGit extends Git {
         if (!hasGit) {
             const init = await this.#inquirer.handler(qsForAskInitStorage());
             if (init) await this.initGit();
-            throw new Error(IgnoreFlag);
+            throw new Error(ignore_flag);
         }
     }
 
@@ -53,7 +48,7 @@ export class PjGit extends Git {
         if (remoteList.length <= 0) {
             const { name, url } = await this.confirmRemoteInfo();
             await GitRemote.addRemote(name, url as string);
-            throw new Error(IgnoreFlag);
+            throw new Error(ignore_flag);
         } else {
             if (remoteList.length > 1) {
                 remote = await this.#inquirer.handler(
@@ -123,7 +118,7 @@ export class PjGit extends Git {
                 type = "remote";
                 localFile = citFile;
             } else {
-                throw new Error(IgnoreFlag);
+                throw new Error(ignore_flag);
             }
         }
 
