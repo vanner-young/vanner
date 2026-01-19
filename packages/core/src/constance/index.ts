@@ -1,5 +1,4 @@
 import * as path from "node:path";
-import { version } from "@/package.json";
 import { getAppData } from "mv-common/pkg/node/m.process";
 import { isValidUrl } from "mv-common/pkg/index";
 
