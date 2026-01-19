@@ -1,4 +1,4 @@
-import { isType } from "mv-common/pkg/index";
+import { isType } from "mv-common/pkg/m.common";
 import type { IndexType } from "mv-common/pkg/type";
 
 /**
@@ -8,7 +8,7 @@ import type { IndexType } from "mv-common/pkg/type";
  * **/
 export const filterObject = (
     value: Array<any | IndexType<any>>,
-    filterList: Array<any>
+    filterList: Array<any>,
 ) => {
     if (!isType(value, "object") || !isType(value, "array")) return value;
 
@@ -24,7 +24,7 @@ export const filterObject = (
  * **/
 export const arrayExecSyncHandler = (
     cb: (...rest: Array<any>) => Promise<unknown>,
-    options: any
+    options: any,
 ) => {
     if (!Array.isArray(options)) return cb(options);
 

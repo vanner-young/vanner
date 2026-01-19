@@ -1,4 +1,4 @@
-import { isEmptyJSON } from "mv-common/pkg/index";
+import { isEmptyJSON } from "mv-common/pkg/m.object";
 import { RegisterCommand } from "@core/register";
 import { registerCommandOption } from "@core/constance/command";
 import { getRuntimeConfig } from "@vanner/common";

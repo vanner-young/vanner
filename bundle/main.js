@@ -414,610 +414,6 @@ var require_main = __commonJS((exports, module) => {
   module.exports = DotenvModule;
 });
 
-// node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/index.js
-var require_mv_common = __commonJS((exports, module) => {
-  var __dirname = "F:\\vanner\\node_modules\\.bun\\mv-common@1.2.4\\node_modules\\mv-common";
-  (function(global, factory) {
-    typeof exports === "object" && typeof module !== "undefined" ? factory(exports, __require("fs"), __require("path"), __require("os"), __require("child_process")) : typeof define === "function" && define.amd ? define(["exports", "node:fs", "node:path", "node:os", "node:child_process"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.mvcommon = {}, global.fs, global.path, global.os, global.node_child_process));
-  })(exports, function(exports2, fs2, path2, os2, node_child_process) {
-    const isValidUrl = (url) => {
-      return /^(http|https):\/\//.test(url);
-    };
-    const getType2 = (value) => {
-      const typeResult = Object.prototype.toString.call(value);
-      const type = typeResult.slice(typeResult.indexOf(" ") + 1, -1).toLocaleLowerCase();
-      if (type === "array") {
-        if (Array.isArray(value))
-          return "array";
-        else
-          return null;
-      }
-      return type;
-    };
-    const isType2 = (value, type) => {
-      const valueType = getType2(value);
-      if (valueType === null)
-        throw new Error("invalid value...");
-      if (typeof type === "string")
-        return valueType === type.toLocaleLowerCase();
-      return type.map((item) => item.toLocaleLowerCase()).includes(valueType);
-    };
-    const sleep = (timeout = 1000, sync = false) => {
-      if (!sync) {
-        return new Promise((resolve) => {
-          const timer = setTimeout(() => {
-            clearTimeout(timer);
-            resolve(true);
-          }, timeout);
-        });
-      } else {
-        return Promise.resolve(true);
-      }
-    };
-    const debounce = (cb, delay = 0, immediate = false) => {
-      let timer;
-      return function(...rest) {
-        clearTimeout(timer);
-        if (!timer && immediate)
-          cb.apply(this, rest);
-        const handler = () => {
-          clearTimeout(timer);
-          timer = null;
-          if (!immediate)
-            cb.apply(this, rest);
-        };
-        timer = setTimeout(handler, delay);
-        if (immediate && !timer)
-          cb.apply(this, rest);
-      };
-    };
-    const throttle = (cb, delay = 0) => {
-      let loading = false;
-      return function(...rest) {
-        if (!loading)
-          cb.apply(this, rest);
-        loading = true;
-        const timer = setTimeout(() => {
-          clearTimeout(timer);
-          loading = false;
-        }, delay);
-      };
-    };
-    const hasProperty = (value, attr) => {
-      return Reflect.has(value, attr);
-    };
-    const findString2 = (str, ident, absolute = false) => {
-      if (isType2(ident, "array")) {
-        const findFunction = absolute ? (item) => !str.includes(item) : (item) => str.includes(item);
-        const result = ident.find(findFunction);
-        return absolute ? !result : !!result;
-      }
-      return !!str.includes(ident);
-    };
-    var src = { exports: {} };
-    (function(module2, exports3) {
-      Object.defineProperty(exports3, "__esModule", { value: true });
-      exports3.isPlainObject = exports3.clone = exports3.recursive = exports3.merge = exports3.main = undefined;
-      module2.exports = exports3 = main;
-      exports3.default = main;
-      function main() {
-        var items = [];
-        for (var _i = 0;_i < arguments.length; _i++) {
-          items[_i] = arguments[_i];
-        }
-        return merge.apply(undefined, items);
-      }
-      exports3.main = main;
-      main.clone = clone;
-      main.isPlainObject = isPlainObject;
-      main.recursive = recursive;
-      function merge() {
-        var items = [];
-        for (var _i = 0;_i < arguments.length; _i++) {
-          items[_i] = arguments[_i];
-        }
-        return _merge(items[0] === true, false, items);
-      }
-      exports3.merge = merge;
-      function recursive() {
-        var items = [];
-        for (var _i = 0;_i < arguments.length; _i++) {
-          items[_i] = arguments[_i];
-        }
-        return _merge(items[0] === true, true, items);
-      }
-      exports3.recursive = recursive;
-      function clone(input) {
-        if (Array.isArray(input)) {
-          var output = [];
-          for (var index = 0;index < input.length; ++index)
-            output.push(clone(input[index]));
-          return output;
-        } else if (isPlainObject(input)) {
-          var output = {};
-          for (var index in input)
-            output[index] = clone(input[index]);
-          return output;
-        } else {
-          return input;
-        }
-      }
-      exports3.clone = clone;
-      function isPlainObject(input) {
-        return input && typeof input === "object" && !Array.isArray(input);
-      }
-      exports3.isPlainObject = isPlainObject;
-      function _recursiveMerge(base, extend) {
-        if (!isPlainObject(base))
-          return extend;
-        for (var key in extend) {
-          if (key === "__proto__" || key === "constructor" || key === "prototype")
-            continue;
-          base[key] = isPlainObject(base[key]) && isPlainObject(extend[key]) ? _recursiveMerge(base[key], extend[key]) : extend[key];
-        }
-        return base;
-      }
-      function _merge(isClone, isRecursive, items) {
-        var result;
-        if (isClone || !isPlainObject(result = items.shift()))
-          result = {};
-        for (var index = 0;index < items.length; ++index) {
-          var item = items[index];
-          if (!isPlainObject(item))
-            continue;
-          for (var key in item) {
-            if (key === "__proto__" || key === "constructor" || key === "prototype")
-              continue;
-            var value = isClone ? clone(item[key]) : item[key];
-            result[key] = isRecursive ? _recursiveMerge(result[key], value) : value;
-          }
-        }
-        return result;
-      }
-    })(src, src.exports);
-    var srcExports = src.exports;
-    const isEmptyJSON = (value) => {
-      if (!isType2(value, "object"))
-        throw new Error("invalid isEmptyJSON parameter");
-      return !Object.keys(value).length;
-    };
-    const flatJSON = (obj) => {
-      let value = {};
-      for (const key in obj) {
-        const item = obj[key];
-        if (isType2(item, "object")) {
-          value = srcExports.recursive(true, value, flatJSON(item));
-        } else {
-          value[key] = item;
-        }
-      }
-      return value;
-    };
-    const splitJsonToContent = (content, sep = "") => {
-      content = flatJSON(content);
-      let fileContent = "";
-      for (const key in content) {
-        fileContent += `${key}${sep}${content[key]}
-`;
-      }
-      return fileContent;
-    };
-    const isEmptyArray = (value) => {
-      if (!isType2(value, "array"))
-        throw new Error("invalid isEmptyArray parameter");
-      else
-        return !value.length;
-    };
-    const validType = (type, ...args) => {
-      return !args.find((item) => !isType2(item, type));
-    };
-    const intersectionArrayList = (...args) => {
-      return args.reduce((acc, array) => {
-        return acc.filter((item) => array.includes(item));
-      });
-    };
-    const differenceArrayList = (baseArray, ...args) => {
-      const otherElementsSet = new Set(...args);
-      return baseArray.filter((item) => !otherElementsSet.has(item));
-    };
-    const unionArrayList = (...args) => {
-      return [...new Set(args.flat(1))];
-    };
-    const packageMangerViewer = new Map([
-      ["yarn", "yarn.lock"],
-      ["npm", "package-lock.json"],
-      ["pnpm", "pnpm-lock.yaml"]
-    ]);
-    const getPackageMangerName = (targetPath = process.cwd()) => {
-      for (const [key, value] of packageMangerViewer) {
-        if (fs2.existsSync(path2.resolve(targetPath, value))) {
-          return key;
-        }
-      }
-    };
-    const execCommand2 = (command, options = {}) => {
-      return new Promise((resolve, reject) => {
-        const commandList = command.split(" "), spawnOption = Object.assign({
-          shell: true,
-          encoding: "utf8",
-          cwd: process.cwd()
-        }, options);
-        if (!fs2.existsSync(spawnOption.cwd || ""))
-          return reject("exec command cwd is not exists...");
-        const result = node_child_process.spawnSync(commandList[0], commandList.slice(1), spawnOption);
-        const stdout = result.stdout?.trim?.();
-        const error = result.error || result.stderr;
-        if (error && findString2(error, ["error", "Error", "fatal:"]))
-          return reject(error);
-        else
-          return resolve(stdout);
-      });
-    };
-    const getSystemInfo2 = () => {
-      const platform = process.platform;
-      const systemDigit = process.arch;
-      return {
-        platform,
-        digit: systemDigit,
-        isWindow: platform === "win32",
-        isMac: platform === "darwin",
-        isWin64: systemDigit === "x64",
-        isWin32: systemDigit !== "x64"
-      };
-    };
-    const getHome2 = () => {
-      return os2.homedir();
-    };
-    const getAppData2 = () => {
-      const homedir = getHome2();
-      return getSystemInfo2().isWindow ? path2.resolve(homedir, "AppData/Roaming") : getSystemInfo2().isMac ? path2.join(homedir, "/") : path2.resolve(__dirname);
-    };
-    const getReferToAppData = (refer) => {
-      return path2.resolve(getAppData2(), refer || "");
-    };
-    const getPidByName = (name) => {
-      const isWindows = getSystemInfo2().isWindow;
-      const command = isWindows ? "tasklist" : "ps -ef";
-      const pidList = [];
-      return new Promise((resolve) => {
-        execCommand2(command).then((result) => {
-          const lines = result.split(isWindows ? `\r
-` : `
-`);
-          for (let i = 0;i < lines.length; i++) {
-            if (lines[i].includes(name)) {
-              const columns = lines[i].split(/\s+/);
-              const pid = isWindows ? columns[1] : columns[2];
-              pidList.push(parseInt(pid));
-            }
-          }
-          resolve(pidList.filter((item) => item));
-        }).catch(() => {
-          resolve([]);
-        });
-      });
-    };
-    const isActiveProcessByName = async (processName) => {
-      const processList = await getPidByName(processName);
-      return !!processList.length;
-    };
-    const isActiveProcessByPid = async (pid) => {
-      const isWindow = getSystemInfo2().isWindow;
-      const command = isWindow ? `tasklist /FI "PID eq ${pid}"` : "ps -p ${pid}";
-      return new Promise((resolve) => {
-        execCommand2(command).then((res) => {
-          resolve(res.includes(pid));
-        }).catch(() => {
-          resolve(false);
-        });
-      });
-    };
-    const killProcessPid = (pid) => {
-      if (!pid)
-        return Promise.resolve(false);
-      if (!isType2(pid, "array"))
-        pid = [pid];
-      const tasks = [], isWindows = getSystemInfo2().isWindow;
-      function killTak(id) {
-        const killCommand = isWindows ? `taskkill /F /PID ${id}` : `kill -9 ${id}`;
-        return new Promise((resolve) => {
-          node_child_process.exec(killCommand, (err) => {
-            if (err) {
-              resolve(false);
-              return;
-            }
-            resolve(true);
-          });
-        });
-      }
-      pid.forEach((id) => tasks.push(killTak(id)));
-      return Promise.all(tasks);
-    };
-    const killProcessName = (processName) => {
-      return getPidByName(processName).then((list) => {
-        list.forEach((pid) => {
-          killProcessPid(pid);
-        });
-        return list;
-      });
-    };
-    const exists = (filename, cwd = process.cwd()) => {
-      return fs2.existsSync(path2.resolve(cwd, filename));
-    };
-    const readForTypeFileDir = (targetPath, type = "all") => {
-      const list = fs2.readdirSync(targetPath);
-      if (type === "all")
-        return list;
-      return list.filter((item) => {
-        const itemPath = path2.resolve(targetPath, item);
-        const stat = fs2.statSync(itemPath);
-        if (typeof type !== "string")
-          return type(itemPath, stat);
-        return type === "file" ? !stat.isDirectory() : stat.isDirectory();
-      });
-    };
-    const createDir = (targetPath, cover = false) => {
-      if (fs2.existsSync(targetPath)) {
-        if (!cover)
-          return;
-        fs2.rmSync(targetPath, { recursive: true });
-      }
-      fs2.mkdirSync(targetPath, { recursive: true });
-    };
-    const createFile = (targetPath, content, cover = false) => {
-      if (fs2.existsSync(targetPath)) {
-        if (!cover)
-          return;
-        fs2.unlinkSync(targetPath);
-      }
-      const dirPathName = path2.dirname(targetPath);
-      if (!fs2.existsSync(dirPathName))
-        createDir(dirPathName);
-      fs2.writeFileSync(targetPath, content, { encoding: "utf-8" });
-    };
-    const readExistsFile = (targetPath, options = {}) => {
-      if (!fs2.existsSync(targetPath))
-        return "";
-      return fs2.readFileSync(targetPath, options);
-    };
-    const copyFile = (sourcePath, targetPath, cover = false) => {
-      if (!fs2.existsSync(targetPath) || cover) {
-        fs2.copyFileSync(sourcePath, targetPath);
-        return { type: 1, sourcePath, targetPath };
-      }
-      return { type: 0, sourcePath, targetPath };
-    };
-    const copyDirectory = async (origin, targetPath, cover = true, ignore = false) => {
-      const originStat = fs2.statSync(origin).isDirectory();
-      if (!originStat)
-        throw new Error("origin or target is not directory");
-      if (!fs2.existsSync(targetPath))
-        createDir(targetPath);
-      const entries = fs2.readdirSync(origin, { withFileTypes: true });
-      for (const entry of entries) {
-        const sourceChildrenPath = path2.resolve(origin, entry.name), destChildrenPath = path2.resolve(targetPath, entry.name);
-        if (typeof ignore === "function" && isType2(ignore, ["function", "asyncfunction"]) && await ignore(sourceChildrenPath, destChildrenPath)) {
-          continue;
-        }
-        let isCover = false;
-        if (fs2.existsSync(destChildrenPath) && !entry.isDirectory()) {
-          if (isType2(cover, ["boolean"]) && cover || typeof cover === "function" && await cover(sourceChildrenPath, destChildrenPath)) {
-            isCover = true;
-            fs2.unlinkSync(destChildrenPath);
-          } else {
-            continue;
-          }
-        }
-        if (entry.isDirectory()) {
-          await copyDirectory(sourceChildrenPath, destChildrenPath, cover, ignore);
-        } else {
-          copyFile(sourceChildrenPath, destChildrenPath, isCover);
-        }
-      }
-    };
-    const removeFileOrDir = (targetPath) => {
-      if (!fs2.existsSync(targetPath))
-        return;
-      const stats = fs2.statSync(targetPath);
-      if (stats.isDirectory())
-        fs2.rmSync(targetPath, { recursive: true });
-      else
-        fs2.unlinkSync(targetPath);
-    };
-    const checkXPermission = (targetPath) => {
-      fs2.accessSync(targetPath, fs2.constants.X_OK);
-      fs2.chmodSync(targetPath, fs2.constants.S_IXUSR);
-    };
-    const checkReadPermission = (targetPath) => {
-      fs2.accessSync(targetPath, fs2.constants.R_OK);
-    };
-    const dropCleanFolder = (dirPath, whiteList = []) => {
-      if (fs2.existsSync(dirPath)) {
-        const files = fs2.readdirSync(dirPath);
-        for (const file of files) {
-          const filePath = path2.join(dirPath, file);
-          if (fs2.lstatSync(filePath).isDirectory()) {
-            dropCleanFolder(filePath, whiteList);
-          } else {
-            if (!whiteList.includes(filePath)) {
-              fs2.unlinkSync(filePath);
-            }
-          }
-        }
-        if (!whiteList.includes(dirPath)) {
-          fs2.rmdirSync(dirPath);
-        }
-      }
-    };
-    const mergeOrCreateFile = (source, targetPath, options = {}) => {
-      options = srcExports.recursive({ wrap: false, jsonOrArray: false, tabWidth: 4 }, options);
-      const existsSource = fs2.existsSync(source), existsTarget = fs2.existsSync(targetPath);
-      if (!existsSource)
-        throw new Error("source or target path can not be null");
-      if (!existsTarget)
-        return fs2.copyFileSync(source, targetPath);
-      const sourceContent = fs2.readFileSync(source, { encoding: "utf-8" });
-      if (options.jsonOrArray) {
-        const source2 = JSON.parse(sourceContent), target = JSON.parse(fs2.readFileSync(targetPath, {
-          encoding: "utf-8"
-        }));
-        fs2.writeFileSync(targetPath, JSON.stringify(srcExports.recursive(source2, target), null, options.tabWidth), {
-          encoding: "utf-8"
-        });
-      } else {
-        fs2.appendFileSync(targetPath, `${options.wrap ? `
-` : ""}${sourceContent}`, { encoding: "utf-8" });
-      }
-    };
-    const isDriveDirectory = (targetPath) => {
-      targetPath = path2.resolve(targetPath);
-      return targetPath === path2.parse(targetPath).root;
-    };
-    const parentExecHandlerPromise = (targetPath, cb) => {
-      return new Promise((resolve) => {
-        if (isDriveDirectory(targetPath))
-          return resolve("");
-        const recursionExecHandler = () => resolve(parentExecHandlerPromise(path2.dirname(targetPath), cb));
-        if (isType2(cb, "asyncfunction")) {
-          cb(targetPath).then((result) => {
-            if (!result)
-              throw new Error("");
-            return resolve(result);
-          }).catch(() => {
-            return recursionExecHandler();
-          });
-        } else {
-          try {
-            const result = cb(targetPath);
-            if (result)
-              return resolve(result);
-            else
-              throw new Error("");
-          } catch (e) {
-            return recursionExecHandler();
-          }
-        }
-      });
-    };
-    const findParentFile = (targetPath, handler) => {
-      return parentExecHandlerPromise(targetPath, async (cwd) => {
-        let result = null;
-        if (isType2(handler, "string")) {
-          result = fs2.existsSync(path2.resolve(cwd, handler));
-        } else if (isType2(handler, "function")) {
-          result = handler(cwd);
-        } else if (isType2(handler, "asyncfunction")) {
-          result = await handler(cwd);
-        } else {
-          throw new Error("invalid handler parameter");
-        }
-        return result ? cwd : result;
-      });
-    };
-    const findRootParentPath = (value) => {
-      if (!value.trim())
-        return value;
-      value = value.replaceAll("//", "/");
-      const parentPath = path2.dirname(value);
-      if ([".", "/"].includes(parentPath))
-        return value;
-      else
-        return findRootParentPath(parentPath);
-    };
-    const getExistsFilePath = (basicPath = process.cwd(), fileNameList) => {
-      for (const item of fileNameList) {
-        const filePath = path2.resolve(basicPath, item);
-        if (fs2.existsSync(filePath))
-          return filePath;
-      }
-      return "";
-    };
-    const blobToString = (blob) => {
-      return new Promise((resolve) => {
-        const fileRender = new FileReader;
-        fileRender.onload = () => {
-          resolve(fileRender.result);
-        };
-        fileRender.readAsText(blob);
-      });
-    };
-    const getBrowserInfo = () => {
-      const userAgent = window.navigator.userAgent;
-      let browserName = "", browserVersion = "";
-      if (/Chrome/i.test(userAgent)) {
-        browserName = "Chrome";
-      } else if (/Firefox/i.test(userAgent)) {
-        browserName = "Firefox";
-      } else if (/Safari/i.test(userAgent)) {
-        browserName = "Safari";
-      } else if (/Opera|OPR/i.test(userAgent)) {
-        browserName = "Opera";
-      } else if (/Edge/i.test(userAgent)) {
-        browserName = "Edge";
-      } else if (/MSIE/i.test(userAgent) || /Trident/i.test(userAgent)) {
-        browserName = "IE";
-      } else {
-        browserName = "Unknown";
-      }
-      const versionMatch = userAgent.match(/(Chrome|Firefox|Safari|Opera|Edge|IE)\/?\s*(\.?\d+(\.\d+)*)/i);
-      if (versionMatch && versionMatch.length >= 3) {
-        browserVersion = versionMatch[2];
-      } else {
-        browserVersion = "Unknown";
-      }
-      return {
-        name: browserName,
-        version: browserVersion
-      };
-    };
-    exports2.blobToString = blobToString;
-    exports2.checkReadPermission = checkReadPermission;
-    exports2.checkXPermission = checkXPermission;
-    exports2.copyDirectory = copyDirectory;
-    exports2.copyFile = copyFile;
-    exports2.createDir = createDir;
-    exports2.createFile = createFile;
-    exports2.debounce = debounce;
-    exports2.differenceArrayList = differenceArrayList;
-    exports2.dropCleanFolder = dropCleanFolder;
-    exports2.execCommand = execCommand2;
-    exports2.exists = exists;
-    exports2.findParentFile = findParentFile;
-    exports2.findRootParentPath = findRootParentPath;
-    exports2.findString = findString2;
-    exports2.flatJSON = flatJSON;
-    exports2.getAppData = getAppData2;
-    exports2.getBrowserInfo = getBrowserInfo;
-    exports2.getExistsFilePath = getExistsFilePath;
-    exports2.getHome = getHome2;
-    exports2.getPackageMangerName = getPackageMangerName;
-    exports2.getPidByName = getPidByName;
-    exports2.getReferToAppData = getReferToAppData;
-    exports2.getSystemInfo = getSystemInfo2;
-    exports2.getType = getType2;
-    exports2.hasProperty = hasProperty;
-    exports2.intersectionArrayList = intersectionArrayList;
-    exports2.isActiveProcessByName = isActiveProcessByName;
-    exports2.isActiveProcessByPid = isActiveProcessByPid;
-    exports2.isEmptyArray = isEmptyArray;
-    exports2.isEmptyJSON = isEmptyJSON;
-    exports2.isType = isType2;
-    exports2.isValidUrl = isValidUrl;
-    exports2.killProcessName = killProcessName;
-    exports2.killProcessPid = killProcessPid;
-    exports2.mergeOrCreateFile = mergeOrCreateFile;
-    exports2.packageMangerViewer = packageMangerViewer;
-    exports2.readExistsFile = readExistsFile;
-    exports2.readForTypeFileDir = readForTypeFileDir;
-    exports2.removeFileOrDir = removeFileOrDir;
-    exports2.sleep = sleep;
-    exports2.splitJsonToContent = splitJsonToContent;
-    exports2.throttle = throttle;
-    exports2.unionArrayList = unionArrayList;
-    exports2.validType = validType;
-  });
-});
-
 // node_modules/.bun/commander@14.0.2/node_modules/commander/lib/error.js
 var require_error = __commonJS((exports) => {
   class CommanderError extends Error {
@@ -3537,12 +2933,10 @@ var require_process = __commonJS((exports, module) => {
 
 // src/main.ts
 var import_dotenv = __toESM(require_main(), 1);
-import { resolve as resolve6 } from "path";
+import { resolve as resolve5 } from "path";
 
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
-// package.json
-var version = "2.3.1-beat";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.process.js
 import fs from "fs";
@@ -3551,6 +2945,9 @@ import path from "path";
 import { spawnSync, exec } from "child_process";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/m.common.js
+var isValidUrl = (url) => {
+  return /^(http|https):\/\//.test(url);
+};
 var getType = (value) => {
   const typeResult = Object.prototype.toString.call(value);
   const type = typeResult.slice(typeResult.indexOf(" ") + 1, -1).toLocaleLowerCase();
@@ -3622,7 +3019,6 @@ var getAppData = () => {
 };
 
 // packages/core/src/constance/index.ts
-var import_pkg = __toESM(require_mv_common(), 1);
 var app_description = "\u4E00\u6B3E\u53EF\u5BF9\u9879\u76EE\u3001\u4F9D\u8D56\u3001\u4ED3\u5E93\u3001\u6A21\u677F\u8FDB\u884C\u4FBF\u6377\u5F0F\u7684\u547D\u4EE4\u884C\u5DE5\u5177";
 var package_manger_view = {
   npm: "package-lock.json",
@@ -3643,7 +3039,7 @@ var commit_type_list = {
 };
 var support_exec_file = [".js", ".ts", ".html"];
 var app_config = {
-  app_version: version,
+  app_version: 123,
   app_description
 };
 var support_package_manger_name = Object.keys(package_manger_view);
@@ -3664,7 +3060,7 @@ var config_default_option = {
   },
   mirror_registry: {
     value: "https://registry.npmmirror.com/",
-    require: (val) => import_pkg.isValidUrl(val),
+    require: (val) => isValidUrl(val),
     error: `\u503C\u53EA\u80FD\u8BBE\u7F6E\u4E3A\u4E00\u4E2A\u6709\u6548\u7684http\u6216https\u94FE\u63A5\u5730\u5740`,
     description: "\u5305\u7BA1\u7406\u5668\u6267\u884C\u65F6\u7684\u4EE3\u7406\u955C\u50CF"
   },
@@ -3695,24 +3091,6 @@ var config_default_option = {
 };
 var claudeModel = [
   {
-    name: "qw(\u5343\u95EE\u6A21\u578B)",
-    value: "QW",
-    option: {
-      ANTHROPIC_BASE_URL: {
-        text: "BaseUrl",
-        value: "https://dashscope.aliyuncs.com/apps/anthropic"
-      },
-      ANTHROPIC_AUTH_TOKEN: {
-        text: "\u9A8C\u8BC1Token",
-        value: ""
-      },
-      ANTHROPIC_MODEL: {
-        text: "\u6A21\u578B\u540D\u79F0",
-        value: ""
-      }
-    }
-  },
-  {
     name: "GLM(\u667A\u8C31)",
     value: "GLM",
     option: {
@@ -3729,11 +3107,117 @@ var claudeModel = [
         value: ""
       }
     }
+  },
+  {
+    name: "qw(\u5343\u95EE\u6A21\u578B)",
+    value: "QW",
+    option: {
+      ANTHROPIC_BASE_URL: {
+        text: "BaseUrl",
+        value: "https://dashscope.aliyuncs.com/apps/anthropic"
+      },
+      ANTHROPIC_AUTH_TOKEN: {
+        text: "\u9A8C\u8BC1Token",
+        value: ""
+      },
+      ANTHROPIC_MODEL: {
+        text: "\u6A21\u578B\u540D\u79F0",
+        value: ""
+      }
+    }
   }
 ];
 
-// packages/core/src/command/main.ts
-var import_pkg3 = __toESM(require_mv_common(), 1);
+// node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/external/vendor-ZVB4LWnE.js
+var src = { exports: {} };
+(function(module, exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.isPlainObject = exports.clone = exports.recursive = exports.merge = exports.main = undefined;
+  module.exports = exports = main;
+  exports.default = main;
+  function main() {
+    var items = [];
+    for (var _i = 0;_i < arguments.length; _i++) {
+      items[_i] = arguments[_i];
+    }
+    return merge.apply(undefined, items);
+  }
+  exports.main = main;
+  main.clone = clone;
+  main.isPlainObject = isPlainObject;
+  main.recursive = recursive;
+  function merge() {
+    var items = [];
+    for (var _i = 0;_i < arguments.length; _i++) {
+      items[_i] = arguments[_i];
+    }
+    return _merge(items[0] === true, false, items);
+  }
+  exports.merge = merge;
+  function recursive() {
+    var items = [];
+    for (var _i = 0;_i < arguments.length; _i++) {
+      items[_i] = arguments[_i];
+    }
+    return _merge(items[0] === true, true, items);
+  }
+  exports.recursive = recursive;
+  function clone(input) {
+    if (Array.isArray(input)) {
+      var output = [];
+      for (var index = 0;index < input.length; ++index)
+        output.push(clone(input[index]));
+      return output;
+    } else if (isPlainObject(input)) {
+      var output = {};
+      for (var index in input)
+        output[index] = clone(input[index]);
+      return output;
+    } else {
+      return input;
+    }
+  }
+  exports.clone = clone;
+  function isPlainObject(input) {
+    return input && typeof input === "object" && !Array.isArray(input);
+  }
+  exports.isPlainObject = isPlainObject;
+  function _recursiveMerge(base, extend) {
+    if (!isPlainObject(base))
+      return extend;
+    for (var key in extend) {
+      if (key === "__proto__" || key === "constructor" || key === "prototype")
+        continue;
+      base[key] = isPlainObject(base[key]) && isPlainObject(extend[key]) ? _recursiveMerge(base[key], extend[key]) : extend[key];
+    }
+    return base;
+  }
+  function _merge(isClone, isRecursive, items) {
+    var result;
+    if (isClone || !isPlainObject(result = items.shift()))
+      result = {};
+    for (var index = 0;index < items.length; ++index) {
+      var item = items[index];
+      if (!isPlainObject(item))
+        continue;
+      for (var key in item) {
+        if (key === "__proto__" || key === "constructor" || key === "prototype")
+          continue;
+        var value = isClone ? clone(item[key]) : item[key];
+        result[key] = isRecursive ? _recursiveMerge(result[key], value) : value;
+      }
+    }
+    return result;
+  }
+})(src, src.exports);
+var srcExports = src.exports;
+
+// node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/m.object.js
+var isEmptyJSON = (value) => {
+  if (!isType(value, "object"))
+    throw new Error("invalid isEmptyJSON parameter");
+  return !Object.keys(value).length;
+};
 
 // node_modules/.bun/commander@14.0.2/node_modules/commander/esm.mjs
 var import__ = __toESM(require_commander(), 1);
@@ -3756,8 +3240,8 @@ class SingleCommandRegister {
   usage(program2, content) {
     return program2.usage(content);
   }
-  version(program2, version2) {
-    return program2.version(version2);
+  version(program2, version) {
+    return program2.version(version);
   }
   command(program2, command) {
     return program2.command(command);
@@ -3848,92 +3332,6 @@ import { existsSync } from "fs";
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.file.js
 import fs2 from "fs";
 import path3 from "path";
-
-// node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/external/vendor-ZVB4LWnE.js
-var src = { exports: {} };
-(function(module, exports) {
-  Object.defineProperty(exports, "__esModule", { value: true });
-  exports.isPlainObject = exports.clone = exports.recursive = exports.merge = exports.main = undefined;
-  module.exports = exports = main;
-  exports.default = main;
-  function main() {
-    var items = [];
-    for (var _i = 0;_i < arguments.length; _i++) {
-      items[_i] = arguments[_i];
-    }
-    return merge.apply(undefined, items);
-  }
-  exports.main = main;
-  main.clone = clone;
-  main.isPlainObject = isPlainObject;
-  main.recursive = recursive;
-  function merge() {
-    var items = [];
-    for (var _i = 0;_i < arguments.length; _i++) {
-      items[_i] = arguments[_i];
-    }
-    return _merge(items[0] === true, false, items);
-  }
-  exports.merge = merge;
-  function recursive() {
-    var items = [];
-    for (var _i = 0;_i < arguments.length; _i++) {
-      items[_i] = arguments[_i];
-    }
-    return _merge(items[0] === true, true, items);
-  }
-  exports.recursive = recursive;
-  function clone(input) {
-    if (Array.isArray(input)) {
-      var output = [];
-      for (var index = 0;index < input.length; ++index)
-        output.push(clone(input[index]));
-      return output;
-    } else if (isPlainObject(input)) {
-      var output = {};
-      for (var index in input)
-        output[index] = clone(input[index]);
-      return output;
-    } else {
-      return input;
-    }
-  }
-  exports.clone = clone;
-  function isPlainObject(input) {
-    return input && typeof input === "object" && !Array.isArray(input);
-  }
-  exports.isPlainObject = isPlainObject;
-  function _recursiveMerge(base, extend) {
-    if (!isPlainObject(base))
-      return extend;
-    for (var key in extend) {
-      if (key === "__proto__" || key === "constructor" || key === "prototype")
-        continue;
-      base[key] = isPlainObject(base[key]) && isPlainObject(extend[key]) ? _recursiveMerge(base[key], extend[key]) : extend[key];
-    }
-    return base;
-  }
-  function _merge(isClone, isRecursive, items) {
-    var result;
-    if (isClone || !isPlainObject(result = items.shift()))
-      result = {};
-    for (var index = 0;index < items.length; ++index) {
-      var item = items[index];
-      if (!isPlainObject(item))
-        continue;
-      for (var key in item) {
-        if (key === "__proto__" || key === "constructor" || key === "prototype")
-          continue;
-        var value = isClone ? clone(item[key]) : item[key];
-        result[key] = isRecursive ? _recursiveMerge(result[key], value) : value;
-      }
-    }
-    return result;
-  }
-})(src, src.exports);
-var srcExports = src.exports;
-
-// node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/node/m.file.js
 var exists = (filename, cwd = process.cwd()) => {
   return fs2.existsSync(path3.resolve(cwd, filename));
 };
@@ -4064,6 +3462,7 @@ var searchCwdPath = async (filename) => {
   return cwd;
 };
 // packages/common/src/platform.ts
+import { execSync } from "child_process";
 var nodeVersion = async () => {
   try {
     const result = await execCommand("node -v");
@@ -4080,10 +3479,21 @@ var bunVersion = async () => {
     return "";
   }
 };
+var claudeEnv = async () => {
+  try {
+    return await execCommand("claude -v");
+  } catch (e) {
+    return "";
+  }
+};
 var checkSystem = async () => {
-  const { isWindow } = getSystemInfo();
-  if (!isWindow)
+  const { isWindow, isMac } = getSystemInfo();
+  const platforms = { windows: isWindow, mac: isMac };
+  const support_platform = process.env.APP_SUPPORT_SYSTEM?.split(",") || [];
+  const systemCheck = support_platform.find((platform) => platforms[platform]);
+  if (!systemCheck) {
     throw new Error(`\u5F53\u524D\u5DE5\u5177\u4EC5\u652F\u6301\u7684\u7CFB\u7EDF\u5E73\u53F0\u6709\uFF1A${process.env.APP_SUPPORT_SYSTEM}`);
+  }
   const git = await hasGit();
   setRuntimeFlag("RUNTIME_GIT" /* git */, String(git ? 1 : 0));
   const nodeVer = await nodeVersion();
@@ -4095,9 +3505,10 @@ var checkSystem = async () => {
     throw new Error("\u672A\u68C0\u6D4B\u5230Node\u4E14Bun\u73AF\u5883\uFF0C\u81F3\u5C11\u5B89\u88C5\u4E00\u4E2A\uFF1ANode\u3001Bun");
   }
   setRuntimeFlag("RUNTIME_CLI" /* cli */, bunVer ? "bun" : "node");
-};
-var claudeEnv = async () => {
-  return await execCommand("claude -v");
+  const claudeVersion = await claudeEnv();
+  if (!claudeVersion)
+    console.warn("claude not install, the relevant function will be unavailable...");
+  setRuntimeFlag("RUNTIME_CLAUDE" /* claude */, "-1");
 };
 var createCacheDir = () => {
   const appDataPath = getAppData();
@@ -4106,10 +3517,17 @@ var createCacheDir = () => {
   }
   createDir(app_cache_path(), false);
 };
+var executeInTerminal = (command) => {
+  const { isWindow } = getSystemInfo();
+  if (isWindow) {
+    execSync(`start powershell -NoExit -Command ${command}`);
+  } else {
+    execSync(`open -a Terminal ${command}`);
+  }
+};
 // packages/common/src/util.ts
-var import_pkg2 = __toESM(require_mv_common(), 1);
 var filterObject = (value, filterList) => {
-  if (!import_pkg2.isType(value, "object") || !import_pkg2.isType(value, "array"))
+  if (!isType(value, "object") || !isType(value, "array"))
     return value;
   const newVal = {};
   for (const key in value) {
@@ -6693,7 +6111,7 @@ var qsForAskInitStorage = () => {
     type: "confirm",
     default: false,
     require: true,
-    message: "\u5F53\u524D\u5DE5\u4F5C\u76EE\u5F55\u8FD8\u672A\u521D\u59CB\u5316git\uFF0C\u662F\u5426\u9700\u8981\u521D\u59CB\u5316\uFF1F"
+    message: "\u5F53\u524D\u76EE\u5F55\u4E0D\u662F\u4E00\u4E2Agit\u5DE5\u7A0B\u76EE\u5F55\uFF0C\u662F\u5426\u9700\u8981\u5728\u6B64\u76EE\u5F55\u4E0B\u521D\u59CB\u5316git\uFF1F"
   };
 };
 var qsForAddStorageRemote = () => {
@@ -6832,6 +6250,13 @@ var qsForUsePreClaudeOption = () => {
     name: "usePreClaudeOption",
     type: "confirm",
     message: "\u662F\u5426\u9700\u8981\u4F7F\u7528\u4E0A\u6B21\u8F93\u5165\u7684\u914D\u7F6E\u4FE1\u606F\uFF1F"
+  };
+};
+var qsForWriteClaudeOptionToCache = () => {
+  return {
+    name: "writeClaudeOptionToCache",
+    type: "confirm",
+    message: "\u662F\u5426\u9700\u8981\u5C06\u914D\u7F6E\u4FE1\u606F\u5199\u5165\u7F13\u5B58\uFF0C\u65B9\u4FBF\u4E0B\u6B21\u4F7F\u7528\uFF1F"
   };
 };
 
@@ -7116,9 +6541,6 @@ class ExecFile {
   }
 }
 
-// packages/core/src/module/pjGit.ts
-import { resolve as resolve3 } from "path";
-
 // packages/core/src/constance/runtime.ts
 var IgnoreFlag = "IGNORE-FLAG";
 
@@ -7226,10 +6648,7 @@ class PjGit extends Git {
         throw new Error("\u5F53\u524D\u4ED3\u5E93\u5206\u652F\u4E0D\u5C5E\u4E8E\u4E3B\u5206\u652F\uFF0C\u65E0\u6CD5\u53D1\u5E03tag\u7248\u672C~");
       }
     }
-    const cwd = await searchCwdPath(".git");
-    const pg = resolve3(cwd, "package.json");
-    const res = await import(pg);
-    return res.version;
+    return "12312";
   }
   async releaseTag(remote = "", tag = "") {
     if (!remote)
@@ -7389,7 +6808,7 @@ class Tl extends Template {
 }
 
 // packages/core/src/command/init.ts
-import { resolve as resolve4 } from "path";
+import { resolve as resolve3 } from "path";
 class Init {
   #tl;
   #inquirer;
@@ -7407,7 +6826,7 @@ class Init {
     const git3 = new Git;
     const folderName = await git3.cloneGitProject(url, process.cwd());
     if (folderName)
-      await GitSync.syncAll(resolve4(process.cwd(), folderName));
+      await GitSync.syncAll(resolve3(process.cwd(), folderName));
   }
   async start() {
     const pjGit = new PjGit;
@@ -7461,7 +6880,7 @@ class Remote extends PjGit {
 
 // packages/core/src/command/claude.ts
 import { homedir } from "os";
-import { resolve as resolve5, dirname } from "path";
+import { resolve as resolve4, dirname } from "path";
 class Claude extends Inquirer {
   #config;
   constructor() {
@@ -7471,14 +6890,13 @@ class Claude extends Inquirer {
       defaultContent: {}
     });
   }
-  async writeConfig(modelName, option) {
-    const configPath = resolve5(homedir(), ".claude", "settings.json");
-    if (exists(configPath)) {
-      copyFile(configPath, resolve5(dirname(configPath), `settings-back.json`), true);
+  async switch(modelName = "") {
+    if (!modelName) {
+      modelName = await this.handler(qsForChooseClaudeModel(claudeModel));
     }
-    const content = { env: option };
-    createFile(configPath, JSON.stringify(content, undefined, 2), true);
-    this.#config.set(modelName, JSON.stringify(option));
+    const option = await this.confirmOption(modelName);
+    await this.writeConfig(modelName, option);
+    return claudeModel.find((val) => val.value === modelName)?.name;
   }
   async confirmOption(modelName) {
     const model = claudeModel.find((val) => val.value === modelName);
@@ -7486,11 +6904,25 @@ class Claude extends Inquirer {
       throw new Error("\u5207\u6362claude\u6A21\u578B\u5931\u8D25\uFF0C\u9700\u8981\u5207\u6362\u7684\u6A21\u578B\u4E0D\u652F\u6301");
     let useCache = false;
     let config2 = {};
-    const cacheConfig = this.#config.get(modelName);
-    if (cacheConfig)
+    let cacheConfig = this.#config.get(modelName);
+    if (cacheConfig) {
+      cacheConfig = JSON.parse(cacheConfig);
+      const text = [];
+      for (const ml of claudeModel) {
+        if (ml.value !== modelName)
+          continue;
+        for (const key in cacheConfig) {
+          text.push(`${ml.option[key].text}\uFF1A${cacheConfig[key]}`);
+        }
+      }
+      console.log(`
+${text.join(`
+`)}
+`);
       useCache = await this.handler(qsForUsePreClaudeOption());
+    }
     if (useCache) {
-      config2 = JSON.parse(cacheConfig);
+      config2 = cacheConfig;
     } else {
       const option = model?.option;
       const keys = Object.keys(option);
@@ -7505,18 +6937,24 @@ class Claude extends Inquirer {
     }
     return config2;
   }
-  async switch(modelName = "") {
-    if (!modelName) {
-      modelName = await this.handler(qsForChooseClaudeModel(claudeModel));
+  async writeConfig(modelName, option) {
+    const configPath = resolve4(homedir(), ".claude", "settings.json");
+    if (exists(configPath)) {
+      copyFile(configPath, resolve4(dirname(configPath), `settings-back.json`), true);
     }
-    const option = await this.confirmOption(modelName);
-    await this.writeConfig(modelName, option);
-    return claudeModel.find((val) => val.value === modelName)?.name;
+    const content = { env: option };
+    createFile(configPath, JSON.stringify(content, undefined, 2), true);
+    const writeCache = await this.handler(qsForWriteClaudeOptionToCache());
+    if (writeCache)
+      this.#config.set(modelName, JSON.stringify(option));
   }
   async start() {
-    await claudeEnv();
+    if (getRuntimeConfig("RUNTIME_CLAUDE" /* claude */) === "-1") {
+      throw new Error("\u5F53\u524D\u7CFB\u7EDF\u672A\u5B89\u88C5claude\uFF0C\u529F\u80FD\u4E0D\u53EF\u7528\u3002\u8BF7\u6839\u636E\u94FE\u63A5\u7684\u6307\u5F15\u8FDB\u884C\u5B89\u88C5\uFF1Ahttps://github.com/anthropics/claude-code");
+    }
     const modelName = await this.switch();
-    console.log(`${modelName} \u6A21\u578B\u5207\u6362\u6210\u529F\uFF0C\u8BF7\u91CD\u542F\u5DF2\u6253\u5F00\u7684claude\u7EC8\u7AEF\u540E\u8F93\u5165\uFF1A\u2018claude\u2019 \u547D\u4EE4\u9A8C\u8BC1~`);
+    console.log(`${modelName} \u6A21\u578B\u5207\u6362\u6210\u529F\uFF0C\u8BF7\u5728\u65B0\u6253\u5F00\u7684\u7EC8\u7AEF\u4E2D\u9A8C\u8BC1~`);
+    executeInTerminal("claude");
   }
 }
 
@@ -7747,7 +7185,7 @@ class BaseCommand extends RegisterCommand {
   }
   start() {
     this.commandGlobalCatch((source, dest) => {
-      const args = dest.args, isEmptySource = import_pkg3.isEmptyJSON(source);
+      const args = dest.args, isEmptySource = isEmptyJSON(source);
       if (args?.at(0) === "help" || isEmptySource && !args.length) {
         this.program.outputHelp();
       } else if (source.v) {
@@ -7809,11 +7247,13 @@ class CommanderCore {
           console.error(`${process.env.APP_NAME} error: ${msg}`);
         process.exit(-1);
       });
+    } else {
+      console.warn("the project env not product... ignore error catch");
     }
   }
 }
 
 // src/main.ts
 var __dirname = "F:\\vanner\\src";
-import_dotenv.config({ path: [resolve6(__dirname, "../.env")], quiet: true });
+import_dotenv.config({ path: [resolve5(__dirname, "../.env")], quiet: true });
 new CommanderCore().start();

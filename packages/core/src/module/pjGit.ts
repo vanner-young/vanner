@@ -31,7 +31,7 @@ export class PjGit extends Git {
         const git = getRuntimeFlag(RuntimeFlag.git);
         if (!Number(git))
             throw new Error(
-                "当前系统未存在git，请根据此链接进行安装后重试：https://git-scm.com"
+                "当前系统未存在git，请根据此链接进行安装后重试：https://git-scm.com",
             );
         const hasGit = await this.env();
 
@@ -58,8 +58,8 @@ export class PjGit extends Git {
             if (remoteList.length > 1) {
                 remote = await this.#inquirer.handler(
                     qsForChooseRemote(
-                        remoteList.map((it) => it.origin as string)
-                    )
+                        remoteList.map((it) => it.origin as string),
+                    ),
                 );
             } else {
                 remote = remoteList[0]?.origin as string;
@@ -77,7 +77,7 @@ export class PjGit extends Git {
         if (!remotes.length) throw new Error("当前仓库暂无远程地址~");
 
         return await this.#inquirer.handler(
-            qsForChooseRemote(remotes.map((it) => it.origin as string))
+            qsForChooseRemote(remotes.map((it) => it.origin as string)),
         );
     }
 
@@ -117,7 +117,7 @@ export class PjGit extends Git {
                 throw new Error("当前分支下，不存在需要提交的文件~");
 
             const isPushFile = await this.#inquirer.handler(
-                qsForStraightforwardPushRemote()
+                qsForStraightforwardPushRemote(),
             );
             if (isPushFile) {
                 type = "remote";
@@ -168,7 +168,7 @@ export class PjGit extends Git {
             if (!tempFiles.length) throw new Error("当前暂存区无可撤回的文件~");
 
             const files = (await this.#inquirer.handler(
-                qsForResetStorageFile(tempFiles)
+                qsForResetStorageFile(tempFiles),
             )) as Array<string>;
             await commit.resetTempStorageFile(files);
         } else {
@@ -224,7 +224,7 @@ export class PjGit extends Git {
      * **/
     async confirmRemoteInfo() {
         const originRemote = (await this.#inquirer.handler(
-            qsForAddStorageRemote()
+            qsForAddStorageRemote(),
         )) as string;
 
         const [name, url] = originRemote.split(" ");

@@ -1,9 +1,7 @@
 import * as path from "node:path";
+import { version } from "@/package.json";
+import { isValidUrl } from "mv-common/pkg/m.common";
 import { getAppData } from "mv-common/pkg/node/m.process";
-import { isValidUrl } from "mv-common/pkg/index";
-
-// 支持的node版本-主版本(大于等于此版本)
-export const support_node_version = 20;
 
 // 命令行工具简介
 export const app_description =
