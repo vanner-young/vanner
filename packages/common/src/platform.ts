@@ -1,9 +1,10 @@
+import { execSync } from "node:child_process";
 import {
     getAppData,
     execCommand,
     getSystemInfo,
 } from "mv-common/pkg/node/m.process";
-import { createDir, exists } from "mv-common/pkg/node/m.file";
+import { createDir } from "mv-common/pkg/node/m.file";
 import { app_cache_path } from "@core/constance";
 import { setRuntimeFlag, RuntimeFlag, hasGit } from "@common/index";
 
@@ -50,11 +51,11 @@ export const checkSystem = async () => {
     const platforms = { windows: isWindow, mac: isMac };
     const support_platform = process.env.APP_SUPPORT_SYSTEM?.split(",") || [];
     const systemCheck = support_platform.find(
-        (platform) => platforms[platform as keyof typeof platforms]
+        (platform) => platforms[platform as keyof typeof platforms],
     );
     if (!systemCheck) {
         throw new Error(
-            `当前工具仅支持的系统平台有：${process.env.APP_SUPPORT_SYSTEM}`
+            `当前工具仅支持的系统平台有：${process.env.APP_SUPPORT_SYSTEM}`,
         );
     }
 
@@ -74,7 +75,7 @@ export const checkSystem = async () => {
     const claudeVersion = await claudeEnv();
     if (!claudeVersion)
         console.warn(
-            "claude not install, the relevant function will be unavailable..."
+            "claude not install, the relevant function will be unavailable...",
         );
     setRuntimeFlag(RuntimeFlag.claude, "-1");
 };
@@ -88,4 +89,17 @@ export const createCacheDir = () => {
         throw new Error("工具缓存目录创建失败");
     }
     createDir(app_cache_path(), false);
+};
+
+/**
+ * 打开终端命令行并执行相应的命令
+ * @param { string } command 需要执行的命令
+ * **/
+export const executeInTerminal = (command: string) => {
+    const { isWindow } = getSystemInfo();
+    if (isWindow) {
+        execSync(`start powershell -NoExit -Command ${command}`);
+    } else {
+        execSync(`open -a Terminal ${command}`);
+    }
 };

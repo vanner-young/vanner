@@ -20,7 +20,7 @@ export const qsForResetConfig = () => {
  * **/
 export const qsForAskWhatPkgManger = (
     cliList: Array<string>,
-    defaultCli: string
+    defaultCli: string,
 ) => {
     const list = cliList.filter((item) => item !== defaultCli);
     list.unshift(defaultCli);
@@ -79,7 +79,7 @@ export const qsForChooseRemote = (remotes: Array<string>) => {
  * 选择一个本次提交类型
  * **/
 export const qsForPushType = (
-    types: Array<{ name: string; value: string }>
+    types: Array<{ name: string; value: string }>,
 ) => {
     return [
         {
@@ -176,7 +176,7 @@ export const qsForAskTlDes = () => {
  * 选择一个或多个模板仓库
  * **/
 export const qsForAskTlStorage = (
-    storages: Array<{ name: string; value: string; text: string }>
+    storages: Array<{ name: string; value: string; text: string }>,
 ) => {
     return {
         name: "tlStorage",
@@ -194,7 +194,7 @@ export const qsForAskTlStorage = (
  * 选择一个模板仓库
  * **/
 export const qsForAskSingleStorage = (
-    storages: Array<{ name: string; value: string; text: string }>
+    storages: Array<{ name: string; value: string; text: string }>,
 ) => {
     return {
         name: "singleStorage",
@@ -211,7 +211,7 @@ export const qsForAskSingleStorage = (
  * 选择一个需要接入claude的模型
  * **/
 export const qsForChooseClaudeModel = (
-    model: Array<{ name: string; value: string }>
+    model: Array<{ name: string; value: string }>,
 ) => {
     return {
         name: "chooseClaudeModel",
@@ -242,5 +242,16 @@ export const qsForUsePreClaudeOption = () => {
         name: "usePreClaudeOption",
         type: "confirm",
         message: "是否需要使用上次输入的配置信息？",
+    };
+};
+
+/**
+ * 是否需要将claude模型配置信息写入缓存
+ * **/
+export const qsForWriteClaudeOptionToCache = () => {
+    return {
+        name: "writeClaudeOptionToCache",
+        type: "confirm",
+        message: "是否需要将配置信息写入缓存，方便下次使用？",
     };
 };

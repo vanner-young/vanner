@@ -115,12 +115,12 @@ export const config_default_option = {
 // claude 自定义模型配置
 export const claudeModel = [
     {
-        name: "qw(千问模型)",
-        value: "QW",
+        name: "GLM(智谱)",
+        value: "GLM",
         option: {
             ANTHROPIC_BASE_URL: {
                 text: "BaseUrl",
-                value: "https://dashscope.aliyuncs.com/apps/anthropic",
+                value: "https://open.bigmodel.cn/api/anthropic",
             },
             ANTHROPIC_AUTH_TOKEN: {
                 text: "验证Token",
@@ -133,12 +133,12 @@ export const claudeModel = [
         },
     },
     {
-        name: "GLM(智谱)",
-        value: "GLM",
+        name: "qw(千问模型)",
+        value: "QW",
         option: {
             ANTHROPIC_BASE_URL: {
                 text: "BaseUrl",
-                value: "https://open.bigmodel.cn/api/anthropic",
+                value: "https://dashscope.aliyuncs.com/apps/anthropic",
             },
             ANTHROPIC_AUTH_TOKEN: {
                 text: "验证Token",

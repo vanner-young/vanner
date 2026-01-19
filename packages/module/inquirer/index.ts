@@ -36,7 +36,7 @@ export class Inquirer {
                 defaultValue = item.default;
             if (defaultValue) {
                 const existsItem = dataSource.findIndex(
-                    (item: any) => item.value === defaultValue
+                    (item: any) => item.value === defaultValue,
                 );
                 if (existsItem !== -1) {
                     const [item] = dataSource.splice(existsItem, 1);
@@ -49,7 +49,7 @@ export class Inquirer {
                 source: async (input) => {
                     return input?.trim?.()
                         ? dataSource.filter((item: any) =>
-                              item.name.includes(input)
+                              item.name.includes(input),
                           )
                         : dataSource;
                 },
