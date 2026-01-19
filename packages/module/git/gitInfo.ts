@@ -19,6 +19,17 @@ export class GitInfo {
     }
 
     /**
+     * 获取git仓库根目录
+     * **/
+    async getRootPath(): Promise<string> {
+        const source = await execCommand(`git rev-parse --show-toplevel`, {
+            stdio: ["ignore", "pipe", "ignore"],
+            encoding: "utf-8" as any,
+        });
+        return source.trim();
+    }
+
+    /**
      * 查看git远程提交地址
      * **/
     async remote(): Promise<Array<{ origin: string; remote: string }>> {

@@ -1,7 +1,8 @@
 import * as path from "node:path";
 import { existsSync } from "node:fs";
+import { execSync } from "node:child_process";
 import { package_manger_view } from "@core/constance";
-import { execCommand } from "mv-common/pkg/node/m.process";
+import { execCommand, getSystemInfo } from "mv-common/pkg/node/m.process";
 import { findParentFile } from "mv-common/pkg/node/m.file";
 
 /**
@@ -106,4 +107,17 @@ export const searchCwdPath = async (filename: string) => {
     const cwd = await findParentFile(process.cwd(), filename);
     if (!cwd) throw new Error("当前目录及父级目录不是一个可执行目录！");
     return cwd;
+};
+
+/**
+ * 打开终端命令行并执行相应的命令
+ * @param { string } command 需要执行的命令
+ * **/
+export const executeInTerminal = (command: string) => {
+    const { isWindow } = getSystemInfo();
+    if (isWindow) {
+        execSync(`start powershell -NoExit -Command ${command}`);
+    } else {
+        execSync(`${command}`, { stdio: "inherit" });
+    }
 };

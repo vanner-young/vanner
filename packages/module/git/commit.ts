@@ -1,4 +1,5 @@
 import { GitSync } from "@module/git/sync";
+import { GitInfo } from "@module/git/gitInfo";
 import { execCommand } from "mv-common/pkg/node/m.process";
 
 export interface CommitProps {
@@ -8,9 +9,20 @@ export interface CommitProps {
 
 export class GitCommit {
     #config: CommitProps;
+    #rootPath?: string;
 
     constructor(props: CommitProps = {}) {
         this.#config = { ...props };
+    }
+
+    /**
+     * 获取 git 仓库根目录（带缓存）
+     * **/
+    async #getRootPath(): Promise<string> {
+        if (!this.#rootPath) {
+            this.#rootPath = await new GitInfo().getRootPath();
+        }
+        return this.#rootPath;
     }
 
     /**
@@ -20,6 +32,7 @@ export class GitCommit {
         const command = `git add ${file.join(" ")}`;
         return await execCommand(command, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -30,6 +43,7 @@ export class GitCommit {
         const command = `git commit -m "${type}:${msg}"`;
         return await execCommand(command, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -44,6 +58,7 @@ export class GitCommit {
         const command = `git push ${remote} ${branch}`;
         await execCommand(command, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -53,6 +68,7 @@ export class GitCommit {
     async rewriteCommitMsg(type: string, msg: string) {
         return await execCommand(`git commit --amend -m "${type}:${msg}"`, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -62,6 +78,7 @@ export class GitCommit {
     async resetFileToCommit() {
         return await execCommand(`git reset --soft HEAD~1`, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -71,6 +88,7 @@ export class GitCommit {
     async resetTempStorageFile(file: Array<string>) {
         return await execCommand(`git reset ${file.join(" ")}`, {
             stdio: "inherit",
+            cwd: await this.#getRootPath(),
         });
     }
 
@@ -81,6 +99,7 @@ export class GitCommit {
         await GitSync.syncTag();
         const tagStr = await execCommand("git tag", {
             stdio: ["ignore", "pipe", "ignore"],
+            cwd: await this.#getRootPath(),
         });
         return tagStr
             .split("\n")
@@ -100,14 +119,17 @@ export class GitCommit {
                 `标签：${tagVersion} 已存在当前仓库标签列表，推送失败~`
             );
 
+        const cwd = await this.#getRootPath();
         await execCommand(
             `git tag -a v${option.tag} -m "Release version ${option.tag}"`,
             {
                 stdio: "inherit",
+                cwd,
             }
         );
         await execCommand(`git push ${option.remote} ${tagVersion}`, {
             stdio: "inherit",
+            cwd,
         });
     }
 }
