@@ -68,6 +68,8 @@ export class CommanderCore {
                     console.error(`${process.env.APP_NAME} error: ${msg}`);
                 process.exit(-1);
             });
+        } else {
+            console.warn("the project env not product... ignore error catch");
         }
     }
 }

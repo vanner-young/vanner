@@ -50,6 +50,7 @@ export const getRuntimeConfig = (key: string | Array<string>) => {
 export enum RuntimeFlag {
     cli = "RUNTIME_CLI",
     git = "RUNTIME_GIT",
+    claude = "RUNTIME_CLAUDE",
 }
 export const setRuntimeFlag = (key: RuntimeFlag, value: string) => {
     setRuntimeConfig(key, value);

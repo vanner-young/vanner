@@ -2,8 +2,8 @@ import { homedir } from "node:os";
 import { resolve, dirname } from "node:path";
 
 import { Config } from "@module/config";
-import { claudeEnv } from "@common/platform";
 import { Inquirer } from "@module/inquirer";
+import { getRuntimeConfig, RuntimeFlag } from "@common/runtime";
 import type { IndexType } from "mv-common/pkg/type";
 import { exists, copyFile, createFile } from "mv-common/pkg/node/m.file";
 
@@ -81,7 +81,12 @@ export class Claude extends Inquirer {
     }
 
     async start() {
-        await claudeEnv();
+        if (getRuntimeConfig(RuntimeFlag.claude) === "-1") {
+            throw new Error(
+                "当前系统未安装claude，功能不可用。请根据链接的指引进行安装：https://github.com/anthropics/claude-code"
+            );
+        }
+
         const modelName = await this.switch();
         console.log(
             `${modelName} 模型切换成功，请重启已打开的claude终端后输入：‘claude’ 命令验证~`

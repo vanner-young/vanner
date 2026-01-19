@@ -32,37 +32,51 @@ export const bunVersion = async () => {
 };
 
 /**
+ * 检测当前系统的claude环境
+ * **/
+export const claudeEnv = async () => {
+    try {
+        return await execCommand("claude -v");
+    } catch (e) {
+        return "";
+    }
+};
+
+/**
  * 检测系统环境是否支持
  * **/
 export const checkSystem = async () => {
-    const { isWindow } = getSystemInfo();
-    if (!isWindow)
+    const { isWindow, isMac } = getSystemInfo();
+    const platforms = { windows: isWindow, mac: isMac };
+    const support_platform = process.env.APP_SUPPORT_SYSTEM?.split(",") || [];
+    const systemCheck = support_platform.find(
+        (platform) => platforms[platform as keyof typeof platforms]
+    );
+    if (!systemCheck) {
         throw new Error(
             `当前工具仅支持的系统平台有：${process.env.APP_SUPPORT_SYSTEM}`
         );
+    }
 
     const git = await hasGit();
     setRuntimeFlag(RuntimeFlag.git, String(git ? 1 : 0));
 
     const nodeVer = await nodeVersion();
     const bunVer = await bunVersion();
-
     if (nodeVer && bunVer) {
         return;
     }
-
     if (!nodeVer && !bunVer) {
         throw new Error("未检测到Node且Bun环境，至少安装一个：Node、Bun");
     }
-
     setRuntimeFlag(RuntimeFlag.cli, bunVer ? "bun" : "node");
-};
 
-/**
- * 检测当前系统的claude环境
- * **/
-export const claudeEnv = async () => {
-    return await execCommand("claude -v");
+    const claudeVersion = await claudeEnv();
+    if (!claudeVersion)
+        console.warn(
+            "claude not install, the relevant function will be unavailable..."
+        );
+    setRuntimeFlag(RuntimeFlag.claude, "-1");
 };
 
 /**

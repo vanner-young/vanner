@@ -46,7 +46,7 @@ export const qsForAskInitStorage = () => {
         type: "confirm",
         default: false,
         require: true,
-        message: "当前工作目录还未初始化git，是否需要初始化？",
+        message: "当前目录不是一个git工程目录，是否需要在此目录下初始化git？",
     };
 };
 
