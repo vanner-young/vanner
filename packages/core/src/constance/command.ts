@@ -12,7 +12,7 @@ import { Tl } from "@core/command/tl";
 import { Init } from "@core/command/init";
 import { Tag } from "@core/command/tag";
 import { Remote } from "@core/command/remote";
-import { Claude } from "@core/command/claude";
+import { Claude, ClaudeType } from "@core/command/claude";
 
 /**
  * 命令注册配置选项
@@ -219,7 +219,14 @@ export const registerCommandOption = () => {
                     description:
                         "管理 claude 模型，claude 本身不具备直接切换自定义接入模型的功能。",
                     action: () => {
-                        new Claude().start();
+                        new Claude().start(ClaudeType.switch);
+                    },
+                },
+                {
+                    command: "import",
+                    description: "选择一个模型配置文件，导入claude模型",
+                    action: () => {
+                        new Claude().start(ClaudeType.import);
                     },
                 },
             ],

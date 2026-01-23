@@ -18,10 +18,11 @@ export class Claude extends Inquirer {
         defaultContent: {},
     });
 
+    // 写入配置文件
     async writeConfig(
         modelName: string,
         option: IndexType<string>,
-        tipsCache = true
+        tipsCache = true,
     ) {
         if (exists(this.configPath)) {
             copyFile(this.configPath, this.backConfigPath, true);
@@ -30,7 +31,7 @@ export class Claude extends Inquirer {
         createFile(
             this.configPath,
             JSON.stringify(content, undefined, 2),
-            true
+            true,
         );
 
         if (!tipsCache) return;
@@ -38,6 +39,7 @@ export class Claude extends Inquirer {
         if (writeCache) this.config.set(modelName, JSON.stringify(option));
     }
 
+    // 打开 claude-code
     openClaude() {
         return executeInTerminal("claude");
     }

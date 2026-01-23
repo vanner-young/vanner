@@ -12,7 +12,7 @@ import { findParentFile } from "mv-common/pkg/node/m.file";
  * **/
 export const setRuntimeConfig = (
     key: string | Array<{ key: string; value: string }>,
-    value?: string
+    value?: string,
 ) => {
     if (Array.isArray(key)) {
         for (const item of key) {
@@ -33,13 +33,16 @@ export const setRuntimeConfig = (
  * **/
 export const getRuntimeConfig = (key: string | Array<string>) => {
     if (Array.isArray(key)) {
-        return key.reduce((pre, next) => {
-            pre[next] =
-                process.env[
-                    `${process.env.APP_NAME}_${next.toLocaleLowerCase()}`
-                ];
-            return pre;
-        }, {} as Record<string, string | undefined>);
+        return key.reduce(
+            (pre, next) => {
+                pre[next] =
+                    process.env[
+                        `${process.env.APP_NAME}_${next.toLocaleLowerCase()}`
+                    ];
+                return pre;
+            },
+            {} as Record<string, string | undefined>,
+        );
     }
     return process.env[`${process.env.APP_NAME}_${key.toLocaleLowerCase()}`];
 };
@@ -69,7 +72,7 @@ export const getRuntimeFlag = (key: RuntimeFlag) => {
  * @param { string } targetPath 目标路径
  * **/
 export const getPackageMangerName = (
-    targetPath: string = process.cwd()
+    targetPath: string = process.cwd(),
 ): string | void => {
     for (const key in package_manger_view) {
         const value =
@@ -89,7 +92,7 @@ export const getPackageMangerName = (
 export const execProjectCommandInCwd = async (
     cli: string,
     cwd: string,
-    command: string
+    command: string,
 ) => {
     const runStr = ["bun", "npm"].includes(cli) ? "run" : "";
 

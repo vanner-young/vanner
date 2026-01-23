@@ -18,7 +18,7 @@ export class ExecFile {
 
         if (cli === "node" && suffix !== ".js") {
             throw new Error(
-                "直接运行js文件时，推荐使用bun工具，安装文档：https://bun.com/docs/installation"
+                "直接运行js文件时，推荐使用bun工具，安装文档：https://bun.com/docs/installation",
             );
         }
 
@@ -28,15 +28,15 @@ export class ExecFile {
     async verifyFileName(suffix: string) {
         if (!suffix) {
             throw new Error(
-                "命令输入错误或无法识别需要执行的文件类型，请确认命令输入或文件名称是否正确"
+                "命令输入错误或无法识别需要执行的文件类型，请确认命令输入或文件名称是否正确",
             );
         }
 
         if (!support_exec_file.includes(suffix)) {
             throw new Error(
                 `当前文件不支持被执行，仅支持 "${support_exec_file.join(
-                    "/"
-                )}" 文件`
+                    "/",
+                )}" 文件`,
             );
         }
     }
