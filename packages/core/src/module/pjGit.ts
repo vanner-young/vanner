@@ -138,8 +138,25 @@ export class PjGit extends Git {
             }`,
             value: key,
         }));
+        let { type = "", msg = "" } = await (this.#inquirer.handler(
+            qsForPushType(types),
+        ) as Promise<{ type: string; msg: string }>);
 
-        return await this.#inquirer.handler(qsForPushType(types));
+        if (!msg?.trim?.()) {
+            while (true) {
+                console.log("本地提交描述不可为空，请重试~");
+                const content = await (this.#inquirer.handler(
+                    qsForPushType(types).slice(1),
+                ) as Promise<{ type: string; msg: string }>);
+
+                if (content?.msg?.trim?.()) {
+                    msg = content.msg;
+                    break;
+                }
+            }
+        }
+
+        return { type, msg };
     }
 
     /**
