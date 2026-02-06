@@ -2938,7 +2938,7 @@ import { resolve as resolve6 } from "path";
 // packages/core/src/constance/index.ts
 import * as path2 from "path";
 // package.json
-var version = "2.3.1";
+var version = "2.3.2";
 
 // node_modules/.bun/mv-common@1.2.4/node_modules/mv-common/m.common.js
 var isValidUrl = (url) => {
